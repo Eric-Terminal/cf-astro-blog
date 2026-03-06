@@ -1,61 +1,78 @@
-import { describe, expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import { app } from "../../src/admin/app";
 
-describe("Admin API", () => {
-	test("GET /health returns ok", async () => {
-		const res = await app.request("/health");
-		expect(res.status).toBe(200);
+const mockEnv = {
+	TURNSTILE_SITE_KEY: "",
+	SESSION: {
+		get: async () => null,
+		put: async () => undefined,
+		delete: async () => undefined,
+	},
+} as unknown as Env;
 
-		const body = await res.json();
-		expect(body.status).toBe("ok");
-		expect(body.timestamp).toBeDefined();
+describe("后台接口喵", () => {
+	test("GET /health 会返回健康状态喵", async () => {
+		const res = await app.request("/health");
+		assert.equal(res.status, 200);
+
+		const body = (await res.json()) as {
+			status: string;
+			timestamp: string;
+		};
+		assert.equal(body.status, "ok");
+		assert.ok(body.timestamp);
 	});
 
-	test("GET /auth/login returns login page", async () => {
-		const res = await app.request("/auth/login");
-		expect(res.status).toBe(200);
+	test("GET /auth/login 会返回登录页面喵", async () => {
+		const res = await app.request("/auth/login", undefined, mockEnv);
+		assert.equal(res.status, 200);
 
 		const html = await res.text();
-		expect(html).toContain("Admin Login");
-		expect(html).toContain("username");
-		expect(html).toContain("password");
+		assert.match(html, /管理后台登录/u);
+		assert.match(html, /name="username"/u);
+		assert.match(html, /name="password"/u);
 	});
 
-	test("GET /admin redirects to login without auth", async () => {
+	test("未登录访问 /admin 会跳转到登录页喵", async () => {
 		const res = await app.request("/admin", { redirect: "manual" });
-		expect(res.status).toBe(302);
-		expect(res.headers.get("location")).toBe("/api/auth/login");
+		assert.equal(res.status, 302);
+		assert.equal(res.headers.get("location"), "/api/auth/login");
 	});
 
-	test("GET /admin/posts redirects to login without auth", async () => {
+	test("未登录访问 /admin/posts 会跳转到登录页喵", async () => {
 		const res = await app.request("/admin/posts", { redirect: "manual" });
-		expect(res.status).toBe(302);
-		expect(res.headers.get("location")).toBe("/api/auth/login");
+		assert.equal(res.status, 302);
+		assert.equal(res.headers.get("location"), "/api/auth/login");
 	});
 
-	test("GET /admin/media redirects to login without auth", async () => {
+	test("未登录访问 /admin/media 会跳转到登录页喵", async () => {
 		const res = await app.request("/admin/media", { redirect: "manual" });
-		expect(res.status).toBe(302);
-		expect(res.headers.get("location")).toBe("/api/auth/login");
+		assert.equal(res.status, 302);
+		assert.equal(res.headers.get("location"), "/api/auth/login");
 	});
 
-	test("GET /admin/analytics redirects to login without auth", async () => {
+	test("未登录访问 /admin/analytics 会跳转到登录页喵", async () => {
 		const res = await app.request("/admin/analytics", {
 			redirect: "manual",
 		});
-		expect(res.status).toBe(302);
-		expect(res.headers.get("location")).toBe("/api/auth/login");
+		assert.equal(res.status, 302);
+		assert.equal(res.headers.get("location"), "/api/auth/login");
 	});
 
-	test("POST /auth/login without credentials returns 400", async () => {
-		const res = await app.request("/auth/login", {
-			method: "POST",
-			body: new URLSearchParams({}),
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		});
-		expect(res.status).toBe(400);
+	test("POST /auth/login 缺少凭据时会返回 400 喵", async () => {
+		const res = await app.request(
+			"/auth/login",
+			{
+				method: "POST",
+				body: new URLSearchParams({}),
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			},
+			mockEnv,
+		);
+		assert.equal(res.status, 400);
 
 		const html = await res.text();
-		expect(html).toContain("required");
+		assert.match(html, /用户名和密码不能为空/u);
 	});
 });

@@ -1,10 +1,10 @@
 ---
 import { desc, eq } from "drizzle-orm";
-import Base from "@/layouts/Base.astro";
 import PostCard from "@/components/PostCard.astro";
-import { siteConfig } from "@/lib/types";
 import { blogCategories, blogPosts } from "@/db/schema";
+import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
+import { siteConfig } from "@/lib/types";
 
 let recentPosts: Array<{
 	title: string;

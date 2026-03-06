@@ -8,7 +8,8 @@ interface Props {
 	authorName?: string | null;
 }
 
-const { title, slug, excerpt, publishedAt, categoryName, authorName } = Astro.props;
+const { title, slug, excerpt, publishedAt, categoryName, authorName } =
+	Astro.props;
 
 const formattedDate = publishedAt
 	? new Date(publishedAt).toLocaleDateString("en-US", {

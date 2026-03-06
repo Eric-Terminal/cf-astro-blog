@@ -1,9 +1,9 @@
 ---
 import { desc, eq, like, or } from "drizzle-orm";
-import Base from "@/layouts/Base.astro";
-import Search from "@/components/Search.astro";
 import PostCard from "@/components/PostCard.astro";
+import SearchBox from "@/components/Search.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
+import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
 
 const query = Astro.url.searchParams.get("q")?.trim() || "";
@@ -44,7 +44,7 @@ if (query) {
 			.orderBy(desc(blogPosts.publishedAt))
 			.limit(20);
 	} catch {
-		// D1 not bound
+		// D1 未绑定时回退为空结果喵
 	}
 }
 ---
@@ -52,7 +52,7 @@ if (query) {
 <Base title="Search" description="Search blog posts">
 	<h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-lg);">Search</h1>
 
-	<Search />
+	<SearchBox />
 
 	{query && (
 		<div style="margin-top: var(--space-xl);">

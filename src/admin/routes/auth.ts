@@ -1,6 +1,21 @@
 import { Hono } from "hono";
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { createToken, verifyToken } from "../middleware/auth";
+import { deleteCookie, setCookie } from "hono/cookie";
+import {
+	isLegacyPasswordHash,
+	timingSafeEqualText,
+	verifyPassword,
+} from "@/lib/password";
+import { sanitizePlainText } from "@/lib/security";
+import {
+	type AdminAppEnv,
+	assertCsrfToken,
+	createSession,
+	createToken,
+	destroySession,
+	getAuthenticatedSession,
+	getSessionCookieOptions,
+	requireAuth,
+} from "../middleware/auth";
 import {
 	clearAttempts,
 	rateLimit,
@@ -8,77 +23,166 @@ import {
 } from "../middleware/rate-limit";
 import { loginPage } from "../views/login";
 
-const auth = new Hono<{ Bindings: Env }>();
+const auth = new Hono<AdminAppEnv>();
 
-// GET /api/auth/login — render login page
-auth.get("/login", (c) => {
-	return c.html(loginPage());
-});
+function getTurnstileSiteKey(env: Env): string | undefined {
+	const siteKey = env.TURNSTILE_SITE_KEY?.trim();
+	return siteKey ? siteKey : undefined;
+}
 
-// POST /api/auth/login — authenticate
-auth.post("/login", rateLimit, async (c) => {
-	const body = await c.req.parseBody();
-	const username = String(body.username || "");
-	const password = String(body.password || "");
-	const ip = c.req.header("cf-connecting-ip") || "unknown";
+async function verifyTurnstile(
+	env: Env,
+	responseToken: string,
+	ipAddress: string,
+): Promise<boolean> {
+	const siteKey = getTurnstileSiteKey(env);
+	const secret = env.TURNSTILE_SECRET_KEY?.trim();
 
-	if (!username || !password) {
-		return c.html(loginPage("Username and password are required"), 400);
+	if (!siteKey && !secret) {
+		return true;
 	}
 
-	// Verify credentials
-	if (username !== c.env.ADMIN_USERNAME) {
-		await recordFailedAttempt(c.env, ip);
-		return c.html(loginPage("Invalid credentials"), 401);
+	if (!siteKey || !secret) {
+		return false;
 	}
 
-	// Verify password hash (SHA-256)
-	const encoder = new TextEncoder();
-	const data = encoder.encode(password);
-	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	const hashHex = hashArray
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-
-	if (hashHex !== c.env.ADMIN_PASSWORD_HASH) {
-		await recordFailedAttempt(c.env, ip);
-		return c.html(loginPage("Invalid credentials"), 401);
+	if (!responseToken) {
+		return false;
 	}
 
-	// Create JWT and set cookie
-	const token = await createToken(c.env.JWT_SECRET);
-	setCookie(c, "admin_session", token, {
-		httpOnly: true,
-		secure: true,
-		sameSite: "Lax",
-		path: "/",
-		maxAge: 7 * 24 * 60 * 60, // 7 days
+	const body = new URLSearchParams({
+		secret,
+		response: responseToken,
+		remoteip: ipAddress,
 	});
 
-	await clearAttempts(c.env, ip);
+	try {
+		const response = await fetch(
+			"https://challenges.cloudflare.com/turnstile/v0/siteverify",
+			{
+				method: "POST",
+				body,
+			},
+		);
+
+		if (!response.ok) {
+			return false;
+		}
+
+		const result = (await response.json()) as { success?: boolean };
+		return Boolean(result.success);
+	} catch {
+		return false;
+	}
+}
+
+auth.get("/login", (c) => {
+	return c.html(
+		loginPage({
+			turnstileSiteKey: getTurnstileSiteKey(c.env),
+		}),
+	);
+});
+
+auth.post("/login", rateLimit, async (c) => {
+	const body = await c.req.parseBody();
+	const username = sanitizePlainText(body.username, 80);
+	const password = String(body.password || "");
+	const turnstileResponse = String(body["cf-turnstile-response"] || "");
+	const ip = c.req.header("cf-connecting-ip") || "unknown";
+	const loginOptions = {
+		turnstileSiteKey: getTurnstileSiteKey(c.env),
+	};
+
+	if (!username || !password) {
+		return c.html(
+			loginPage({
+				...loginOptions,
+				error: "用户名和密码不能为空喵",
+			}),
+			400,
+		);
+	}
+
+	const turnstileVerified = await verifyTurnstile(c.env, turnstileResponse, ip);
+
+	if (!turnstileVerified) {
+		return c.html(
+			loginPage({
+				...loginOptions,
+				error: "人机验证未通过喵",
+			}),
+			400,
+		);
+	}
+
+	const usernameMatches = timingSafeEqualText(username, c.env.ADMIN_USERNAME);
+	const passwordMatches = await verifyPassword(
+		password,
+		c.env.ADMIN_PASSWORD_HASH,
+	);
+
+	if (!usernameMatches || !passwordMatches) {
+		try {
+			await recordFailedAttempt(c.env, ip);
+		} catch {
+			return c.html(
+				loginPage({
+					...loginOptions,
+					error: "登录保护暂时不可用，请稍后再试喵",
+				}),
+				503,
+			);
+		}
+
+		return c.html(
+			loginPage({
+				...loginOptions,
+				error: "用户名或密码错误喵",
+			}),
+			401,
+		);
+	}
+
+	const session = await createSession(c.env);
+	const token = await createToken(c.env, session.id);
+	setCookie(c, "admin_session", token, {
+		...getSessionCookieOptions(c.req.url),
+	});
+
+	await clearAttempts(c.env, ip).catch(() => undefined);
 	return c.redirect("/api/admin");
 });
 
-// GET /api/auth/logout
 auth.get("/logout", (c) => {
+	return c.text("不支持当前请求方法喵", 405);
+});
+
+auth.post("/logout", requireAuth, async (c) => {
+	const body = await c.req.parseBody();
+	const session = getAuthenticatedSession(c);
+
+	if (!assertCsrfToken(body._csrf, session)) {
+		return c.text("CSRF 校验失败喵", 403);
+	}
+
+	await destroySession(c.env, session.id);
 	deleteCookie(c, "admin_session", { path: "/" });
 	return c.redirect("/api/auth/login");
 });
 
-// GET /api/auth/verify
-auth.get("/verify", async (c) => {
-	const token = getCookie(c, "admin_session");
-	if (!token) {
-		return c.json({ authenticated: false }, 401);
-	}
-
-	try {
-		const valid = await verifyToken(c.env.JWT_SECRET, token);
-		return c.json({ authenticated: valid }, valid ? 200 : 401);
-	} catch {
-		return c.json({ authenticated: false }, 401);
-	}
+auth.get("/verify", requireAuth, async (c) => {
+	const session = getAuthenticatedSession(c);
+	return c.json(
+		{
+			authenticated: true,
+			csrfToken: session.csrfToken,
+			passwordHashFormat: isLegacyPasswordHash(c.env.ADMIN_PASSWORD_HASH)
+				? "legacy-sha256"
+				: "pbkdf2-sha256",
+		},
+		200,
+	);
 });
 
 export { auth as authRoutes };

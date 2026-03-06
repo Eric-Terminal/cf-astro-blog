@@ -1,12 +1,29 @@
-export function adminLayout(title: string, content: string): string {
+import { escapeAttribute, escapeHtml } from "@/lib/security";
+
+interface AdminLayoutOptions {
+	csrfToken?: string;
+}
+
+export function adminLayout(
+	title: string,
+	content: string,
+	options: AdminLayoutOptions = {},
+): string {
+	const logoutForm = options.csrfToken
+		? `<form method="post" action="/api/auth/logout">
+				<input type="hidden" name="_csrf" value="${escapeAttribute(options.csrfToken)}" />
+				<button type="submit" class="btn btn-sm">退出登录</button>
+			</form>`
+		: "";
+
 	return `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>${title} | Admin</title>
+	<title>${escapeHtml(title)} | 后台</title>
 	<meta name="robots" content="noindex, nofollow" />
-	<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+	<script src="/admin.js" defer></script>
 	<style>
 		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -257,17 +274,17 @@ export function adminLayout(title: string, content: string): string {
 </head>
 <body>
 	<aside class="sidebar">
-		<div class="sidebar-brand">Admin</div>
+		<div class="sidebar-brand">管理后台</div>
 		<nav class="sidebar-nav">
-			<a href="/api/admin">Dashboard</a>
-			<a href="/api/admin/posts">Posts</a>
-			<a href="/api/admin/media">Media</a>
-			<a href="/api/admin/analytics">Analytics</a>
+			<a href="/api/admin">控制台</a>
+			<a href="/api/admin/posts">文章</a>
+			<a href="/api/admin/media">媒体</a>
+			<a href="/api/admin/analytics">统计</a>
 		</nav>
 		<div class="sidebar-footer">
-			<a href="/" target="_blank">View Site</a>
+			<a href="/" target="_blank" rel="noopener noreferrer">查看站点</a>
 			<br />
-			<a href="/api/auth/logout">Sign Out</a>
+			${logoutForm}
 		</div>
 	</aside>
 	<main class="main-content">

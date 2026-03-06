@@ -1,8 +1,8 @@
 ---
 import { desc, eq, sql } from "drizzle-orm";
-import Base from "@/layouts/Base.astro";
 import PostCard from "@/components/PostCard.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
+import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
 
 const page = Number(Astro.url.searchParams.get("page") || "1");

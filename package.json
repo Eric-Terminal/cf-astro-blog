@@ -3,17 +3,18 @@
 	"version": "0.1.0",
 	"type": "module",
 	"private": true,
-	"description": "Astro + Hono + Cloudflare Workers starter with built-in CMS, admin panel, and analytics",
+	"description": "基于 Astro、Hono 与 Cloudflare Workers 的内置后台站点模板",
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
 		"preview": "astro build && wrangler dev",
 		"deploy": "npm run db:migrate:remote && astro build && wrangler deploy",
-		"check": "astro check && bunx biome check src/ tests/",
-		"check:fix": "bunx biome check --fix src/ tests/",
-		"format": "bunx biome format --write src/ tests/",
-		"lint": "bunx biome lint src/ tests/",
-		"test": "bun test",
+		"check": "astro check && biome check src public tests scripts",
+		"check:fix": "biome check --write src public tests scripts",
+		"format": "biome format --write src public tests scripts README.md",
+		"lint": "biome lint src public tests scripts",
+		"test": "tsx --test tests/integration/*.test.ts tests/unit/*.test.ts",
+		"hash:password": "node scripts/hash-password.mjs",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate:local": "wrangler d1 migrations apply DB --local",
 		"db:migrate:remote": "wrangler d1 migrations apply DB --remote",
@@ -23,25 +24,25 @@
 	"cloudflare": {
 		"bindings": {
 			"DB": {
-				"description": "D1 database for blog posts, categories, tags, and analytics"
+				"description": "用于文章、分类、标签和统计数据的 D1 数据库"
 			},
 			"MEDIA_BUCKET": {
-				"description": "R2 bucket for media uploads (images, files)"
+				"description": "用于媒体文件上传的 R2 存储桶"
 			},
 			"SESSION": {
-				"description": "KV namespace for session storage and caching"
+				"description": "用于后台会话和登录限流的 KV 命名空间"
 			},
 			"JWT_SECRET": {
-				"description": "Generate a random string using `openssl rand -hex 32`"
+				"description": "建议使用 `openssl rand -hex 32` 生成随机密钥"
 			},
 			"ADMIN_USERNAME": {
-				"description": "Username for the admin panel login"
+				"description": "管理后台登录用户名"
 			},
 			"ADMIN_PASSWORD_HASH": {
-				"description": "SHA-256 hash of your admin password. Generate with: `echo -n 'yourpassword' | sha256sum`"
+				"description": "后台密码的 PBKDF2 哈希，使用 `npm run hash:password -- 你的密码` 生成"
 			},
 			"TURNSTILE_SECRET_KEY": {
-				"description": "Cloudflare Turnstile secret key from the [Turnstile dashboard](https://dash.cloudflare.com/turnstile)"
+				"description": "可选的 Cloudflare Turnstile 密钥，用于登录人机验证"
 			}
 		}
 	},
@@ -54,9 +55,12 @@
 		"marked": "^15.0.7"
 	},
 	"devDependencies": {
+		"@astrojs/check": "^0.9.6",
+		"@types/node": "^24.10.1",
 		"@biomejs/biome": "^2.3.11",
 		"@cloudflare/workers-types": "^4.20260111.0",
 		"drizzle-kit": "^0.30.0",
+		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
 		"wrangler": "^4.50.0"
 	}

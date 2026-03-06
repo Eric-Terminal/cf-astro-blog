@@ -1,4 +1,7 @@
-JWT_SECRET=generate-a-random-string-using-openssl-rand-hex-32
+# 建议使用 `openssl rand -hex 32` 生成随机密钥喵
+JWT_SECRET=请替换为随机密钥
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD_HASH=sha256-hash-of-your-password
-TURNSTILE_SECRET_KEY=your-turnstile-secret-key
+# 使用 `npm run hash:password -- 你的密码` 生成后台密码哈希喵
+ADMIN_PASSWORD_HASH=请替换为_PBKDF2_密码哈希
+# 如未启用 Turnstile，可留空喵
+TURNSTILE_SECRET_KEY=

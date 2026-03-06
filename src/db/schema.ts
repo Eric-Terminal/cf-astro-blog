@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	type AnySQLiteColumn,
 	index,
 	integer,
 	primaryKey,
@@ -7,7 +8,7 @@ import {
 	text,
 } from "drizzle-orm/sqlite-core";
 
-// ─── Blog Categories ─────────────────────────────────────────────────────────
+// ─── 文章分类喵 ────────────────────────────────────────────────────────────────
 
 export const blogCategories = sqliteTable("blog_categories", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
@@ -15,13 +16,13 @@ export const blogCategories = sqliteTable("blog_categories", {
 	slug: text("slug").notNull().unique(),
 	description: text("description"),
 	parentId: integer("parent_id").references(
-		(): ReturnType<typeof integer> => blogCategories.id,
+		(): AnySQLiteColumn => blogCategories.id,
 	),
 	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 	updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// ─── Blog Tags ───────────────────────────────────────────────────────────────
+// ─── 文章标签喵 ────────────────────────────────────────────────────────────────
 
 export const blogTags = sqliteTable("blog_tags", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
@@ -30,7 +31,7 @@ export const blogTags = sqliteTable("blog_tags", {
 	createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// ─── Blog Posts ──────────────────────────────────────────────────────────────
+// ─── 文章内容喵 ────────────────────────────────────────────────────────────────
 
 export const blogPosts = sqliteTable(
 	"blog_posts",
@@ -61,7 +62,7 @@ export const blogPosts = sqliteTable(
 	],
 );
 
-// ─── Blog Post Tags (junction) ──────────────────────────────────────────────
+// ─── 文章标签关联喵 ────────────────────────────────────────────────────────────
 
 export const blogPostTags = sqliteTable(
 	"blog_post_tags",
@@ -76,7 +77,7 @@ export const blogPostTags = sqliteTable(
 	(table) => [primaryKey({ columns: [table.postId, table.tagId] })],
 );
 
-// ─── Analytics Sessions ──────────────────────────────────────────────────────
+// ─── 统计会话喵 ────────────────────────────────────────────────────────────────
 
 export const analyticsSessions = sqliteTable("analytics_sessions", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
@@ -98,7 +99,7 @@ export const analyticsSessions = sqliteTable("analytics_sessions", {
 	lastSeenAt: text("last_seen_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// ─── Analytics Events ────────────────────────────────────────────────────────
+// ─── 统计事件喵 ────────────────────────────────────────────────────────────────
 
 export const analyticsEvents = sqliteTable("analytics_events", {
 	id: integer("id").primaryKey({ autoIncrement: true }),
@@ -113,7 +114,7 @@ export const analyticsEvents = sqliteTable("analytics_events", {
 	timestamp: text("timestamp").notNull().default(sql`(datetime('now'))`),
 });
 
-// ─── Login Attempts ──────────────────────────────────────────────────────────
+// ─── 登录尝试记录喵 ────────────────────────────────────────────────────────────
 
 export const loginAttempts = sqliteTable("login_attempts", {
 	ipAddress: text("ip_address").primaryKey(),
@@ -122,7 +123,7 @@ export const loginAttempts = sqliteTable("login_attempts", {
 	lastAttempt: text("last_attempt"),
 });
 
-// ─── Type Exports ────────────────────────────────────────────────────────────
+// ─── 类型导出喵 ────────────────────────────────────────────────────────────────
 
 export type BlogCategory = typeof blogCategories.$inferSelect;
 export type NewBlogCategory = typeof blogCategories.$inferInsert;

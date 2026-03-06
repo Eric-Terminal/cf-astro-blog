@@ -1,3 +1,10 @@
+import {
+	encodeRouteParam,
+	escapeAttribute,
+	escapeHtml,
+	getPostStatusLabel,
+	normalizeDisplayStatus,
+} from "@/lib/security";
 import { adminLayout } from "../layout";
 
 interface PostRow {
@@ -11,11 +18,11 @@ interface PostRow {
 	categoryName: string | null;
 }
 
-export function postsListPage(posts: PostRow[]): string {
+export function postsListPage(posts: PostRow[], csrfToken: string): string {
 	const content = `
 		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-			<h1 style="margin-bottom: 0;">Posts</h1>
-			<a href="/api/admin/posts/new" class="btn btn-primary">New Post</a>
+			<h1 style="margin-bottom: 0;">文章</h1>
+			<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
 		</div>
 
 		${
@@ -23,39 +30,40 @@ export function postsListPage(posts: PostRow[]): string {
 				? `<table class="data-table">
 				<thead>
 					<tr>
-						<th>Title</th>
-						<th>Category</th>
-						<th>Status</th>
-						<th>Views</th>
-						<th>Date</th>
-						<th>Actions</th>
+						<th>标题</th>
+						<th>分类</th>
+						<th>状态</th>
+						<th>浏览量</th>
+						<th>日期</th>
+						<th>操作</th>
 					</tr>
 				</thead>
 				<tbody>
-					${posts
-						.map(
-							(post) => `
+						${posts
+							.map(
+								(post) => `
 					<tr>
-						<td><a href="/api/admin/posts/${post.id}/edit">${post.title}</a></td>
-						<td>${post.categoryName || "-"}</td>
-						<td><span class="badge badge-${post.status}">${post.status}</span></td>
+						<td><a href="/api/admin/posts/${post.id}/edit">${escapeHtml(post.title)}</a></td>
+						<td>${escapeHtml(post.categoryName || "-")}</td>
+						<td><span class="badge badge-${normalizeDisplayStatus(post.status)}">${escapeHtml(getPostStatusLabel(post.status))}</span></td>
 						<td>${post.viewCount ?? 0}</td>
 						<td>${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : new Date(post.createdAt).toLocaleDateString()}</td>
 						<td>
-							<a href="/api/admin/posts/${post.id}/edit" class="btn btn-sm">Edit</a>
-							<a href="/blog/${post.slug}" target="_blank" class="btn btn-sm">View</a>
-							<form method="post" action="/api/admin/posts/${post.id}/delete" style="display:inline;">
-								<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this post?')">Delete</button>
+							<a href="/api/admin/posts/${post.id}/edit" class="btn btn-sm">编辑</a>
+							<a href="/blog/${encodeRouteParam(post.slug)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看</a>
+							<form method="post" action="/api/admin/posts/${post.id}/delete" style="display:inline;" data-confirm-message="${escapeAttribute("确认删除这篇文章吗？")}">
+								<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+								<button type="submit" class="btn btn-sm btn-danger">删除</button>
 							</form>
 						</td>
 					</tr>`,
-						)
-						.join("")}
+							)
+							.join("")}
 				</tbody>
 			</table>`
-				: '<p class="empty-state">No posts yet. <a href="/api/admin/posts/new">Create your first post</a>.</p>'
+				: '<p class="empty-state">当前还没有文章，<a href="/api/admin/posts/new">立即创建第一篇</a>。</p>'
 		}
 	`;
 
-	return adminLayout("Posts", content);
+	return adminLayout("文章", content, { csrfToken });
 }

@@ -1,191 +1,104 @@
-# CF Astro Blog Starter
+# Cloudflare Astro 站点模板喵
 
-An opinionated blog starter template powered by **Astro** + **Hono** + **Cloudflare Workers** with a built-in admin panel, CMS, analytics, and media management — all using Cloudflare-native services.
+这是一个基于 `Astro + Hono + Cloudflare Workers` 的站点模板，内置公开页面、后台文章管理、媒体管理和访问统计能力喵
 
-**[Live Demo](https://cf-astro-blog-starter.h1n054ur.dev)** 
---
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/h1n054ur/cf-astro-blog-starter)
+当前版本已经补上了这几类关键安全能力喵
 
-## Stack
+- 公开页面的 Markdown 渲染会转义原始 HTML，并限制危险链接协议喵
+- 后台模板统一做 HTML 与属性转义，避免管理员侧存储型 XSS 喵
+- 后台会话改为 `JWT + KV 会话记录`，支持服务端撤销和密码变更失效喵
+- 所有后台写操作都加上了 CSRF 校验喵
+- 登录限流改为 KV 存储，并在存储异常时拒绝继续登录，避免 fail-open 喵
+- 媒体上传只接受受控图片类型，并且对象键名改成 `UUID + 白名单扩展名` 喵
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | [Astro](https://astro.build) (SSR on Workers) |
-| Admin/API | [Hono](https://hono.dev) + [HTMX](https://htmx.org) |
-| Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) via [Drizzle ORM](https://orm.drizzle.team) |
-| Media | [Cloudflare R2](https://developers.cloudflare.com/r2/) |
-| Sessions | [Cloudflare KV](https://developers.cloudflare.com/kv/) |
-| Auth | JWT ([jose](https://github.com/panva/jose)) + [Turnstile](https://developers.cloudflare.com/turnstile/) |
-| Runtime | [Bun](https://bun.sh) |
-| Linting | [Biome](https://biomejs.dev) |
-| Testing | [bun:test](https://bun.sh/docs/cli/test) |
-| Deploy | [Cloudflare Workers](https://developers.cloudflare.com/workers/) |
+## 技术栈喵
 
-## Features
+| 分层 | 技术 |
+| --- | --- |
+| 前台页面 | `Astro` |
+| 后台与接口 | `Hono` |
+| 数据库 | `Cloudflare D1` + `Drizzle ORM` |
+| 会话与限流 | `Cloudflare KV` |
+| 媒体文件 | `Cloudflare R2` |
+| 运行时 | `Cloudflare Workers` |
+| 检查与格式化 | `Biome` |
+| 测试 | `tsx + node:test` |
 
-- **Blog** — SSR pages served from D1, markdown content, categories, tags, pagination, SEO meta
-- **Admin Panel** — Hono-powered dashboard at `/api/admin` with HTMX interactivity
-- **Post Editor** — Create/edit posts with markdown, SEO fields, categories, tags, featured images
-- **Media Manager** — Upload and manage files via R2 directly from the admin
-- **Analytics** — Built-in session and event tracking stored in D1
-- **Search** — Server-side search across post titles, content, and excerpts
-- **RSS + Sitemap** — Dynamic feeds generated from D1
-- **Dark Mode** — System preference auto-detect with manual toggle
-- **Security** — CSP headers, rate-limited login, JWT auth, Turnstile CAPTCHA support
-- **Themeable** — CSS custom properties for easy style customization
+## 目录结构喵
 
-## Architecture
-
-```
-Astro (public site)          Hono (admin + API)
-├── / (homepage)             ├── /api/auth/* (login/logout)
-├── /blog (listing)          ├── /api/admin (dashboard)
-├── /blog/:slug (post)       ├── /api/admin/posts (CRUD)
-├── /search                  ├── /api/admin/media (R2)
-├── /rss.xml                 ├── /api/admin/analytics
-└── /sitemap.xml             └── /api/health
-
-         ┌──────────┐
-         │ Shared   │
-         │ D1 + R2  │
-         │ + KV     │
-         └──────────┘
+```text
+src/
+├── admin/                  # 后台子应用、认证中间件和 HTML 模板喵
+├── db/                     # Drizzle schema 喵
+├── layouts/                # 公共布局喵
+├── lib/                    # 安全工具、数据库访问与共享类型喵
+├── pages/                  # Astro 页面与 API 入口喵
+└── styles/                 # 全局样式喵
+public/
+├── admin.js                # 后台交互脚本喵
+└── theme.js                # 主题初始化脚本喵
+scripts/
+├── hash-password.mjs       # 生成后台密码哈希喵
+└── seed.sql                # 示例数据喵
+tests/
+├── integration/            # 路由与认证基础行为测试喵
+└── unit/                   # schema 与安全工具测试喵
 ```
 
-Astro handles the public-facing site with SSR pages that query D1 directly. Hono handles the admin panel and API routes, mounted via a catch-all Astro endpoint at `/api/[...route]`.
+## 本地开发喵
 
-## Quick Start
-
-### Deploy to Cloudflare (one-click)
-
-Click the button above. Cloudflare will automatically provision D1, R2, and KV resources.
-
-### Manual Setup
+推荐使用 `Node.js 22+` 和 `npm` 喵
 
 ```bash
-# Clone
 git clone https://github.com/h1n054ur/cf-astro-blog-starter.git
 cd cf-astro-blog-starter
-
-# Install
-bun install
-
-# Set up local secrets
+npm install
 cp .dev.vars.example .dev.vars
-# Edit .dev.vars with your values
-
-# Generate initial migration
-bun run db:generate
-
-# Run locally
-bun run dev
+npm run dev
 ```
 
-### Create Resources (manual deploy)
+如果你需要生成后台密码哈希，执行下面的命令即可喵
 
 ```bash
-# Create Cloudflare resources
-wrangler d1 create blog-db
-wrangler r2 bucket create blog-media
-wrangler kv namespace create SESSION
-
-# Update wrangler.jsonc with the IDs from above
-
-# Set secrets
-wrangler secret put JWT_SECRET
-wrangler secret put ADMIN_USERNAME
-wrangler secret put ADMIN_PASSWORD_HASH
-wrangler secret put TURNSTILE_SECRET_KEY
-
-# Deploy
-bun run deploy
+npm run hash:password -- 你的密码
 ```
 
-### Generate Admin Password Hash
+输出格式为 `pbkdf2_sha256$迭代次数$盐值$哈希值`，把整行填进 `ADMIN_PASSWORD_HASH` 即可喵
 
-```bash
-echo -n 'your-password' | sha256sum
-# Use the hash output as ADMIN_PASSWORD_HASH
-```
+## Cloudflare 绑定喵
 
-## Scripts
+| 绑定名 | 类型 | 作用 |
+| --- | --- | --- |
+| `DB` | D1 | 存放文章、分类、标签和统计数据喵 |
+| `MEDIA_BUCKET` | R2 | 存放后台上传的图片资源喵 |
+| `SESSION` | KV | 存放后台会话和登录限流状态喵 |
+| `JWT_SECRET` | Secret | 用于签发后台会话令牌喵 |
+| `ADMIN_USERNAME` | Secret | 后台用户名喵 |
+| `ADMIN_PASSWORD_HASH` | Secret | 后台密码的 PBKDF2 哈希喵 |
+| `TURNSTILE_SECRET_KEY` | Secret，可选 | 开启登录人机验证时使用喵 |
+| `TURNSTILE_SITE_KEY` | Variable，可选 | 登录页渲染 Turnstile 时使用喵 |
 
-| Command | Description |
-|---------|-------------|
-| `bun run dev` | Start Astro dev server |
-| `bun run build` | Build for production |
-| `bun run preview` | Build and preview with Wrangler |
-| `bun run deploy` | Run migrations, build, and deploy |
-| `bun run check` | Astro check + Biome check |
-| `bun run check:fix` | Auto-fix Biome issues |
-| `bun run format` | Format with Biome |
-| `bun run lint` | Lint with Biome |
-| `bun test` | Run tests |
-| `bun run db:generate` | Generate Drizzle migration |
-| `bun run db:migrate:local` | Apply migrations locally |
-| `bun run db:migrate:remote` | Apply migrations to production |
-| `bun run db:seed:local` | Seed local DB with sample posts |
-| `bun run db:seed:remote` | Seed production DB with sample posts |
+## 常用命令喵
 
-## Project Structure
+| 命令 | 说明 |
+| --- | --- |
+| `npm run dev` | 启动本地开发服务器喵 |
+| `npm run build` | 生成生产构建喵 |
+| `npm run preview` | 构建后用 Wrangler 本地预览喵 |
+| `npm run check` | 运行类型检查和 Biome 检查喵 |
+| `npm run lint` | 运行 Biome lint 喵 |
+| `npm run format` | 格式化源码、脚本和测试喵 |
+| `npm test` | 运行自动化测试喵 |
+| `npm run db:migrate:local` | 应用本地 D1 迁移喵 |
+| `npm run db:migrate:remote` | 应用线上 D1 迁移喵 |
 
-```
-src/
-├── pages/                  # Astro pages (public site)
-│   ├── index.astro         # Homepage
-│   ├── blog/               # Blog listing + post pages (SSR)
-│   ├── search.astro        # Search page
-│   ├── rss.xml.ts          # RSS feed
-│   ├── sitemap.xml.ts      # Dynamic sitemap
-│   └── api/[...route].ts   # Catch-all → Hono
-├── admin/                  # Hono sub-app
-│   ├── app.ts              # Hono entry
-│   ├── routes/             # Auth, dashboard, posts, media, analytics
-│   ├── middleware/          # JWT auth, rate limiting
-│   └── views/              # HTML templates (admin UI)
-├── components/             # Astro components
-├── layouts/                # Base + Post layouts
-├── styles/                 # CSS custom properties (themeable)
-├── db/schema.ts            # Drizzle schema
-├── lib/                    # Shared utilities
-└── middleware.ts            # Security headers
-scripts/
-└── seed.sql                # Sample blog posts for demo/dev
-tests/
-├── unit/                   # Schema tests
-└── integration/            # API endpoint tests
-```
+## 部署前检查喵
 
-## Cloudflare Services Used
+1. 先确认 `JWT_SECRET`、`ADMIN_USERNAME` 和 `ADMIN_PASSWORD_HASH` 都已经配置喵
+2. 如果启用了 Turnstile，要同时配置 `TURNSTILE_SITE_KEY` 与 `TURNSTILE_SECRET_KEY` 喵
+3. 如果要启用媒体管理，确认 `MEDIA_BUCKET` 已经绑定喵
+4. 上线前执行 `npm run check` 和 `npm test` 喵
 
-| Service | Binding | Purpose |
-|---------|---------|---------|
-| D1 | `DB` | Blog posts, categories, tags, analytics, auth |
-| R2 | `MEDIA_BUCKET` | Image and file uploads |
-| KV | `SESSION` | Session storage and caching |
-| Workers | — | SSR runtime |
-| Turnstile | `TURNSTILE_SITE_KEY` | Bot protection on login |
+## 许可证喵
 
-## Customization
-
-### Theming
-
-Edit `src/styles/global.css` — all colors, fonts, spacing, and layout values are CSS custom properties:
-
-```css
-:root {
-  --color-accent: #3b82f6;     /* Change the accent color */
-  --font-sans: 'Inter', ...;   /* Swap fonts */
-  --max-width: 72rem;          /* Adjust content width */
-}
-```
-
-Dark mode tokens are defined in `[data-theme="dark"]` and `@media (prefers-color-scheme: dark)`.
-
-### Site Config
-
-Edit `src/lib/types.ts` to update site name, URL, description, and author.
-
-## License
-
-[MIT](LICENSE)
+项目使用 [MIT](LICENSE) 许可证喵

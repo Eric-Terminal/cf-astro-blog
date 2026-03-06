@@ -1,11 +1,21 @@
-export function loginPage(error?: string): string {
+import { escapeAttribute, escapeHtml } from "@/lib/security";
+
+interface LoginPageOptions {
+	error?: string;
+	turnstileSiteKey?: string;
+}
+
+export function loginPage(options: LoginPageOptions = {}): string {
+	const { error, turnstileSiteKey } = options;
+
 	return `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Admin Login</title>
+	<title>管理后台登录</title>
 	<meta name="robots" content="noindex, nofollow" />
+	${turnstileSiteKey ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>' : ""}
 	<style>
 		*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 		html {
@@ -70,18 +80,23 @@ export function loginPage(error?: string): string {
 </head>
 <body>
 	<div class="login-card">
-		<h1>Admin Login</h1>
-		${error ? `<div class="error">${error}</div>` : ""}
+		<h1>管理后台登录</h1>
+		${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
 		<form method="post" action="/api/auth/login">
 			<div class="form-group">
-				<label for="username">Username</label>
+				<label for="username">用户名</label>
 				<input type="text" id="username" name="username" required autocomplete="username" />
 			</div>
 			<div class="form-group">
-				<label for="password">Password</label>
+				<label for="password">密码</label>
 				<input type="password" id="password" name="password" required autocomplete="current-password" />
 			</div>
-			<button type="submit">Sign In</button>
+			${
+				turnstileSiteKey
+					? `<div class="form-group"><div class="cf-turnstile" data-sitekey="${escapeAttribute(turnstileSiteKey)}"></div></div>`
+					: ""
+			}
+			<button type="submit">登录</button>
 		</form>
 	</div>
 </body>

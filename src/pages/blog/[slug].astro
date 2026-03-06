@@ -1,9 +1,9 @@
 ---
 import { eq } from "drizzle-orm";
-import { marked } from "marked";
-import Post from "@/layouts/Post.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
+import Post from "@/layouts/Post.astro";
 import { getDb } from "@/lib/db";
+import { renderSafeMarkdown } from "@/lib/security";
 
 const { slug } = Astro.params;
 
@@ -51,7 +51,7 @@ try {
 	if (row) {
 		post = row;
 
-		// Increment view count (fire and forget)
+		// 浏览计数失败时不影响正文渲染喵
 		db.update(blogPosts)
 			.set({ viewCount: blogPosts.viewCount })
 			.where(eq(blogPosts.slug, slug))
@@ -59,14 +59,14 @@ try {
 			.catch(() => {});
 	}
 } catch {
-	// D1 not bound
+	// D1 未绑定时回退到重定向喵
 }
 
 if (!post) {
 	return Astro.redirect("/blog");
 }
 
-const htmlContent = await marked.parse(post.content);
+const htmlContent = await renderSafeMarkdown(post.content);
 ---
 
 <Post

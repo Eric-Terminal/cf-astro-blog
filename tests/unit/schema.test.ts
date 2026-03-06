@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, test } from "node:test";
 import {
 	analyticsEvents,
 	analyticsSessions,
@@ -9,72 +10,72 @@ import {
 	loginAttempts,
 } from "../../src/db/schema";
 
-describe("Database Schema", () => {
-	test("blogPosts table has required columns", () => {
+describe("数据库结构喵", () => {
+	test("blogPosts 表包含必要字段喵", () => {
 		const columns = Object.keys(blogPosts);
-		expect(columns).toContain("id");
-		expect(columns).toContain("title");
-		expect(columns).toContain("slug");
-		expect(columns).toContain("content");
-		expect(columns).toContain("status");
-		expect(columns).toContain("excerpt");
-		expect(columns).toContain("publishedAt");
-		expect(columns).toContain("featuredImageKey");
-		expect(columns).toContain("metaTitle");
-		expect(columns).toContain("metaDescription");
-		expect(columns).toContain("categoryId");
-		expect(columns).toContain("authorName");
-		expect(columns).toContain("viewCount");
-		expect(columns).toContain("createdAt");
-		expect(columns).toContain("updatedAt");
+		assert.ok(columns.includes("id"));
+		assert.ok(columns.includes("title"));
+		assert.ok(columns.includes("slug"));
+		assert.ok(columns.includes("content"));
+		assert.ok(columns.includes("status"));
+		assert.ok(columns.includes("excerpt"));
+		assert.ok(columns.includes("publishedAt"));
+		assert.ok(columns.includes("featuredImageKey"));
+		assert.ok(columns.includes("metaTitle"));
+		assert.ok(columns.includes("metaDescription"));
+		assert.ok(columns.includes("categoryId"));
+		assert.ok(columns.includes("authorName"));
+		assert.ok(columns.includes("viewCount"));
+		assert.ok(columns.includes("createdAt"));
+		assert.ok(columns.includes("updatedAt"));
 	});
 
-	test("blogCategories table has required columns", () => {
+	test("blogCategories 表包含必要字段喵", () => {
 		const columns = Object.keys(blogCategories);
-		expect(columns).toContain("id");
-		expect(columns).toContain("name");
-		expect(columns).toContain("slug");
-		expect(columns).toContain("description");
-		expect(columns).toContain("parentId");
+		assert.ok(columns.includes("id"));
+		assert.ok(columns.includes("name"));
+		assert.ok(columns.includes("slug"));
+		assert.ok(columns.includes("description"));
+		assert.ok(columns.includes("parentId"));
 	});
 
-	test("blogTags table has required columns", () => {
+	test("blogTags 表包含必要字段喵", () => {
 		const columns = Object.keys(blogTags);
-		expect(columns).toContain("id");
-		expect(columns).toContain("name");
-		expect(columns).toContain("slug");
+		assert.ok(columns.includes("id"));
+		assert.ok(columns.includes("name"));
+		assert.ok(columns.includes("slug"));
 	});
 
-	test("blogPostTags junction table has required columns", () => {
+	test("blogPostTags 关联表包含必要字段喵", () => {
 		const columns = Object.keys(blogPostTags);
-		expect(columns).toContain("postId");
-		expect(columns).toContain("tagId");
+		assert.ok(columns.includes("postId"));
+		assert.ok(columns.includes("tagId"));
 	});
 
-	test("analyticsSessions table has required columns", () => {
+	test("analyticsSessions 表包含必要字段喵", () => {
 		const columns = Object.keys(analyticsSessions);
-		expect(columns).toContain("sessionId");
-		expect(columns).toContain("ipHash");
-		expect(columns).toContain("country");
-		expect(columns).toContain("browser");
-		expect(columns).toContain("deviceType");
-		expect(columns).toContain("referrer");
-		expect(columns).toContain("utmSource");
+		assert.ok(columns.includes("sessionId"));
+		assert.ok(columns.includes("ipHash"));
+		assert.ok(columns.includes("country"));
+		assert.ok(columns.includes("browser"));
+		assert.ok(columns.includes("deviceType"));
+		assert.ok(columns.includes("referrer"));
+		assert.ok(columns.includes("utmSource"));
 	});
 
-	test("analyticsEvents table has required columns", () => {
+	test("analyticsEvents 表包含必要字段喵", () => {
 		const columns = Object.keys(analyticsEvents);
-		expect(columns).toContain("sessionId");
-		expect(columns).toContain("eventType");
-		expect(columns).toContain("pageUrl");
-		expect(columns).toContain("eventData");
-		expect(columns).toContain("scrollDepth");
+		assert.ok(columns.includes("sessionId"));
+		assert.ok(columns.includes("eventType"));
+		assert.ok(columns.includes("pageUrl"));
+		assert.ok(columns.includes("eventData"));
+		assert.ok(columns.includes("scrollDepth"));
 	});
 
-	test("loginAttempts table has required columns", () => {
+	test("loginAttempts 表包含必要字段喵", () => {
 		const columns = Object.keys(loginAttempts);
-		expect(columns).toContain("ipAddress");
-		expect(columns).toContain("attempts");
-		expect(columns).toContain("lockedUntil");
+		assert.ok(columns.includes("ipAddress"));
+		assert.ok(columns.includes("attempts"));
+		assert.ok(columns.includes("lockedUntil"));
 	});
 });

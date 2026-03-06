@@ -2,15 +2,19 @@ import { desc, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { analyticsEvents, analyticsSessions, blogPosts } from "@/db/schema";
 import { getDb } from "@/lib/db";
-import { requireAuth } from "../middleware/auth";
+import {
+	type AdminAppEnv,
+	getAuthenticatedSession,
+	requireAuth,
+} from "../middleware/auth";
 import { dashboardPage } from "../views/dashboard";
 
-const dashboard = new Hono<{ Bindings: Env }>();
+const dashboard = new Hono<AdminAppEnv>();
 
 dashboard.use("*", requireAuth);
 
-// GET /api/admin — dashboard
 dashboard.get("/", async (c) => {
+	const session = getAuthenticatedSession(c);
 	try {
 		const db = getDb(c.env.DB);
 
@@ -44,25 +48,31 @@ dashboard.get("/", async (c) => {
 			.limit(5);
 
 		return c.html(
-			dashboardPage({
-				posts: {
-					total: postStats?.total ?? 0,
-					published: postStats?.published ?? 0,
-					drafts: postStats?.drafts ?? 0,
+			dashboardPage(
+				{
+					posts: {
+						total: postStats?.total ?? 0,
+						published: postStats?.published ?? 0,
+						drafts: postStats?.drafts ?? 0,
+					},
+					sessions: sessionStats?.total ?? 0,
+					events: eventStats?.total ?? 0,
+					recentPosts,
 				},
-				sessions: sessionStats?.total ?? 0,
-				events: eventStats?.total ?? 0,
-				recentPosts,
-			}),
+				session.csrfToken,
+			),
 		);
 	} catch {
 		return c.html(
-			dashboardPage({
-				posts: { total: 0, published: 0, drafts: 0 },
-				sessions: 0,
-				events: 0,
-				recentPosts: [],
-			}),
+			dashboardPage(
+				{
+					posts: { total: 0, published: 0, drafts: 0 },
+					sessions: 0,
+					events: 0,
+					recentPosts: [],
+				},
+				session.csrfToken,
+			),
 		);
 	}
 });

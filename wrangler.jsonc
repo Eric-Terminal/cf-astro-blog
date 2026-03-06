@@ -43,9 +43,9 @@
 		"TURNSTILE_SITE_KEY": ""
 	}
 
-	// Secrets (set via `wrangler secret put` or .dev.vars locally):
-	// JWT_SECRET
-	// ADMIN_USERNAME
-	// ADMIN_PASSWORD_HASH
-	// TURNSTILE_SECRET_KEY
+	// 机密变量可通过 `wrangler secret put` 或本地 `.dev.vars` 配置喵
+	// JWT_SECRET 喵
+	// ADMIN_USERNAME 喵
+	// ADMIN_PASSWORD_HASH 喵
+	// TURNSTILE_SECRET_KEY 喵
 }
