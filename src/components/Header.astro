@@ -51,9 +51,9 @@ const currentPath = Astro.url.pathname;
 		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		align-items: center;
 		gap: var(--space-md);
-		width: 100vw;
+		width: 100%;
 		max-width: none;
-		margin-inline: calc(50% - 50vw);
+		margin-inline: auto;
 		padding:
 			0.9rem
 			calc(1.4rem + env(safe-area-inset-right))
@@ -81,7 +81,6 @@ const currentPath = Astro.url.pathname;
 		transition:
 			width var(--nav-motion-main),
 			max-width var(--nav-motion-main),
-			margin var(--nav-motion-main),
 			padding var(--nav-motion-main),
 			border-radius var(--nav-motion-main),
 			background-color var(--nav-motion-surface),
@@ -215,9 +214,9 @@ const currentPath = Astro.url.pathname;
 			display: flex;
 			flex-wrap: wrap;
 			justify-content: center;
-			width: 100vw;
+			width: 100%;
 			max-width: none;
-			margin-inline: calc(50% - 50vw);
+			margin-inline: auto;
 			padding:
 				0.82rem
 				calc(0.9rem + env(safe-area-inset-right))
