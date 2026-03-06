@@ -6,32 +6,29 @@ const currentPath = Astro.url.pathname;
 ---
 
 <header class="site-header">
-	<div class="site-header-shell">
-		<div class="site-header-surface" aria-hidden="true"></div>
-		<nav class="site-nav-content" transition:persist>
-			<a href="/" class="site-brand" aria-label={siteConfig.name}>
-				<span class="site-brand-mark">E</span>
-				<span class="site-brand-copy">
-					<strong>{siteConfig.name}</strong>
-					<small>流畅、克制、持续更新的技术写作</small>
-				</span>
-			</a>
-			<ul class="nav-links">
-				<li>
-					<a href="/" class:list={["nav-link", { active: currentPath === "/" }]}>首页</a>
-				</li>
-				<li>
-					<a href="/blog" class:list={["nav-link", { active: currentPath.startsWith("/blog") }]}>归档</a>
-				</li>
-				<li>
-					<a href="/search" class:list={["nav-link", { active: currentPath === "/search" }]}>搜索</a>
-				</li>
-			</ul>
-			<div class="nav-actions">
-				<ThemeToggle />
-			</div>
-		</nav>
-	</div>
+	<nav class="site-nav glass-panel" transition:persist>
+		<a href="/" class="site-brand" aria-label={siteConfig.name}>
+			<span class="site-brand-mark">E</span>
+			<span class="site-brand-copy">
+				<strong>{siteConfig.name}</strong>
+				<small>流畅、克制、持续更新的技术写作</small>
+			</span>
+		</a>
+		<ul class="nav-links">
+			<li>
+				<a href="/" class:list={["nav-link", { active: currentPath === "/" }]}>首页</a>
+			</li>
+			<li>
+				<a href="/blog" class:list={["nav-link", { active: currentPath.startsWith("/blog") }]}>归档</a>
+			</li>
+			<li>
+				<a href="/search" class:list={["nav-link", { active: currentPath === "/search" }]}>搜索</a>
+			</li>
+		</ul>
+		<div class="nav-actions">
+			<ThemeToggle />
+		</div>
+	</nav>
 </header>
 
 <style>
@@ -39,57 +36,46 @@ const currentPath = Astro.url.pathname;
 		position: sticky;
 		top: 0;
 		z-index: 30;
+		padding-inline: 0;
 		pointer-events: none;
 		transition:
-			top 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			padding-top 360ms cubic-bezier(0.22, 1, 0.36, 1);
+			top 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			padding-inline 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
 
-	.site-header-shell {
-		position: relative;
-		padding-top: 0;
-		pointer-events: auto;
-	}
-
-	.site-header-surface {
-		position: absolute;
-		inset: 0 0 auto;
-		left: 50%;
-		width: 100vw;
-		height: 100%;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-		background: rgba(255, 255, 255, 0.16);
-		box-shadow: 0 10px 24px -26px rgba(8, 18, 34, 0.18);
-		transform: translate3d(-50%, 0, 0) scaleX(1);
-		transform-origin: center top;
-		will-change: transform, border-radius, background-color, box-shadow;
-		transition:
-			transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-			border-radius 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			border-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			background-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			backdrop-filter 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			-webkit-backdrop-filter 360ms cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.site-nav-content {
-		position: relative;
+	.site-nav {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-md);
-		width: min(calc(100% - 2rem), calc(var(--max-width) + 2rem));
-		margin-inline: auto;
+		width: 100vw;
+		max-width: none;
+		margin-inline: calc(50% - 50vw);
 		padding:
 			0.9rem
 			calc(1.4rem + env(safe-area-inset-right))
 			1rem
 			calc(1.4rem + env(safe-area-inset-left));
+		border-top: none;
+		border-left: none;
+		border-right: none;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+		border-radius: 0;
+		background: rgba(255, 255, 255, 0.16);
+		box-shadow: 0 10px 24px -26px rgba(8, 18, 34, 0.18);
+		pointer-events: auto;
+		transform-origin: top center;
 		transition:
-			width 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			padding 360ms cubic-bezier(0.22, 1, 0.36, 1),
-			transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+			width 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			max-width 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			margin 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			padding 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			border-radius 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			background-color 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			border-color 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			box-shadow 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			backdrop-filter 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			-webkit-backdrop-filter 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
 
 	.site-brand {
@@ -168,44 +154,41 @@ const currentPath = Astro.url.pathname;
 	}
 
 	:global(html[data-nav-condensed]) .site-header {
-		top: 0;
-		padding-top: 0.85rem;
-	}
-
-	:global(html[data-nav-condensed]) .site-header-shell {
+		top: 0.85rem;
 		padding-inline: 0.5rem;
 	}
 
-	:global(html[data-nav-condensed]) .site-header-surface {
+	:global(html[data-nav-condensed]) .site-nav {
+		width: min(calc(100% - 1rem), var(--max-width));
+		max-width: var(--max-width);
+		margin-inline: auto;
+		padding: 0.72rem 0.92rem;
 		border: 1px solid rgba(255, 255, 255, 0.18);
 		border-radius: var(--radius-panel);
 		background: rgba(255, 255, 255, 0.12);
 		box-shadow: 0 18px 36px -30px rgba(8, 18, 34, 0.22);
 		backdrop-filter: blur(16px) saturate(130%);
 		-webkit-backdrop-filter: blur(16px) saturate(130%);
-		transform: translate3d(-50%, 0, 0) scaleX(var(--nav-condensed-scale, 0.82));
-	}
-
-	:global(html[data-nav-condensed]) .site-nav-content {
-		width: min(calc(100% - 1rem), var(--max-width));
-		padding: 0.72rem 0.92rem;
 	}
 
 	@media (max-width: 960px) {
 		.site-header {
 			top: 0;
-			padding-top: 0;
+			padding-inline: 0;
 		}
 
-		.site-nav-content {
+		.site-nav {
 			flex-wrap: wrap;
 			justify-content: center;
-			width: min(calc(100% - 1.2rem), calc(var(--max-width) + 1rem));
+			width: 100vw;
+			max-width: none;
+			margin-inline: calc(50% - 50vw);
 			padding:
 				0.82rem
 				calc(0.9rem + env(safe-area-inset-right))
 				0.95rem
 				calc(0.9rem + env(safe-area-inset-left));
+			border-radius: 0;
 		}
 
 		.site-brand {
@@ -233,22 +216,21 @@ const currentPath = Astro.url.pathname;
 		}
 
 		:global(html[data-nav-condensed]) .site-header {
-			padding-top: 0.5rem;
-		}
-
-		:global(html[data-nav-condensed]) .site-header-shell {
+			top: 0.5rem;
 			padding-inline: 0.5rem;
 		}
 
-		:global(html[data-nav-condensed]) .site-nav-content {
+		:global(html[data-nav-condensed]) .site-nav {
 			width: min(calc(100% - 1rem), var(--max-width));
 			padding: 0.78rem 0.88rem;
+			border-radius: 28px;
 		}
 	}
 
 	@media (max-width: 640px) {
-		.site-nav-content {
+		.site-nav {
 			padding: 0.8rem;
+			border-radius: 0;
 		}
 
 		.nav-links,
@@ -263,7 +245,7 @@ const currentPath = Astro.url.pathname;
 			padding-inline: 0.88rem;
 		}
 
-		:global(html[data-nav-condensed]) .site-header-surface {
+		:global(html[data-nav-condensed]) .site-nav {
 			border-radius: 24px;
 		}
 	}

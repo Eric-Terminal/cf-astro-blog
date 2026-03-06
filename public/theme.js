@@ -8,19 +8,8 @@
 
 	let navTicking = false;
 
-	const syncNavMetrics = () => {
-		const viewportWidth = window.innerWidth || 1;
-		const condensedWidth = Math.min(Math.max(viewportWidth - 16, 0), 1184);
-		const condensedScale = Math.min(
-			1,
-			Math.max(0.6, condensedWidth / viewportWidth),
-		);
-		root.style.setProperty("--nav-condensed-scale", condensedScale.toFixed(4));
-	};
-
 	const syncNavState = () => {
 		navTicking = false;
-		syncNavMetrics();
 		root.toggleAttribute("data-nav-condensed", window.scrollY > 28);
 	};
 
