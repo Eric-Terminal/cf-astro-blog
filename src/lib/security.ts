@@ -129,6 +129,16 @@ export function getPostStatusLabel(value: string): string {
 	}
 }
 
+export function buildProtectedAssetHeaders(contentType: string) {
+	return {
+		"Content-Type": contentType,
+		"Cache-Control": "private, no-store, max-age=0",
+		Pragma: "no-cache",
+		Vary: "Cookie",
+		"X-Content-Type-Options": "nosniff",
+	};
+}
+
 function sanitizeUrl(
 	href: string | null | undefined,
 	options?: { allowMailto?: boolean },

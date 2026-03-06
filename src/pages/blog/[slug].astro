@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { blogCategories, blogPosts } from "@/db/schema";
 import Post from "@/layouts/Post.astro";
 import { getDb } from "@/lib/db";
+import { getPublicPostBySlugCondition } from "@/lib/public-content";
 import { renderSafeMarkdown } from "@/lib/security";
 
 const { slug } = Astro.params;
@@ -45,7 +46,7 @@ try {
 		})
 		.from(blogPosts)
 		.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
-		.where(eq(blogPosts.slug, slug))
+		.where(getPublicPostBySlugCondition(slug))
 		.limit(1);
 
 	if (row) {

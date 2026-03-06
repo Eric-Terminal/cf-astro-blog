@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import {
+	buildProtectedAssetHeaders,
 	decodeRouteParam,
 	encodeRouteParam,
 	escapeAttribute,
@@ -170,11 +171,7 @@ media.get("/file/*", async (c) => {
 	}
 
 	return new Response(object.body, {
-		headers: {
-			"Content-Type": contentType,
-			"Cache-Control": "public, max-age=31536000, immutable",
-			"X-Content-Type-Options": "nosniff",
-		},
+		headers: buildProtectedAssetHeaders(contentType),
 	});
 });
 

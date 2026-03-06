@@ -1,10 +1,11 @@
 ---
-import { desc, eq, like, or } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import PostCard from "@/components/PostCard.astro";
 import SearchBox from "@/components/Search.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
 import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
+import { getPublicPostSearchCondition } from "@/lib/public-content";
 
 const query = Astro.url.searchParams.get("q")?.trim() || "";
 
@@ -34,13 +35,7 @@ if (query) {
 			})
 			.from(blogPosts)
 			.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
-			.where(
-				or(
-					like(blogPosts.title, pattern),
-					like(blogPosts.content, pattern),
-					like(blogPosts.excerpt, pattern),
-				),
-			)
+			.where(getPublicPostSearchCondition(pattern))
 			.orderBy(desc(blogPosts.publishedAt))
 			.limit(20);
 	} catch {

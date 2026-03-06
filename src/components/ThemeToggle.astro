@@ -42,11 +42,9 @@
 		border-color: var(--color-accent);
 	}
 
-	/* Default: show sun (means "switch to light"), hide moon */
 	.icon-sun { display: none; }
 	.icon-moon { display: block; }
 
-	/* When dark: show sun, hide moon */
 	:global([data-theme="dark"]) .icon-sun { display: block; }
 	:global([data-theme="dark"]) .icon-moon { display: none; }
 
@@ -55,21 +53,3 @@
 		:global(:root:not([data-theme="light"])) .icon-moon { display: none; }
 	}
 </style>
-
-<script is:inline>
-	document.querySelector(".theme-toggle")?.addEventListener("click", () => {
-		const root = document.documentElement;
-		const current = root.getAttribute("data-theme");
-		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-		let next;
-		if (current === "dark" || (!current && prefersDark)) {
-			next = "light";
-		} else {
-			next = "dark";
-		}
-
-		root.setAttribute("data-theme", next);
-		localStorage.setItem("theme", next);
-	});
-</script>
