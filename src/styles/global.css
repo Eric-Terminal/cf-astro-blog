@@ -325,13 +325,28 @@ pre code {
 }
 
 .site-background-image {
+	--bg-focus-x: 50;
+	--bg-focus-y: 50;
+	--bg-blur: 24px;
+	--bg-scale: 1.12;
 	position: absolute;
 	inset: -8%;
 	width: 116%;
 	height: 116%;
 	object-fit: cover;
+	object-position: center center;
 	opacity: 0.48;
+	filter: blur(var(--bg-blur)) saturate(1.08);
 	transform-origin: center center;
+	transform: translate3d(
+			calc((50 - var(--bg-focus-x)) * 0.45%),
+			calc((50 - var(--bg-focus-y)) * 0.45%),
+			0
+		)
+		scale(var(--bg-scale));
+	transition:
+		transform var(--nav-motion-surface),
+		filter var(--nav-motion-surface);
 	will-change: transform, filter, object-position;
 }
 

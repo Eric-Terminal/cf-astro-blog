@@ -34,7 +34,7 @@ const backgroundImageUrl = buildBackgroundImageUrl(
 	siteAppearance.backgroundImageKey,
 );
 const backgroundImageStyle = backgroundImageUrl
-	? `object-position: ${siteAppearance.backgroundPositionX}% ${siteAppearance.backgroundPositionY}%; filter: blur(${siteAppearance.backgroundBlur}px) saturate(1.08); transform: scale(${siteAppearance.backgroundScale / 100});`
+	? `--bg-focus-x: ${siteAppearance.backgroundPositionX}; --bg-focus-y: ${siteAppearance.backgroundPositionY}; --bg-blur: ${siteAppearance.backgroundBlur}px; --bg-scale: ${siteAppearance.backgroundScale / 100};`
 	: "";
 ---
 
@@ -56,7 +56,7 @@ const backgroundImageStyle = backgroundImageUrl
 		{!isAdminPreview && <script is:inline src="/footer-reveal.js"></script>}
 	</head>
 	<body class="site-shell">
-		<div class="site-background" aria-hidden="true" transition:persist>
+		<div class="site-background" aria-hidden="true">
 			{backgroundImageUrl && (
 				<img
 					src={backgroundImageUrl}
