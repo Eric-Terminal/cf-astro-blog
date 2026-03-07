@@ -38,8 +38,8 @@ export function postEditorPage(data: EditorData): string {
 
 		<form method="post" action="${escapeAttribute(formAction)}">
 			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-			<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
-				<div>
+			<div class="editor-grid">
+				<div class="editor-panel">
 					<div class="form-group">
 						<label for="title">标题</label>
 						<input type="text" id="title" name="title" class="form-input" value="${escapeAttribute(post?.title || "")}" required maxlength="200" />
@@ -61,7 +61,7 @@ export function postEditorPage(data: EditorData): string {
 					</div>
 				</div>
 
-				<div>
+				<div class="editor-panel">
 					<div class="form-group">
 						<label for="status">状态</label>
 						<select id="status" name="status" class="form-select">
@@ -94,8 +94,8 @@ export function postEditorPage(data: EditorData): string {
 						<input type="text" id="featuredImageAlt" name="featuredImageAlt" class="form-input" value="${escapeAttribute(post?.featuredImageAlt || "")}" maxlength="200" />
 					</div>
 
-					<details style="margin-bottom: 1rem;">
-						<summary style="cursor: pointer; color: var(--text-secondary); margin-bottom: 0.75rem;">SEO 设置</summary>
+					<details>
+						<summary>SEO 设置</summary>
 						<div class="form-group">
 							<label for="metaTitle">SEO 标题</label>
 							<input type="text" id="metaTitle" name="metaTitle" class="form-input" value="${escapeAttribute(post?.metaTitle || "")}" maxlength="200" />
@@ -119,11 +119,11 @@ export function postEditorPage(data: EditorData): string {
 							? `<div class="form-group">
 							<label>标签</label>
 							<input type="hidden" id="tagIds" name="tagIds" value="${escapeAttribute(selectedTagIds.join(","))}" />
-							<div style="display: flex; flex-wrap: wrap; gap: 0.375rem;">
+							<div class="tag-list">
 								${tags
 									.map(
 										(tag) => `
-								<label style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.8rem; cursor: pointer;">
+								<label class="tag-chip">
 									<input type="checkbox" value="${tag.id}" ${selectedTagIds.includes(tag.id) ? "checked" : ""} data-tag-checkbox="true" />
 									${escapeHtml(tag.name)}
 								</label>`,
@@ -134,7 +134,7 @@ export function postEditorPage(data: EditorData): string {
 							: ""
 					}
 
-					<div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+					<div class="form-actions">
 						<button type="submit" class="btn btn-primary">${isEdit ? "保存修改" : "创建文章"}</button>
 						<a href="/api/admin/posts" class="btn">取消</a>
 					</div>

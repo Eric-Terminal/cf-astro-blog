@@ -20,14 +20,14 @@ interface PostRow {
 
 export function postsListPage(posts: PostRow[], csrfToken: string): string {
 	const content = `
-		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-			<h1 style="margin-bottom: 0;">文章</h1>
+		<div class="page-header">
+			<h1>文章</h1>
 			<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
 		</div>
 
 		${
 			posts.length > 0
-				? `<table class="data-table">
+				? `<div class="table-card"><table class="data-table">
 				<thead>
 					<tr>
 						<th>标题</th>
@@ -48,10 +48,10 @@ export function postsListPage(posts: PostRow[], csrfToken: string): string {
 						<td><span class="badge badge-${normalizeDisplayStatus(post.status)}">${escapeHtml(getPostStatusLabel(post.status))}</span></td>
 						<td>${post.viewCount ?? 0}</td>
 						<td>${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : new Date(post.createdAt).toLocaleDateString()}</td>
-						<td>
+						<td class="table-actions">
 							<a href="/api/admin/posts/${post.id}/edit" class="btn btn-sm">编辑</a>
 							<a href="/blog/${encodeRouteParam(post.slug)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看</a>
-							<form method="post" action="/api/admin/posts/${post.id}/delete" style="display:inline;" data-confirm-message="${escapeAttribute("确认删除这篇文章吗？")}">
+							<form method="post" action="/api/admin/posts/${post.id}/delete" data-confirm-message="${escapeAttribute("确认删除这篇文章吗？")}">
 								<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
 								<button type="submit" class="btn btn-sm btn-danger">删除</button>
 							</form>
@@ -60,7 +60,7 @@ export function postsListPage(posts: PostRow[], csrfToken: string): string {
 							)
 							.join("")}
 				</tbody>
-			</table>`
+			</table></div>`
 				: '<p class="empty-state">当前还没有文章，<a href="/api/admin/posts/new">立即创建第一篇</a>。</p>'
 		}
 	`;

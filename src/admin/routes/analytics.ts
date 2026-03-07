@@ -78,6 +78,7 @@ analytics.get("/", async (c) => {
 
 	const content = `
 		<h1>访问统计</h1>
+		<p class="page-intro">这里集中查看页面访问、来源分布和最近事件，让后台和前台一样保持更轻的浮层阅读节奏。</p>
 		<div class="stats-grid">
 			<div class="stat-card">
 				<span class="stat-value">${stats.totalSessions}</span>
@@ -92,36 +93,36 @@ analytics.get("/", async (c) => {
 		<h2>热门页面</h2>
 		${
 			stats.topPages.length > 0
-				? `<table class="data-table">
+				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>页面</th><th>浏览量</th></tr></thead>
 				<tbody>
 					${stats.topPages.map((p) => `<tr><td>${escapeHtml(p.pageUrl || "-")}</td><td>${p.views}</td></tr>`).join("")}
 				</tbody>
-			</table>`
+			</table></div>`
 				: "<p class='empty-state'>当前还没有页面访问数据。</p>"
 		}
 
 		<h2>来源站点</h2>
 		${
 			stats.topReferrers.length > 0
-				? `<table class="data-table">
+				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>来源</th><th>次数</th></tr></thead>
 				<tbody>
 					${stats.topReferrers.map((r) => `<tr><td>${escapeHtml(r.referrer)}</td><td>${r.count}</td></tr>`).join("")}
 				</tbody>
-			</table>`
+			</table></div>`
 				: "<p class='empty-state'>当前还没有来源统计数据。</p>"
 		}
 
 		<h2>最近事件</h2>
 		${
 			stats.recentEvents.length > 0
-				? `<table class="data-table">
+				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>类型</th><th>页面</th><th>时间</th></tr></thead>
 				<tbody>
 					${stats.recentEvents.map((e) => `<tr><td>${escapeHtml(e.eventType)}</td><td>${escapeHtml(e.pageUrl || "-")}</td><td>${escapeHtml(e.timestamp)}</td></tr>`).join("")}
 				</tbody>
-			</table>`
+			</table></div>`
 				: "<p class='empty-state'>当前还没有事件记录。</p>"
 		}
 	`;

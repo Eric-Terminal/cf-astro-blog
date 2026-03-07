@@ -49,7 +49,7 @@ export function dashboardPage(data: DashboardData, csrfToken: string): string {
 		<h2>最近文章</h2>
 		${
 			data.recentPosts.length > 0
-				? `<table class="data-table">
+				? `<div class="table-card"><table class="data-table">
 				<thead>
 					<tr>
 						<th>标题</th>
@@ -76,11 +76,11 @@ export function dashboardPage(data: DashboardData, csrfToken: string): string {
 							)
 							.join("")}
 				</tbody>
-			</table>`
+			</table></div>`
 				: '<p class="empty-state">当前还没有文章，<a href="/api/admin/posts/new">立即创建第一篇</a>。</p>'
 		}
 
-		<div style="margin-top: 1rem;">
+		<div class="page-actions">
 			<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
 		</div>
 	`;
