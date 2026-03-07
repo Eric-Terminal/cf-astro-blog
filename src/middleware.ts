@@ -2,9 +2,13 @@ import { defineMiddleware } from "astro:middleware";
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	const response = await next();
+	const isAdminPreview = context.url.searchParams.get("adminPreview") === "1";
 
 	response.headers.set("X-Content-Type-Options", "nosniff");
-	response.headers.set("X-Frame-Options", "DENY");
+	response.headers.set(
+		"X-Frame-Options",
+		isAdminPreview ? "SAMEORIGIN" : "DENY",
+	);
 	response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 	response.headers.set(
 		"Permissions-Policy",
@@ -13,12 +17,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
 
 	if (!context.url.pathname.startsWith("/api/")) {
+		const frameAncestors = isAdminPreview ? "'self'" : "'none'";
 		response.headers.set(
 			"Content-Security-Policy",
 			[
 				"default-src 'self'",
 				"base-uri 'self'",
-				"frame-ancestors 'none'",
+				`frame-ancestors ${frameAncestors}`,
 				"object-src 'none'",
 				"form-action 'self'",
 				"script-src 'self'",
