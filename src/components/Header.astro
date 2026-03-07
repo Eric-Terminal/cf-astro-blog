@@ -351,7 +351,6 @@ function isLinkActive(href: string) {
 				calc(0.9rem + env(safe-area-inset-right))
 				0.95rem
 				calc(0.9rem + env(safe-area-inset-left));
-			transform: none;
 		}
 
 		.site-brand-copy {
@@ -385,11 +384,11 @@ function isLinkActive(href: string) {
 		:global(html[data-nav-condensed]) .site-nav::before {
 			inset-inline: var(--nav-shell-condensed-inset-mobile);
 			border-radius: 28px;
-			transform: none;
+			transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 		}
 
 		:global(html[data-nav-condensed]) .site-nav-shell {
-			transform: none;
+			transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 		}
 
 		:global(html[data-nav-condensed]) .site-nav-shell-scroll {
