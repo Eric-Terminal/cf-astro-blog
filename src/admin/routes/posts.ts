@@ -17,6 +17,7 @@ import {
 	type AdminAppEnv,
 	assertCsrfToken,
 	getAuthenticatedSession,
+	getBodyText,
 	requireAuth,
 } from "../middleware/auth";
 import { adminLayout } from "../views/layout";
@@ -377,7 +378,7 @@ posts.post("/", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const db = getDb(c.env.DB);
 	const body = await c.req.parseBody();
-	if (!assertCsrfToken(body._csrf, session)) {
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 
@@ -486,7 +487,7 @@ posts.post("/:id", async (c) => {
 	}
 	const db = getDb(c.env.DB);
 	const body = await c.req.parseBody();
-	if (!assertCsrfToken(body._csrf, session)) {
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 
@@ -570,7 +571,7 @@ posts.post("/:id", async (c) => {
 posts.post("/:id/delete", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const body = await c.req.parseBody();
-	if (!assertCsrfToken(body._csrf, session)) {
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 

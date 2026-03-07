@@ -9,6 +9,7 @@ import {
 	createToken,
 	destroySession,
 	getAuthenticatedSession,
+	getBodyText,
 	getSessionCookieOptions,
 	requireAuth,
 } from "../middleware/auth";
@@ -318,10 +319,10 @@ auth.get("/logout", (c) => {
 });
 
 auth.post("/logout", requireAuth, async (c) => {
-	const body = await c.req.parseBody();
+	const body = await c.req.parseBody({ all: true });
 	const session = getAuthenticatedSession(c);
 
-	if (!assertCsrfToken(body._csrf, session)) {
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 

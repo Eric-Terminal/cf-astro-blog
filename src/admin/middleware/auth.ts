@@ -23,6 +23,37 @@ export interface AdminAppEnv {
 	};
 }
 
+function normalizeFormText(value: unknown): string {
+	if (Array.isArray(value)) {
+		const firstText = value.find(
+			(item): item is string => typeof item === "string",
+		);
+		return firstText?.trim() ?? "";
+	}
+
+	return typeof value === "string" ? value.trim() : "";
+}
+
+export function getBodyText(
+	body: Record<string, unknown>,
+	key: string,
+): string {
+	return normalizeFormText(body[key]);
+}
+
+export function getBodyFile(
+	body: Record<string, unknown>,
+	key: string,
+): File | null {
+	const value = body[key];
+	if (Array.isArray(value)) {
+		const firstFile = value.find((item): item is File => item instanceof File);
+		return firstFile ?? null;
+	}
+
+	return value instanceof File ? value : null;
+}
+
 function getSessionStorageKey(sessionId: string): string {
 	return `${SESSION_PREFIX}${sessionId}`;
 }
@@ -205,7 +236,10 @@ export function assertCsrfToken(
 	providedToken: unknown,
 	session: AdminSession,
 ): boolean {
-	return timingSafeEqualText(String(providedToken ?? ""), session.csrfToken);
+	return timingSafeEqualText(
+		normalizeFormText(providedToken),
+		session.csrfToken,
+	);
 }
 
 export async function requireAuth(c: Context<AdminAppEnv>, next: Next) {

@@ -19,6 +19,8 @@ import {
 	type AdminAppEnv,
 	assertCsrfToken,
 	getAuthenticatedSession,
+	getBodyFile,
+	getBodyText,
 	requireAuth,
 } from "../middleware/auth";
 import { adminLayout } from "../views/layout";
@@ -34,8 +36,7 @@ function renderMediaErrorPage(csrfToken: string, message: string) {
 }
 
 function parseUploadFile(body: Record<string, unknown>): File | null {
-	const file = body.file;
-	return file instanceof File ? file : null;
+	return getBodyFile(body, "file");
 }
 
 function validateUploadFile(file: File): string | null {
@@ -143,8 +144,8 @@ media.get("/", async (c) => {
 
 media.post("/upload", async (c) => {
 	const session = getAuthenticatedSession(c);
-	const body = await c.req.parseBody();
-	if (!assertCsrfToken(body._csrf, session)) {
+	const body = await c.req.parseBody({ all: true });
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 	const file = parseUploadFile(body);
@@ -170,8 +171,8 @@ media.post("/upload", async (c) => {
 
 media.post("/upload-async", async (c) => {
 	const session = getAuthenticatedSession(c);
-	const body = await c.req.parseBody();
-	if (!assertCsrfToken(body._csrf, session)) {
+	const body = await c.req.parseBody({ all: true });
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.json({ message: "CSRF 校验失败喵" }, 403);
 	}
 
@@ -224,8 +225,8 @@ media.get("/file/*", async (c) => {
 
 media.post("/delete/*", async (c) => {
 	const session = getAuthenticatedSession(c);
-	const body = await c.req.parseBody();
-	if (!assertCsrfToken(body._csrf, session)) {
+	const body = await c.req.parseBody({ all: true });
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 
