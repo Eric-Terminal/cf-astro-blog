@@ -84,7 +84,11 @@ describe("后台界面风格保护", () => {
 
 		assert.match(mediaRouteSource, /media\.get\("\/file\/\*"/u);
 		assert.match(mediaRouteSource, /media\.post\("\/delete\/\*"/u);
-		assert.match(mediaRouteSource, /c\.req\.param\("\*"\)/u);
+		assert.match(mediaRouteSource, /extractWildcardMediaKey/u);
+		assert.ok(mediaRouteSource.includes('c.req.param("0")'));
+		assert.ok(mediaRouteSource.includes('"/admin/media/file/"'));
+		assert.ok(mediaRouteSource.includes('"/admin/media/delete/"'));
+		assert.ok(mediaRouteSource.includes('replace(/^\\/+/u, "")'));
 		assert.ok(
 			!mediaRouteSource.includes(
 				'c.req.path.replace("/api/admin/media/file/", "")',

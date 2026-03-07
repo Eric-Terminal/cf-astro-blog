@@ -53,6 +53,21 @@ function validateUploadFile(file: File): string | null {
 	return null;
 }
 
+function extractWildcardMediaKey(
+	c: {
+		req: {
+			param: (name: string) => string;
+			path: string;
+		};
+	},
+	prefix: string,
+) {
+	const wildcardRaw =
+		c.req.param("*") || c.req.param("0") || c.req.path.replace(prefix, "");
+	const normalized = wildcardRaw.replace(/^\/+/u, "");
+	return decodeRouteParam(normalized);
+}
+
 async function saveUploadFile(c: { env: AdminAppEnv["Bindings"] }, file: File) {
 	return saveMediaObjectWithDedup({
 		bucket: c.env.MEDIA_BUCKET,
@@ -231,8 +246,7 @@ media.post("/upload-async", async (c) => {
 });
 
 media.get("/file/*", async (c) => {
-	const wildcardKey = c.req.param("*");
-	const decodedKey = decodeRouteParam(wildcardKey);
+	const decodedKey = extractWildcardMediaKey(c, "/admin/media/file/");
 	const key = sanitizeMediaKey(decodedKey);
 	if (!key) {
 		return c.notFound();
@@ -261,8 +275,7 @@ media.post("/delete/*", async (c) => {
 		return c.text("CSRF 校验失败", 403);
 	}
 
-	const wildcardKey = c.req.param("*");
-	const decodedKey = decodeRouteParam(wildcardKey);
+	const decodedKey = extractWildcardMediaKey(c, "/admin/media/delete/");
 	const key = sanitizeMediaKey(decodedKey);
 	if (!key) {
 		return c.text("媒体键名不合法", 400);
