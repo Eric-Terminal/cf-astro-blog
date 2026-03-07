@@ -68,12 +68,16 @@ if (!post) {
 }
 
 const htmlContent = await renderSafeMarkdown(post.content);
+const featuredImageUrl = post.featuredImageKey
+	? `/media/${post.featuredImageKey}`
+	: undefined;
 ---
 
 <Post
 	slug={slug}
 	title={post.metaTitle || post.title}
 	description={post.metaDescription || post.excerpt || undefined}
+	image={featuredImageUrl}
 	canonicalUrl={post.canonicalUrl || undefined}
 	publishedAt={post.publishedAt || undefined}
 	authorName={post.authorName || undefined}

@@ -16,6 +16,8 @@ let results: Array<{
 	publishedAt: string | null;
 	authorName: string | null;
 	categoryName: string | null;
+	featuredImageKey: string | null;
+	featuredImageAlt: string | null;
 }> = [];
 
 if (query) {
@@ -32,6 +34,8 @@ if (query) {
 				publishedAt: blogPosts.publishedAt,
 				authorName: blogPosts.authorName,
 				categoryName: blogCategories.name,
+				featuredImageKey: blogPosts.featuredImageKey,
+				featuredImageAlt: blogPosts.featuredImageAlt,
 			})
 			.from(blogPosts)
 			.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
@@ -72,7 +76,7 @@ if (query) {
 
 			{results.length > 0 ? (
 				<div class="search-grid">
-					{results.map((post) => (
+					{results.map((post, index) => (
 						<PostCard
 							title={post.title}
 							slug={post.slug}
@@ -80,6 +84,9 @@ if (query) {
 							publishedAt={post.publishedAt}
 							authorName={post.authorName}
 							categoryName={post.categoryName}
+							featuredImageKey={post.featuredImageKey}
+							featuredImageAlt={post.featuredImageAlt}
+							coverSide={index % 2 === 0 ? "left" : "right"}
 						/>
 					))}
 				</div>

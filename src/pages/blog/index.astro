@@ -16,6 +16,8 @@ let posts: Array<{
 	publishedAt: string | null;
 	authorName: string | null;
 	categoryName: string | null;
+	featuredImageKey: string | null;
+	featuredImageAlt: string | null;
 }> = [];
 let totalPosts = 0;
 
@@ -37,6 +39,8 @@ try {
 			publishedAt: blogPosts.publishedAt,
 			authorName: blogPosts.authorName,
 			categoryName: blogCategories.name,
+			featuredImageKey: blogPosts.featuredImageKey,
+			featuredImageAlt: blogPosts.featuredImageAlt,
 		})
 		.from(blogPosts)
 		.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
@@ -74,7 +78,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 	{posts.length > 0 ? (
 		<div class="archive-grid">
-			{posts.map((post) => (
+			{posts.map((post, index) => (
 				<PostCard
 					title={post.title}
 					slug={post.slug}
@@ -82,6 +86,9 @@ const totalPages = Math.ceil(totalPosts / limit);
 					publishedAt={post.publishedAt}
 					authorName={post.authorName}
 					categoryName={post.categoryName}
+					featuredImageKey={post.featuredImageKey}
+					featuredImageAlt={post.featuredImageAlt}
+					coverSide={index % 2 === 0 ? "left" : "right"}
 				/>
 			))}
 		</div>

@@ -9,32 +9,63 @@ interface Props {
 	publishedAt?: string | null;
 	categoryName?: string | null;
 	authorName?: string | null;
+	featuredImageKey?: string | null;
+	featuredImageAlt?: string | null;
+	coverSide?: "left" | "right";
 }
 
-const { title, slug, excerpt, publishedAt, categoryName, authorName } =
-	Astro.props;
+const {
+	title,
+	slug,
+	excerpt,
+	publishedAt,
+	categoryName,
+	authorName,
+	featuredImageKey,
+	featuredImageAlt,
+	coverSide = "left",
+} = Astro.props;
 
 const formattedDate = publishedAt ? formatDate(publishedAt) : null;
+const coverImageUrl = featuredImageKey ? `/media/${featuredImageKey}` : null;
+const coverImageAlt = featuredImageAlt?.trim() || `${title} 的封面图`;
+const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-card-cover-right" : "post-card-cover-left"}`;
 ---
 
-<article class="post-card glass-panel" transition:name={`card-${slug}`}>
-	<div class="post-card-top">
-		<div class="pill-row" transition:name={`meta-${slug}`}>
-			{formattedDate && <time class="pill" datetime={publishedAt ?? undefined}>{formattedDate}</time>}
-			{categoryName && <span class="pill">{categoryName}</span>}
+<article class={cardClassName} transition:name={`card-${slug}`}>
+	<a href={`/blog/${slug}`} class="post-card-cover">
+		{coverImageUrl ? (
+			<img src={coverImageUrl} alt={coverImageAlt} loading="lazy" decoding="async" />
+		) : (
+			<div class="post-card-cover-fallback" aria-hidden="true">
+				<strong>{title}</strong>
+				<span>{categoryName || "未分类"}</span>
+			</div>
+		)}
+	</a>
+	<div class="post-card-content">
+		<div class="post-card-top">
+			<div class="pill-row" transition:name={`meta-${slug}`}>
+				{formattedDate && (
+					<time class="pill" datetime={publishedAt ?? undefined}>
+						{formattedDate}
+					</time>
+				)}
+				{categoryName && <span class="pill">{categoryName}</span>}
+			</div>
+			<a href={`/blog/${slug}`} class="post-card-link">
+				<h2 class="post-card-title" transition:name={`title-${slug}`}>{title}</h2>
+			</a>
 		</div>
-		<a href={`/blog/${slug}`} class="post-card-link">
-			<h2 class="post-card-title" transition:name={`title-${slug}`}>{title}</h2>
-		</a>
-	</div>
-	{excerpt && (
-		<p class="post-card-excerpt" transition:name={`summary-${slug}`}>
-			{excerpt}
-		</p>
-	)}
-	<div class="post-card-meta">
-		<span>{authorName || siteConfig.author}</span>
-		<a href={`/blog/${slug}`} class="post-card-readmore">继续阅读</a>
+		{excerpt && (
+			<p class="post-card-excerpt" transition:name={`summary-${slug}`}>
+				{excerpt}
+			</p>
+		)}
+		<div class="post-card-meta">
+			<span>{authorName || siteConfig.author}</span>
+			<a href={`/blog/${slug}`} class="post-card-readmore">继续阅读</a>
+		</div>
 	</div>
 </article>
 
@@ -42,8 +73,10 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 	.post-card {
 		position: relative;
 		display: grid;
-		gap: var(--space-md);
-		padding: clamp(1.2rem, 1rem + 1vw, 1.8rem);
+		grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr);
+		gap: clamp(0.5rem, 0.2rem + 0.6vw, 0.8rem);
+		padding: clamp(0.28rem, 0.2rem + 0.35vw, 0.52rem);
+		min-height: clamp(16rem, 24vw, 19rem);
 		opacity: 0;
 		animation: post-card-settle 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
 		transition:
@@ -60,36 +93,106 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 		border-radius: inherit;
 		background:
 			linear-gradient(
-				125deg,
-				rgba(255, 255, 255, 0) 18%,
-				rgba(255, 255, 255, 0.18) 48%,
-				rgba(255, 255, 255, 0) 72%
+				120deg,
+				rgba(255, 255, 255, 0) 22%,
+				rgba(255, 255, 255, 0.16) 50%,
+				rgba(255, 255, 255, 0) 76%
 			);
 		opacity: 0;
-		transform: translate3d(-22%, 0, 0);
+		transform: translate3d(-20%, 0, 0);
 		transition:
 			opacity 280ms ease,
 			transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 		pointer-events: none;
 	}
 
-	.post-card:hover {
-		transform: translate3d(0, -4px, 0) scale(1.004);
-		border-color: rgba(10, 132, 255, 0.14);
-		background: rgba(255, 255, 255, 0.2);
+	.post-card-cover {
+		position: relative;
+		display: block;
+		overflow: hidden;
+		min-height: 100%;
+		border-radius: calc(var(--radius-panel) - 8px);
+		background:
+			linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
+			radial-gradient(circle at 24% 22%, rgba(10, 132, 255, 0.28), transparent 58%);
 		box-shadow:
-			0 22px 38px -34px rgba(8, 18, 34, 0.22),
-			0 8px 18px -16px rgba(8, 18, 34, 0.16);
+			inset 0 1px 0 rgba(255, 255, 255, 0.35),
+			0 16px 30px -30px rgba(8, 18, 34, 0.5);
 	}
 
-	.post-card:hover::after {
-		opacity: 1;
-		transform: translate3d(18%, 0, 0);
+	.post-card-cover img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform: scale(1.01);
+		transition:
+			transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+			filter 320ms ease;
+	}
+
+	.post-card-cover-fallback {
+		position: relative;
+		display: grid;
+		align-content: end;
+		gap: 0.65rem;
+		height: 100%;
+		padding: 1.25rem;
+		overflow: hidden;
+	}
+
+	.post-card-cover-fallback::before {
+		content: "";
+		position: absolute;
+		inset: -35%;
+		background:
+			repeating-linear-gradient(
+				135deg,
+				rgba(255, 255, 255, 0.22) 0 9px,
+				rgba(255, 255, 255, 0.08) 9px 18px
+			),
+			radial-gradient(circle at 70% 16%, rgba(10, 132, 255, 0.34), transparent 54%);
+		opacity: 0.75;
+		transform: rotate(10deg);
+		transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.post-card-cover-fallback strong,
+	.post-card-cover-fallback span {
+		position: relative;
+		z-index: 2;
+		color: #f7fbff;
+		text-shadow: 0 6px 20px rgba(4, 12, 22, 0.46);
+	}
+
+	.post-card-cover-fallback strong {
+		font-size: clamp(1.02rem, 0.94rem + 0.32vw, 1.22rem);
+		line-height: 1.48;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.post-card-cover-fallback span {
+		font-size: 0.78rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		opacity: 0.84;
+	}
+
+	.post-card-content {
+		display: grid;
+		align-content: start;
+		gap: var(--space-md);
+		padding:
+			clamp(0.84rem, 0.58rem + 0.7vw, 1.3rem)
+			clamp(0.92rem, 0.72rem + 0.8vw, 1.35rem)
+			clamp(1rem, 0.72rem + 0.9vw, 1.44rem);
 	}
 
 	.post-card-top {
 		display: grid;
-		gap: var(--space-md);
+		gap: var(--space-sm);
 	}
 
 	.pill-row,
@@ -109,9 +212,9 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 	}
 
 	.post-card-title {
-		font-size: clamp(1.32rem, 1.2rem + 0.55vw, 1.75rem);
+		font-size: clamp(1.25rem, 1.14rem + 0.5vw, 1.68rem);
 		color: var(--color-text);
-		line-height: 1.14;
+		line-height: 1.15;
 		letter-spacing: -0.03em;
 	}
 
@@ -125,8 +228,8 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 
 	.post-card-excerpt {
 		color: var(--color-text-secondary);
-		font-size: 0.98rem;
-		line-height: 1.8;
+		font-size: 0.96rem;
+		line-height: 1.82;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
@@ -151,6 +254,48 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 		font-weight: 600;
 	}
 
+	.post-card-cover-left .post-card-cover {
+		-webkit-clip-path: polygon(0 0, 90% 0, 100% 100%, 0 100%);
+		clip-path: polygon(0 0, 90% 0, 100% 100%, 0 100%);
+	}
+
+	.post-card-cover-right {
+		grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.95fr);
+	}
+
+	.post-card-cover-right .post-card-content {
+		order: 1;
+	}
+
+	.post-card-cover-right .post-card-cover {
+		order: 2;
+		-webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 10% 100%);
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 10% 100%);
+	}
+
+	.post-card:hover {
+		transform: translate3d(0, -4px, 0) scale(1.004);
+		border-color: rgba(10, 132, 255, 0.14);
+		background: rgba(255, 255, 255, 0.2);
+		box-shadow:
+			0 22px 38px -34px rgba(8, 18, 34, 0.22),
+			0 8px 18px -16px rgba(8, 18, 34, 0.16);
+	}
+
+	.post-card:hover::after {
+		opacity: 1;
+		transform: translate3d(16%, 0, 0);
+	}
+
+	.post-card:hover .post-card-cover img {
+		transform: scale(1.06);
+		filter: saturate(1.08);
+	}
+
+	.post-card:hover .post-card-cover-fallback::before {
+		transform: rotate(6deg) scale(1.06);
+	}
+
 	@keyframes post-card-settle {
 		from {
 			opacity: 0;
@@ -160,6 +305,27 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 		to {
 			opacity: 1;
 			filter: blur(0);
+		}
+	}
+
+	@media (max-width: 900px) {
+		.post-card,
+		.post-card-cover-right {
+			grid-template-columns: 1fr;
+			min-height: auto;
+		}
+
+		.post-card-cover,
+		.post-card-cover-right .post-card-cover {
+			order: 1;
+			min-height: clamp(11rem, 35vw, 14rem);
+			-webkit-clip-path: none;
+			clip-path: none;
+		}
+
+		.post-card-content,
+		.post-card-cover-right .post-card-content {
+			order: 2;
 		}
 	}
 
@@ -210,6 +376,8 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 	@media (prefers-reduced-motion: reduce) {
 		.post-card,
 		.post-card::after,
+		.post-card-cover img,
+		.post-card-cover-fallback::before,
 		.pill-row,
 		.post-card-title,
 		.post-card-excerpt,
