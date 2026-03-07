@@ -100,6 +100,21 @@ function isInternalHref(href: string) {
 			</div>
 		</div>
 		<div class="home-hero-side">
+			<article class="hero-media-card hero-media-card-landscape">
+				{homepageAppearance.heroLandscapeImagePath ? (
+					<img
+						src={homepageAppearance.heroLandscapeImagePath}
+						alt=""
+						loading="lazy"
+						decoding="async"
+					/>
+				) : (
+					<div class="hero-media-empty">
+						<span>左上横图</span>
+						<strong>在外观设置中填写路径</strong>
+					</div>
+				)}
+			</article>
 			<article class="hero-signal-card" data-tilt-card>
 				<div class="hero-signal-glow" aria-hidden="true"></div>
 				<span class="hero-signal-label">{homepageAppearance.heroSignalLabel}</span>
@@ -119,15 +134,24 @@ function isInternalHref(href: string) {
 			<div class="hero-metric">
 				<span>最近更新</span>
 				<strong>{latestUpdate}</strong>
+				<p>{homepageAppearance.heroTopicText}</p>
+				<p>{homepageAppearance.heroWritingText}</p>
 			</div>
-			<div class="hero-metric">
-				<span>关注主题</span>
-				<strong>{homepageAppearance.heroTopicText}</strong>
-			</div>
-			<div class="hero-metric">
-				<span>写作方式</span>
-				<strong>{homepageAppearance.heroWritingText}</strong>
-			</div>
+			<article class="hero-media-card hero-media-card-portrait">
+				{homepageAppearance.heroPortraitImagePath ? (
+					<img
+						src={homepageAppearance.heroPortraitImagePath}
+						alt=""
+						loading="lazy"
+						decoding="async"
+					/>
+				) : (
+					<div class="hero-media-empty">
+						<span>右下竖图</span>
+						<strong>在外观设置中填写路径</strong>
+					</div>
+				)}
+			</article>
 		</div>
 	</section>
 
@@ -314,6 +338,9 @@ function isInternalHref(href: string) {
 		border-radius: var(--radius-card);
 		background: rgba(255, 255, 255, 0.05);
 		border: 1px solid rgba(255, 255, 255, 0.08);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-rows: minmax(0, 1fr);
+		gap: 0.9rem;
 	}
 
 	.home-hero-main > * {
@@ -336,11 +363,66 @@ function isInternalHref(href: string) {
 		animation-delay: 260ms;
 	}
 
+	.hero-media-card {
+		position: relative;
+		overflow: hidden;
+		border-radius: calc(var(--radius-card) + 2px);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		background:
+			linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08)),
+			radial-gradient(circle at 20% 18%, rgba(10, 132, 255, 0.2), transparent 44%);
+		opacity: 0;
+		animation: home-float-in 780ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.hero-media-card-landscape {
+		grid-column: 1;
+		grid-row: 1;
+		aspect-ratio: 16 / 10;
+		animation-delay: 100ms;
+	}
+
+	.hero-media-card-portrait {
+		grid-column: 2;
+		grid-row: 2;
+		aspect-ratio: 3 / 4;
+		animation-delay: 290ms;
+	}
+
+	.hero-media-card img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform: scale(1.02);
+		transition: transform var(--nav-motion-surface);
+	}
+
+	.hero-media-empty {
+		height: 100%;
+		display: grid;
+		align-content: center;
+		justify-items: center;
+		gap: 0.35rem;
+		padding: 0.8rem;
+		text-align: center;
+		color: var(--color-text-muted);
+		font-size: 0.82rem;
+	}
+
+	.hero-media-empty strong {
+		font-size: 0.88rem;
+		color: var(--color-text-secondary);
+		font-weight: 560;
+	}
+
 	.hero-signal-card {
 		position: relative;
 		display: grid;
 		gap: 0.85rem;
 		padding: 1.25rem;
+		grid-column: 2;
+		grid-row: 1;
 		border-radius: calc(var(--radius-card) + 4px);
 		background:
 			linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.1)),
@@ -481,6 +563,9 @@ function isInternalHref(href: string) {
 		display: grid;
 		gap: 0.35rem;
 		padding: 1.15rem 1.2rem;
+		grid-column: 1;
+		grid-row: 2;
+		align-content: start;
 		border-radius: var(--radius-inner);
 		background: rgba(255, 255, 255, 0.05);
 		border: 1px solid rgba(255, 255, 255, 0.08);
@@ -496,16 +581,8 @@ function isInternalHref(href: string) {
 			box-shadow 220ms ease;
 	}
 
-	.hero-metric:nth-of-type(2) {
-		animation-delay: 200ms;
-	}
-
-	.hero-metric:nth-of-type(3) {
-		animation-delay: 260ms;
-	}
-
-	.hero-metric:nth-of-type(4) {
-		animation-delay: 320ms;
+	.hero-metric {
+		animation-delay: 220ms;
 	}
 
 	.hero-metric:hover {
@@ -527,6 +604,13 @@ function isInternalHref(href: string) {
 		line-height: 1.55;
 		color: var(--color-text);
 		font-weight: 650;
+	}
+
+	.hero-metric p {
+		margin: 0;
+		font-size: 0.88rem;
+		line-height: 1.55;
+		color: var(--color-text-secondary);
 	}
 
 	.section-head {
@@ -612,6 +696,18 @@ function isInternalHref(href: string) {
 			grid-template-columns: 1fr;
 		}
 
+		.home-hero-side {
+			grid-template-columns: 1fr;
+		}
+
+		.hero-media-card-landscape,
+		.hero-signal-card,
+		.hero-metric,
+		.hero-media-card-portrait {
+			grid-column: 1;
+			grid-row: auto;
+		}
+
 		.hero-aura-primary {
 			right: -4rem;
 			width: 14rem;
@@ -638,6 +734,10 @@ function isInternalHref(href: string) {
 	@media (max-width: 640px) {
 		.home-hero {
 			padding: 1.2rem;
+		}
+
+		.hero-media-card-portrait {
+			aspect-ratio: 4 / 5;
 		}
 
 		.hero-grid,

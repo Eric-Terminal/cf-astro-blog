@@ -57,6 +57,22 @@ describe("站点外观设置喵", () => {
 		assert.equal(normalized.heroSecondaryHref, "/search?tag=astro");
 	});
 
+	test("normalizeSiteAppearanceInput 支持首屏横图与竖图路径喵", () => {
+		const normalized = normalizeSiteAppearanceInput({
+			heroLandscapeImagePath: "appearance/home/landscape.webp",
+			heroPortraitImagePath: "https://cdn.example.com/hero/portrait.webp",
+		});
+
+		assert.equal(
+			normalized.heroLandscapeImagePath,
+			"/media/appearance/home/landscape.webp",
+		);
+		assert.equal(
+			normalized.heroPortraitImagePath,
+			"https://cdn.example.com/hero/portrait.webp",
+		);
+	});
+
 	test("buildSiteNavLinks 会按顺序生成顶部导航数据喵", () => {
 		const links = buildSiteNavLinks(DEFAULT_SITE_APPEARANCE);
 
