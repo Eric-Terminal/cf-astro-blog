@@ -208,7 +208,7 @@ function isInternalHref(href: string) {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		background: rgba(255, 255, 255, var(--hero-surface-alpha));
+		background: rgba(var(--card-surface-rgb), var(--hero-surface-alpha));
 		backdrop-filter: blur(var(--hero-blur-effective)) saturate(152%);
 		-webkit-backdrop-filter: blur(var(--hero-blur-effective)) saturate(152%);
 		z-index: 2;
@@ -229,8 +229,8 @@ function isInternalHref(href: string) {
 		background:
 			linear-gradient(
 				140deg,
-				rgba(255, 255, 255, calc(0.18 * var(--hero-opacity-scale))),
-				rgba(255, 255, 255, calc(0.08 * var(--hero-opacity-scale)))
+				rgba(var(--card-sheen-rgb), calc(0.18 * var(--hero-opacity-scale))),
+				rgba(var(--card-sheen-rgb), calc(0.08 * var(--hero-opacity-scale)))
 			),
 			radial-gradient(
 				circle at 18% 20%,

@@ -92,9 +92,7 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		isolation: isolate;
 		transform: translate3d(0, 0, 0);
 		background-color: rgba(
-			255,
-			255,
-			255,
+			var(--card-surface-rgb),
 			var(--post-card-surface-alpha)
 		);
 		backdrop-filter: blur(var(--post-card-blur-effective)) saturate(150%);
@@ -120,9 +118,9 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		background:
 			linear-gradient(
 				120deg,
-				rgba(255, 255, 255, 0) 22%,
-				rgba(255, 255, 255, 0.16) 50%,
-				rgba(255, 255, 255, 0) 76%
+				rgba(var(--card-sheen-rgb), 0) 22%,
+				rgba(var(--card-sheen-rgb), 0.16) 50%,
+				rgba(var(--card-sheen-rgb), 0) 76%
 			);
 		opacity: 0;
 		transform: translate3d(-120%, 0, 0);
@@ -140,7 +138,11 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		min-height: 100%;
 		border-radius: calc(var(--radius-panel) - 8px);
 		background:
-			linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
+			linear-gradient(
+				145deg,
+				rgba(var(--card-sheen-rgb), 0.22),
+				rgba(var(--card-sheen-rgb), 0.08)
+			),
 			radial-gradient(circle at 24% 22%, rgba(10, 132, 255, 0.28), transparent 58%);
 		box-shadow:
 			inset 0 1px 0 rgba(255, 255, 255, 0.35),
@@ -154,9 +156,7 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		inset: 0;
 		pointer-events: none;
 		background: rgba(
-			255,
-			255,
-			255,
+			var(--card-surface-rgb),
 			calc(var(--post-card-surface-alpha) * 0.52)
 		);
 		backdrop-filter: blur(var(--post-card-cover-blur-effective)) saturate(138%);
@@ -188,8 +188,8 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		background:
 			repeating-linear-gradient(
 				135deg,
-				rgba(255, 255, 255, 0.22) 0 9px,
-				rgba(255, 255, 255, 0.08) 9px 18px
+				rgba(var(--card-sheen-rgb), 0.22) 0 9px,
+				rgba(var(--card-sheen-rgb), 0.08) 9px 18px
 			),
 			radial-gradient(circle at 70% 16%, rgba(10, 132, 255, 0.34), transparent 54%);
 		opacity: 0.75;
