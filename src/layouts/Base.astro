@@ -20,6 +20,7 @@ interface Props {
 }
 
 const { title, description, image, canonicalUrl } = Astro.props;
+const isAdminPreview = Astro.url.searchParams.get("adminPreview") === "1";
 let siteAppearance = DEFAULT_SITE_APPEARANCE;
 
 try {
@@ -47,8 +48,8 @@ const backgroundImageStyle = backgroundImageUrl
 			canonicalUrl={canonicalUrl}
 		/>
 		<script is:inline src="/theme.js"></script>
-		<script is:inline src="/home-motion.js"></script>
-		<script is:inline src="/footer-reveal.js"></script>
+		{!isAdminPreview && <script is:inline src="/home-motion.js"></script>}
+		{!isAdminPreview && <script is:inline src="/footer-reveal.js"></script>}
 	</head>
 	<body class="site-shell">
 		<div class="site-background" aria-hidden="true" transition:persist>

@@ -8,7 +8,6 @@ import {
 } from "@/lib/media";
 import { escapeAttribute, escapeHtml, sanitizeMediaKey } from "@/lib/security";
 import {
-	buildBackgroundImageUrl,
 	DEFAULT_SITE_APPEARANCE,
 	getSiteAppearance,
 	type SiteNavLink,
@@ -137,13 +136,6 @@ function renderAppearancePage(options: {
 	alert?: { type: "success" | "error"; message: string };
 }) {
 	const { csrfToken, settings, alert } = options;
-	const backgroundImageUrl = buildBackgroundImageUrl(
-		settings.backgroundImageKey,
-	);
-	const focusHidden = backgroundImageUrl ? "" : " hidden";
-	const previewImage = backgroundImageUrl
-		? `<img src="${escapeAttribute(backgroundImageUrl)}" alt="" class="appearance-stage-image" data-appearance-image />`
-		: `<div class="appearance-stage-empty" data-appearance-empty>上传背景图片后，这里会出现实时预览，点击或拖动即可调整裁切焦点。</div>`;
 	const alertHtml = alert
 		? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>`
 		: "";
@@ -244,72 +236,21 @@ function renderAppearancePage(options: {
 				margin-top: 0.85rem;
 			}
 
-			.appearance-stage {
+			.appearance-live-preview {
 				position: relative;
-				min-height: 360px;
+				aspect-ratio: 16 / 10;
 				border-radius: 1rem;
 				overflow: hidden;
-				background:
-					radial-gradient(circle at top left, rgba(59, 130, 246, 0.2), transparent 28%),
-					linear-gradient(135deg, #0f172a, #111827 50%, #1e293b);
+				background: #0f172a;
 				border: 1px solid var(--border);
-				cursor: crosshair;
-				user-select: none;
 			}
 
-			.appearance-stage-image {
-				position: absolute;
-				inset: -10%;
-				width: 120%;
-				height: 120%;
-				object-fit: cover;
-				transform-origin: center center;
-				opacity: 0.9;
-				will-change: transform, filter, object-position;
-			}
-
-			.appearance-stage-overlay {
-				position: absolute;
-				inset: 0;
-				background:
-					linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.55)),
-					radial-gradient(circle at center, transparent 24%, rgba(15, 23, 42, 0.22));
-				pointer-events: none;
-			}
-
-			.appearance-stage-label {
-				position: absolute;
-				left: 1rem;
-				bottom: 1rem;
-				padding: 0.45rem 0.7rem;
-				border-radius: 9999px;
-				background: rgba(15, 23, 42, 0.55);
-				backdrop-filter: blur(12px);
-				font-size: 0.8rem;
-				color: var(--text-secondary);
-			}
-
-			.appearance-stage-empty {
-				position: absolute;
-				inset: 0;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				padding: 2rem;
-				text-align: center;
-				color: var(--text-muted);
-			}
-
-			.appearance-focus {
-				position: absolute;
-				width: 18px;
-				height: 18px;
-				margin-left: -9px;
-				margin-top: -9px;
-				border-radius: 9999px;
-				background: rgba(255, 255, 255, 0.88);
-				border: 2px solid rgba(59, 130, 246, 0.9);
-				box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.18);
+			.appearance-live-preview iframe {
+				width: 100%;
+				height: 100%;
+				border: 0;
+				display: block;
+				background: #0f172a;
 				pointer-events: none;
 			}
 
@@ -428,10 +369,6 @@ function renderAppearancePage(options: {
 					grid-template-columns: 1fr;
 				}
 
-				.appearance-stage {
-					min-height: 280px;
-				}
-
 				.appearance-inline-grid {
 					grid-template-columns: 1fr;
 				}
@@ -448,7 +385,7 @@ function renderAppearancePage(options: {
 		${alertHtml}
 		<h1>站点外观</h1>
 		<p class="appearance-copy">这里统一控制前台背景、顶部状态栏、导航索引链接和首页首屏文案。</p>
-		<form method="post" action="/api/admin/appearance" class="appearance-grid appearance-form-grid">
+		<form method="post" action="/api/admin/appearance" class="appearance-grid appearance-form-grid" data-appearance-form="true">
 			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
 			<div class="appearance-stack">
 				<section class="appearance-panel">
@@ -610,21 +547,16 @@ function renderAppearancePage(options: {
 			</div>
 			<div class="appearance-stack">
 				<section class="appearance-panel">
-					<h2>实时预览</h2>
-					<div
-						class="appearance-stage"
-						data-appearance-stage
-						data-background-scale="${escapeAttribute(String(settings.backgroundScale))}"
-						data-background-blur="${escapeAttribute(String(settings.backgroundBlur))}"
-						data-background-position-x="${escapeAttribute(String(settings.backgroundPositionX))}"
-						data-background-position-y="${escapeAttribute(String(settings.backgroundPositionY))}"
-					>
-						${previewImage}
-						<div class="appearance-stage-overlay"></div>
-						<div class="appearance-stage-label">前台背景层</div>
-						<div class="appearance-focus" data-appearance-focus${focusHidden}></div>
+					<h2>实时联动预览</h2>
+					<div class="appearance-live-preview">
+						<iframe
+							src="/?adminPreview=1"
+							title="首页实时联动预览"
+							loading="lazy"
+							data-appearance-live-frame
+						></iframe>
 					</div>
-					<p class="appearance-hint">直接在预览图上点击或拖动，就能快速调整裁切焦点位置。</p>
+					<p class="appearance-hint">左侧表单修改会实时同步到这里；点击保存后才会正式生效。</p>
 				</section>
 				<section class="appearance-panel">
 					<h2>背景视觉参数</h2>

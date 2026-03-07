@@ -610,9 +610,8 @@ function initDynamicLinkEditor(name) {
 initDynamicLinkEditor("nav");
 initDynamicLinkEditor("hero");
 
-const appearanceStage = document.querySelector("[data-appearance-stage]");
-const appearanceFocus = document.querySelector("[data-appearance-focus]");
-const appearanceEmpty = document.querySelector("[data-appearance-empty]");
+const appearanceForm = document.querySelector("[data-appearance-form='true']");
+const appearanceLiveFrame = document.querySelector("[data-appearance-live-frame]");
 const appearanceUploadDropzone = document.querySelector(
 	"[data-appearance-upload-dropzone]",
 );
@@ -642,33 +641,311 @@ function updateAppearanceDisplay(name, value) {
 		name === "backgroundBlur" ? `${value} px` : `${value}%`;
 }
 
-function ensureAppearanceImage() {
-	if (!(appearanceStage instanceof HTMLElement)) {
+function getAppearanceFieldValue(name) {
+	if (!(appearanceForm instanceof HTMLFormElement)) {
+		return "";
+	}
+
+	const field = appearanceForm.elements.namedItem(name);
+	if (field instanceof RadioNodeList) {
+		return (field.value || "").trim();
+	}
+
+	if (
+		field instanceof HTMLInputElement ||
+		field instanceof HTMLTextAreaElement ||
+		field instanceof HTMLSelectElement
+	) {
+		return field.value.trim();
+	}
+
+	return "";
+}
+
+function getAppearanceFieldValues(name) {
+	if (!(appearanceForm instanceof HTMLFormElement)) {
+		return [];
+	}
+
+	const values = [];
+	for (const field of appearanceForm.querySelectorAll(`[name="${name}"]`)) {
+		if (
+			field instanceof HTMLInputElement ||
+			field instanceof HTMLTextAreaElement ||
+			field instanceof HTMLSelectElement
+		) {
+			values.push(field.value.trim());
+		}
+	}
+
+	return values;
+}
+
+function resolvePreviewImageUrl(rawValue) {
+	const value = rawValue.trim();
+	if (!value) {
+		return "";
+	}
+
+	if (value.startsWith("/")) {
+		return value.startsWith("//") ? "" : value;
+	}
+
+	if (/^https?:\/\//iu.test(value)) {
+		return value;
+	}
+
+	return `/media/${value.replace(/^\/+/u, "")}`;
+}
+
+function collectAppearanceLinks(labelName, hrefName) {
+	const labels = getAppearanceFieldValues(labelName);
+	const hrefs = getAppearanceFieldValues(hrefName);
+	const count = Math.max(labels.length, hrefs.length);
+	const items = [];
+
+	for (let index = 0; index < count; index += 1) {
+		const label = labels[index] || "";
+		const href = hrefs[index] || "";
+		if (!label || !href) {
+			continue;
+		}
+
+		items.push({ label, href });
+	}
+
+	return items;
+}
+
+function isPreviewInternalHref(href) {
+	return href.startsWith("/") && !href.startsWith("//");
+}
+
+function isPreviewLinkActive(currentPathname, href) {
+	if (!isPreviewInternalHref(href)) {
+		return false;
+	}
+
+	if (href === "/") {
+		return currentPathname === "/";
+	}
+
+	return currentPathname === href || currentPathname.startsWith(`${href}/`);
+}
+
+function clearElementChildren(node) {
+	while (node.firstChild) {
+		node.removeChild(node.firstChild);
+	}
+}
+
+function ensurePreviewBackgroundImage(previewDocument) {
+	const container = previewDocument.querySelector(".site-background");
+	if (!(container instanceof HTMLElement)) {
 		return null;
 	}
 
-	const existingImage = appearanceStage.querySelector("[data-appearance-image]");
-	if (existingImage instanceof HTMLImageElement) {
-		return existingImage;
+	const existing = container.querySelector(".site-background-image");
+	if (existing instanceof HTMLImageElement) {
+		return existing;
 	}
 
-	const image = document.createElement("img");
-	image.className = "appearance-stage-image";
-	image.setAttribute("data-appearance-image", "");
-	appearanceStage.insertBefore(image, appearanceStage.firstChild);
-	appearanceEmpty?.remove();
-	if (appearanceFocus instanceof HTMLElement) {
-		appearanceFocus.hidden = false;
-	}
-
+	const image = previewDocument.createElement("img");
+	image.className = "site-background-image";
+	image.alt = "";
+	image.decoding = "async";
+	image.loading = "eager";
+	container.appendChild(image);
 	return image;
 }
 
-function updateAppearancePreview() {
-	if (!(appearanceStage instanceof HTMLElement)) {
+let appearanceLivePreviewFrame = 0;
+
+function syncAppearanceLivePreview() {
+	if (!(appearanceLiveFrame instanceof HTMLIFrameElement)) {
 		return;
 	}
 
+	let previewDocument = null;
+	try {
+		previewDocument = appearanceLiveFrame.contentDocument;
+	} catch {
+		return;
+	}
+
+	if (!previewDocument) {
+		return;
+	}
+
+	const headerSubtitle = getAppearanceFieldValue("headerSubtitle");
+	const heroKicker = getAppearanceFieldValue("heroKicker");
+	const heroTitle = getAppearanceFieldValue("heroTitle");
+	const heroIntro = getAppearanceFieldValue("heroIntro");
+	const heroSignalLabel = getAppearanceFieldValue("heroSignalLabel");
+	const heroSignalHeading = getAppearanceFieldValue("heroSignalHeading");
+	const heroSignalCopy = getAppearanceFieldValue("heroSignalCopy");
+	const heroMainImagePath = getAppearanceFieldValue("heroMainImagePath");
+	const backgroundImageKey = getAppearanceFieldValue("backgroundImageKey");
+	const navLinks = collectAppearanceLinks("navLinkLabel", "navLinkHref");
+	const heroActions = collectAppearanceLinks("heroActionLabel", "heroActionHref");
+
+	const scaleValue = Number.parseInt(
+		getAppearanceFieldValue("backgroundScale") || "112",
+		10,
+	);
+	const blurValue = Number.parseInt(
+		getAppearanceFieldValue("backgroundBlur") || "24",
+		10,
+	);
+	const positionXValue = Number.parseInt(
+		getAppearanceFieldValue("backgroundPositionX") || "50",
+		10,
+	);
+	const positionYValue = Number.parseInt(
+		getAppearanceFieldValue("backgroundPositionY") || "50",
+		10,
+	);
+
+	const scale = Number.isFinite(scaleValue) ? scaleValue : 112;
+	const blur = Number.isFinite(blurValue) ? blurValue : 24;
+	const positionX = Number.isFinite(positionXValue) ? positionXValue : 50;
+	const positionY = Number.isFinite(positionYValue) ? positionYValue : 50;
+
+	const subtitleNode = previewDocument.querySelector(".site-brand-copy small");
+	if (subtitleNode instanceof HTMLElement) {
+		subtitleNode.textContent = headerSubtitle;
+	}
+
+	const navListNode = previewDocument.querySelector(".nav-links");
+	if (navListNode instanceof HTMLElement) {
+		clearElementChildren(navListNode);
+		const currentPathname = previewDocument.location.pathname;
+		for (const item of navLinks) {
+			const listItem = previewDocument.createElement("li");
+			const link = previewDocument.createElement("a");
+			link.href = item.href;
+			link.textContent = item.label;
+			link.classList.add("nav-link");
+			if (isPreviewLinkActive(currentPathname, item.href)) {
+				link.classList.add("active");
+			}
+
+			if (!isPreviewInternalHref(item.href)) {
+				link.target = "_blank";
+				link.rel = "noopener noreferrer";
+			}
+
+			listItem.appendChild(link);
+			navListNode.appendChild(listItem);
+		}
+	}
+
+	const heroKickerNode = previewDocument.querySelector(
+		".home-hero .home-hero-copy .section-kicker",
+	);
+	if (heroKickerNode instanceof HTMLElement) {
+		heroKickerNode.textContent = heroKicker;
+	}
+
+	const heroTitleNode = previewDocument.querySelector(
+		".home-hero .home-hero-copy .page-title",
+	);
+	if (heroTitleNode instanceof HTMLElement) {
+		heroTitleNode.textContent = heroTitle;
+	}
+
+	const heroIntroNode = previewDocument.querySelector(
+		".home-hero .home-hero-copy .page-intro",
+	);
+	if (heroIntroNode instanceof HTMLElement) {
+		heroIntroNode.textContent = heroIntro;
+	}
+
+	const heroActionsNode = previewDocument.querySelector(".home-hero .hero-actions");
+	if (heroActionsNode instanceof HTMLElement) {
+		clearElementChildren(heroActionsNode);
+		for (const [index, item] of heroActions.entries()) {
+			const link = previewDocument.createElement("a");
+			link.href = item.href;
+			link.textContent = item.label;
+			link.classList.add("button");
+			if (index > 0) {
+				link.classList.add("button-secondary");
+			}
+
+			if (!isPreviewInternalHref(item.href)) {
+				link.target = "_blank";
+				link.rel = "noopener noreferrer";
+			}
+
+			heroActionsNode.appendChild(link);
+		}
+	}
+
+	const signalLabelNode = previewDocument.querySelector(".hero-signal-label");
+	if (signalLabelNode instanceof HTMLElement) {
+		signalLabelNode.textContent = heroSignalLabel;
+	}
+
+	const signalHeadingNode = previewDocument.querySelector(".hero-signal-heading");
+	if (signalHeadingNode instanceof HTMLElement) {
+		signalHeadingNode.textContent = heroSignalHeading;
+	}
+
+	const signalCopyNode = previewDocument.querySelector(".hero-signal-copy");
+	if (signalCopyNode instanceof HTMLElement) {
+		signalCopyNode.textContent = heroSignalCopy;
+	}
+
+	const heroMainMediaNode = previewDocument.querySelector(".hero-main-media");
+	if (heroMainMediaNode instanceof HTMLElement) {
+		const resolvedHeroImageUrl = resolvePreviewImageUrl(heroMainImagePath);
+		let heroImageNode = heroMainMediaNode.querySelector("img");
+		if (resolvedHeroImageUrl) {
+			if (!(heroImageNode instanceof HTMLImageElement)) {
+				heroImageNode = previewDocument.createElement("img");
+				heroImageNode.alt = "";
+				heroImageNode.decoding = "async";
+				heroImageNode.loading = "lazy";
+				heroMainMediaNode.appendChild(heroImageNode);
+			}
+
+			heroImageNode.src = resolvedHeroImageUrl;
+			heroMainMediaNode.classList.add("hero-main-media-has-image");
+		} else {
+			if (heroImageNode instanceof HTMLImageElement) {
+				heroImageNode.remove();
+			}
+			heroMainMediaNode.classList.remove("hero-main-media-has-image");
+		}
+	}
+
+	const resolvedBackgroundUrl = resolvePreviewImageUrl(backgroundImageKey);
+	const backgroundImageNode = ensurePreviewBackgroundImage(previewDocument);
+	if (backgroundImageNode instanceof HTMLImageElement) {
+		if (resolvedBackgroundUrl) {
+			backgroundImageNode.src = resolvedBackgroundUrl;
+			backgroundImageNode.style.objectPosition = `${positionX}% ${positionY}%`;
+			backgroundImageNode.style.filter = `blur(${blur}px) saturate(1.08)`;
+			backgroundImageNode.style.transform = `scale(${scale / 100})`;
+		} else {
+			backgroundImageNode.remove();
+		}
+	}
+}
+
+function queueAppearanceLivePreviewSync() {
+	if (appearanceLivePreviewFrame) {
+		return;
+	}
+
+	appearanceLivePreviewFrame = window.requestAnimationFrame(() => {
+		appearanceLivePreviewFrame = 0;
+		syncAppearanceLivePreview();
+	});
+}
+
+function updateAppearancePreview() {
 	const scaleInput = appearanceControls.backgroundScale;
 	const blurInput = appearanceControls.backgroundBlur;
 	const positionXInput = appearanceControls.backgroundPositionX;
@@ -692,39 +969,7 @@ function updateAppearancePreview() {
 	updateAppearanceDisplay("backgroundBlur", blur);
 	updateAppearanceDisplay("backgroundPositionX", positionX);
 	updateAppearanceDisplay("backgroundPositionY", positionY);
-
-	const image = appearanceStage?.querySelector("[data-appearance-image]");
-	if (image instanceof HTMLImageElement) {
-		image.style.objectPosition = `${positionX}% ${positionY}%`;
-		image.style.filter = `blur(${blur}px) saturate(1.08)`;
-		image.style.transform = `scale(${scale / 100})`;
-	}
-
-	if (appearanceFocus instanceof HTMLElement) {
-		appearanceFocus.style.left = `${positionX}%`;
-		appearanceFocus.style.top = `${positionY}%`;
-	}
-}
-
-let appearanceObjectUrl = "";
-
-function updateAppearanceUploadPreview(file) {
-	if (!(file instanceof File)) {
-		return;
-	}
-
-	const image = ensureAppearanceImage();
-	if (!(image instanceof HTMLImageElement)) {
-		return;
-	}
-
-	if (appearanceObjectUrl) {
-		URL.revokeObjectURL(appearanceObjectUrl);
-	}
-
-	appearanceObjectUrl = URL.createObjectURL(file);
-	image.src = appearanceObjectUrl;
-	updateAppearancePreview();
+	queueAppearanceLivePreviewSync();
 }
 
 function submitAppearanceUpload() {
@@ -746,7 +991,6 @@ function handleAppearanceUploadSelection(file) {
 		return;
 	}
 
-	updateAppearanceUploadPreview(file);
 	submitAppearanceUpload();
 }
 
@@ -809,51 +1053,36 @@ appearanceUploadDropzone?.addEventListener("drop", (event) => {
 	handleAppearanceUploadSelection(file);
 });
 
-let draggingAppearanceFocus = false;
+appearanceLiveFrame?.addEventListener("load", () => {
+	queueAppearanceLivePreviewSync();
+});
 
-function updateAppearanceFocusFromPointer(event) {
-	if (!(appearanceStage instanceof HTMLElement)) {
+appearanceForm?.addEventListener("input", () => {
+	queueAppearanceLivePreviewSync();
+});
+
+appearanceForm?.addEventListener("change", () => {
+	queueAppearanceLivePreviewSync();
+});
+
+appearanceForm?.addEventListener("click", (event) => {
+	if (!(event.target instanceof Element)) {
 		return;
 	}
 
-	const positionXInput = appearanceControls.backgroundPositionX;
-	const positionYInput = appearanceControls.backgroundPositionY;
-	if (
-		!(positionXInput instanceof HTMLInputElement) ||
-		!(positionYInput instanceof HTMLInputElement)
-	) {
-		return;
+	if (event.target.closest("[data-link-add], [data-link-remove]")) {
+		window.setTimeout(() => {
+			queueAppearanceLivePreviewSync();
+		}, 0);
 	}
+});
 
-	const rect = appearanceStage.getBoundingClientRect();
-	const x = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
-	const y = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
-
-	positionXInput.value = String(Math.round(x));
-	positionYInput.value = String(Math.round(y));
-	updateAppearancePreview();
+if (appearanceForm instanceof HTMLFormElement) {
+	const observer = new MutationObserver(() => {
+		queueAppearanceLivePreviewSync();
+	});
+	observer.observe(appearanceForm, { childList: true, subtree: true });
 }
-
-appearanceStage?.addEventListener("pointerdown", (event) => {
-	if (!(appearanceStage.querySelector("[data-appearance-image]") instanceof HTMLImageElement)) {
-		return;
-	}
-
-	draggingAppearanceFocus = true;
-	updateAppearanceFocusFromPointer(event);
-});
-
-window.addEventListener("pointermove", (event) => {
-	if (!draggingAppearanceFocus) {
-		return;
-	}
-
-	updateAppearanceFocusFromPointer(event);
-});
-
-window.addEventListener("pointerup", () => {
-	draggingAppearanceFocus = false;
-});
 
 for (const control of Object.values(appearanceControls)) {
 	control?.addEventListener("input", updateAppearancePreview);
