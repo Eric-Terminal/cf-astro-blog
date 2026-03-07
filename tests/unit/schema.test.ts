@@ -87,6 +87,10 @@ describe("数据库结构", () => {
 		assert.ok(columns.includes("backgroundScale"));
 		assert.ok(columns.includes("backgroundPositionX"));
 		assert.ok(columns.includes("backgroundPositionY"));
+		assert.ok(columns.includes("heroCardOpacity"));
+		assert.ok(columns.includes("heroCardBlur"));
+		assert.ok(columns.includes("postCardOpacity"));
+		assert.ok(columns.includes("postCardBlur"));
 		assert.ok(columns.includes("headerSubtitle"));
 		assert.ok(columns.includes("navLink1Label"));
 		assert.ok(columns.includes("navLink1Href"));

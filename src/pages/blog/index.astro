@@ -123,6 +123,8 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 <style>
 	.archive-hero {
+		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--hero-card-blur, 18px);
 		display: grid;
 		grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.7fr);
 		gap: 1.2rem;

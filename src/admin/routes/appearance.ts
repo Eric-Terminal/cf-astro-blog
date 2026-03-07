@@ -546,7 +546,7 @@ function renderAppearancePage(options: {
 			</div>
 			<div class="appearance-stack">
 				<section class="appearance-panel">
-					<h2>背景视觉参数</h2>
+					<h2>背景与卡片视觉参数</h2>
 					<p class="appearance-note">缩放 0% 表示原始比例；横向/纵向焦点 0% 表示画面居中。</p>
 					<div class="appearance-controls">
 						<div class="appearance-range">
@@ -576,6 +576,34 @@ function renderAppearancePage(options: {
 								<span data-appearance-display="backgroundPositionY">${escapeHtml(String(backgroundPositionYOffset))}%</span>
 							</div>
 							<input id="backgroundPositionY" name="backgroundPositionY" type="range" min="-50" max="50" value="${escapeAttribute(String(backgroundPositionYOffset))}" data-appearance-control="backgroundPositionY" />
+						</div>
+						<div class="appearance-range">
+							<div class="appearance-range-meta">
+								<label for="heroCardOpacity">顶部介绍卡透明度</label>
+								<span data-appearance-display="heroCardOpacity">${escapeHtml(String(settings.heroCardOpacity))}%</span>
+							</div>
+							<input id="heroCardOpacity" name="heroCardOpacity" type="range" min="4" max="40" value="${escapeAttribute(String(settings.heroCardOpacity))}" data-appearance-control="heroCardOpacity" />
+						</div>
+						<div class="appearance-range">
+							<div class="appearance-range-meta">
+								<label for="heroCardBlur">顶部介绍卡高斯模糊</label>
+								<span data-appearance-display="heroCardBlur">${escapeHtml(String(settings.heroCardBlur))} px</span>
+							</div>
+							<input id="heroCardBlur" name="heroCardBlur" type="range" min="0" max="48" value="${escapeAttribute(String(settings.heroCardBlur))}" data-appearance-control="heroCardBlur" />
+						</div>
+						<div class="appearance-range">
+							<div class="appearance-range-meta">
+								<label for="postCardOpacity">文章卡透明度</label>
+								<span data-appearance-display="postCardOpacity">${escapeHtml(String(settings.postCardOpacity))}%</span>
+							</div>
+							<input id="postCardOpacity" name="postCardOpacity" type="range" min="4" max="40" value="${escapeAttribute(String(settings.postCardOpacity))}" data-appearance-control="postCardOpacity" />
+						</div>
+						<div class="appearance-range">
+							<div class="appearance-range-meta">
+								<label for="postCardBlur">文章卡高斯模糊</label>
+								<span data-appearance-display="postCardBlur">${escapeHtml(String(settings.postCardBlur))} px</span>
+							</div>
+							<input id="postCardBlur" name="postCardBlur" type="range" min="0" max="48" value="${escapeAttribute(String(settings.postCardBlur))}" data-appearance-control="postCardBlur" />
 						</div>
 					</div>
 				</section>
@@ -713,6 +741,10 @@ appearance.post("/", async (c) => {
 			50 + Number(getBodyText(body, "backgroundPositionX") || Number.NaN),
 		backgroundPositionY:
 			50 + Number(getBodyText(body, "backgroundPositionY") || Number.NaN),
+		heroCardOpacity: Number(getBodyText(body, "heroCardOpacity") || Number.NaN),
+		heroCardBlur: Number(getBodyText(body, "heroCardBlur") || Number.NaN),
+		postCardOpacity: Number(getBodyText(body, "postCardOpacity") || Number.NaN),
+		postCardBlur: Number(getBodyText(body, "postCardBlur") || Number.NaN),
 		headerSubtitle: getBodyText(body, "headerSubtitle"),
 		navLinks: buildLinkItemsFromBody(
 			getBodyTexts(body, "navLinkLabel"),

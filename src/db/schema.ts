@@ -86,6 +86,10 @@ export const siteAppearanceSettings = sqliteTable("site_appearance_settings", {
 	backgroundScale: integer("background_scale").notNull().default(112),
 	backgroundPositionX: integer("background_position_x").notNull().default(50),
 	backgroundPositionY: integer("background_position_y").notNull().default(50),
+	heroCardOpacity: integer("hero_card_opacity").notNull().default(14),
+	heroCardBlur: integer("hero_card_blur").notNull().default(18),
+	postCardOpacity: integer("post_card_opacity").notNull().default(14),
+	postCardBlur: integer("post_card_blur").notNull().default(18),
 	headerSubtitle: text("header_subtitle")
 		.notNull()
 		.default("流畅、克制、持续更新的技术写作"),

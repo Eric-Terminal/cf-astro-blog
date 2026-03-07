@@ -16,6 +16,10 @@ describe("站点外观设置", () => {
 			backgroundScale: 220,
 			backgroundPositionX: -10,
 			backgroundPositionY: 140,
+			heroCardOpacity: 2,
+			heroCardBlur: 77,
+			postCardOpacity: 80,
+			postCardBlur: -6,
 		});
 
 		assert.equal(
@@ -26,6 +30,10 @@ describe("站点外观设置", () => {
 		assert.equal(normalized.backgroundScale, 180);
 		assert.equal(normalized.backgroundPositionX, 0);
 		assert.equal(normalized.backgroundPositionY, 100);
+		assert.equal(normalized.heroCardOpacity, 4);
+		assert.equal(normalized.heroCardBlur, 48);
+		assert.equal(normalized.postCardOpacity, 40);
+		assert.equal(normalized.postCardBlur, 0);
 	});
 
 	test("normalizeSiteAppearanceInput 会回退到默认值", () => {

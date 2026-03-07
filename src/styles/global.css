@@ -416,12 +416,12 @@ html[data-admin-preview="true"] .site-main {
 	position: relative;
 	overflow: hidden;
 	isolation: isolate;
-	background: rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, var(--glass-panel-opacity, 0.14));
 	border: 1px solid rgba(255, 255, 255, 0.18);
 	border-radius: var(--radius-panel);
 	box-shadow: var(--shadow-card);
-	backdrop-filter: blur(18px) saturate(130%);
-	-webkit-backdrop-filter: blur(18px) saturate(130%);
+	backdrop-filter: blur(var(--glass-panel-blur, 18px)) saturate(130%);
+	-webkit-backdrop-filter: blur(var(--glass-panel-blur, 18px)) saturate(130%);
 }
 
 .glass-panel::before {
@@ -727,8 +727,8 @@ html[data-admin-preview="true"] .site-main {
 
 	.glass-panel {
 		border-radius: var(--radius-card);
-		backdrop-filter: blur(14px) saturate(120%);
-		-webkit-backdrop-filter: blur(14px) saturate(120%);
+		backdrop-filter: blur(var(--glass-panel-blur, 14px)) saturate(120%);
+		-webkit-backdrop-filter: blur(var(--glass-panel-blur, 14px)) saturate(120%);
 	}
 
 	.page-title {

@@ -36,6 +36,7 @@ const backgroundImageUrl = buildBackgroundImageUrl(
 const backgroundImageStyle = backgroundImageUrl
 	? `--bg-focus-x: ${siteAppearance.backgroundPositionX}; --bg-focus-y: ${siteAppearance.backgroundPositionY}; --bg-blur: ${siteAppearance.backgroundBlur}px; --bg-scale: ${siteAppearance.backgroundScale / 100};`
 	: "";
+const surfaceStyle = `--hero-card-opacity: ${siteAppearance.heroCardOpacity}; --hero-card-blur: ${siteAppearance.heroCardBlur}px; --post-card-opacity: ${siteAppearance.postCardOpacity}; --post-card-blur: ${siteAppearance.postCardBlur}px;`;
 ---
 
 <!doctype html>
@@ -55,7 +56,7 @@ const backgroundImageStyle = backgroundImageUrl
 		{!isAdminPreview && <script is:inline src="/home-motion.js"></script>}
 		{!isAdminPreview && <script is:inline src="/footer-reveal.js"></script>}
 	</head>
-	<body class="site-shell">
+	<body class="site-shell" style={surfaceStyle}>
 		<div class="site-background" aria-hidden="true">
 			{backgroundImageUrl && (
 				<img

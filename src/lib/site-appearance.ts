@@ -27,6 +27,10 @@ export interface SiteAppearance {
 	backgroundScale: number;
 	backgroundPositionX: number;
 	backgroundPositionY: number;
+	heroCardOpacity: number;
+	heroCardBlur: number;
+	postCardOpacity: number;
+	postCardBlur: number;
 	headerSubtitle: string;
 	navLinks: SiteNavLink[];
 	navLink1Label: string;
@@ -62,6 +66,10 @@ export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
 	backgroundScale: 112,
 	backgroundPositionX: 50,
 	backgroundPositionY: 50,
+	heroCardOpacity: 14,
+	heroCardBlur: 18,
+	postCardOpacity: 14,
+	postCardBlur: 18,
 	headerSubtitle: "流畅、克制、持续更新的技术写作",
 	navLinks: [...DEFAULT_NAV_LINKS],
 	navLink1Label: DEFAULT_NAV_LINKS[0].label,
@@ -311,6 +319,30 @@ export function normalizeSiteAppearanceInput(
 			100,
 			DEFAULT_SITE_APPEARANCE.backgroundPositionY,
 		),
+		heroCardOpacity: clampInteger(
+			input.heroCardOpacity,
+			4,
+			40,
+			DEFAULT_SITE_APPEARANCE.heroCardOpacity,
+		),
+		heroCardBlur: clampInteger(
+			input.heroCardBlur,
+			0,
+			48,
+			DEFAULT_SITE_APPEARANCE.heroCardBlur,
+		),
+		postCardOpacity: clampInteger(
+			input.postCardOpacity,
+			4,
+			40,
+			DEFAULT_SITE_APPEARANCE.postCardOpacity,
+		),
+		postCardBlur: clampInteger(
+			input.postCardBlur,
+			0,
+			48,
+			DEFAULT_SITE_APPEARANCE.postCardBlur,
+		),
 		headerSubtitle: normalizeText(
 			input.headerSubtitle,
 			120,
@@ -392,6 +424,10 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 			backgroundScale: siteAppearanceSettings.backgroundScale,
 			backgroundPositionX: siteAppearanceSettings.backgroundPositionX,
 			backgroundPositionY: siteAppearanceSettings.backgroundPositionY,
+			heroCardOpacity: siteAppearanceSettings.heroCardOpacity,
+			heroCardBlur: siteAppearanceSettings.heroCardBlur,
+			postCardOpacity: siteAppearanceSettings.postCardOpacity,
+			postCardBlur: siteAppearanceSettings.postCardBlur,
 			headerSubtitle: siteAppearanceSettings.headerSubtitle,
 			navLink1Label: siteAppearanceSettings.navLink1Label,
 			navLink1Href: siteAppearanceSettings.navLink1Href,
@@ -443,6 +479,10 @@ export async function saveSiteAppearance(
 			backgroundScale: normalized.backgroundScale,
 			backgroundPositionX: normalized.backgroundPositionX,
 			backgroundPositionY: normalized.backgroundPositionY,
+			heroCardOpacity: normalized.heroCardOpacity,
+			heroCardBlur: normalized.heroCardBlur,
+			postCardOpacity: normalized.postCardOpacity,
+			postCardBlur: normalized.postCardBlur,
 			headerSubtitle: normalized.headerSubtitle,
 			navLink1Label: normalized.navLink1Label,
 			navLink1Href: normalized.navLink1Href,
@@ -474,6 +514,10 @@ export async function saveSiteAppearance(
 				backgroundScale: normalized.backgroundScale,
 				backgroundPositionX: normalized.backgroundPositionX,
 				backgroundPositionY: normalized.backgroundPositionY,
+				heroCardOpacity: normalized.heroCardOpacity,
+				heroCardBlur: normalized.heroCardBlur,
+				postCardOpacity: normalized.postCardOpacity,
+				postCardBlur: normalized.postCardBlur,
 				headerSubtitle: normalized.headerSubtitle,
 				navLink1Label: normalized.navLink1Label,
 				navLink1Href: normalized.navLink1Href,

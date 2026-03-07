@@ -68,6 +68,8 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 
 <style>
 	.post-card {
+		--glass-panel-opacity: calc(var(--post-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--post-card-blur, 18px);
 		position: relative;
 		display: grid;
 		grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr);
@@ -259,7 +261,12 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 	.post-card:hover {
 		transform: translate3d(0, -4px, 0) scale(1.004);
 		border-color: rgba(10, 132, 255, 0.14);
-		background: rgba(255, 255, 255, 0.2);
+		background: rgba(
+			255,
+			255,
+			255,
+			calc((var(--post-card-opacity, 14) / 100) + 0.06)
+		);
 		box-shadow:
 			0 22px 38px -34px rgba(8, 18, 34, 0.22),
 			0 8px 18px -16px rgba(8, 18, 34, 0.16);

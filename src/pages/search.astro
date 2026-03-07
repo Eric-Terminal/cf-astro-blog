@@ -106,6 +106,8 @@ if (query) {
 
 <style>
 	.search-hero {
+		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
+		--glass-panel-blur: var(--hero-card-blur, 18px);
 		display: grid;
 		gap: 1rem;
 		padding: clamp(1.5rem, 1rem + 2vw, 2.6rem);
