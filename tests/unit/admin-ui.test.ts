@@ -75,4 +75,25 @@ describe("后台界面风格保护", () => {
 		assert.match(adminScriptSource, /\[data-hero-image-uploader='true'\]/u);
 		assert.match(adminScriptSource, /首屏图片上传成功/u);
 	});
+
+	test("媒体文件读取与删除使用通配参数提取键名，避免 /api 前缀重写误删", async () => {
+		const mediaRouteSource = await readFile(
+			"src/admin/routes/media.ts",
+			"utf8",
+		);
+
+		assert.match(mediaRouteSource, /media\.get\("\/file\/\*"/u);
+		assert.match(mediaRouteSource, /media\.post\("\/delete\/\*"/u);
+		assert.match(mediaRouteSource, /c\.req\.param\("\*"\)/u);
+		assert.ok(
+			!mediaRouteSource.includes(
+				'c.req.path.replace("/api/admin/media/file/", "")',
+			),
+		);
+		assert.ok(
+			!mediaRouteSource.includes(
+				'c.req.path.replace("/api/admin/media/delete/", "")',
+			),
+		);
+	});
 });

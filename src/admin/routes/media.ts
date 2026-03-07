@@ -231,9 +231,8 @@ media.post("/upload-async", async (c) => {
 });
 
 media.get("/file/*", async (c) => {
-	const decodedKey = decodeRouteParam(
-		c.req.path.replace("/api/admin/media/file/", ""),
-	);
+	const wildcardKey = c.req.param("*");
+	const decodedKey = decodeRouteParam(wildcardKey);
 	const key = sanitizeMediaKey(decodedKey);
 	if (!key) {
 		return c.notFound();
@@ -262,9 +261,8 @@ media.post("/delete/*", async (c) => {
 		return c.text("CSRF 校验失败", 403);
 	}
 
-	const decodedKey = decodeRouteParam(
-		c.req.path.replace("/api/admin/media/delete/", ""),
-	);
+	const wildcardKey = c.req.param("*");
+	const decodedKey = decodeRouteParam(wildcardKey);
 	const key = sanitizeMediaKey(decodedKey);
 	if (!key) {
 		return c.text("媒体键名不合法", 400);
