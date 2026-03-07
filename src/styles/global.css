@@ -342,25 +342,25 @@ pre code {
 }
 
 ::view-transition-group(page-shell) {
-	animation-duration: 460ms;
-	animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+	animation-duration: 280ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 ::view-transition-old(page-shell),
 ::view-transition-new(page-shell) {
-	animation-duration: 460ms;
-	animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+	animation-duration: 280ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 ::view-transition-group(search-entry) {
-	animation-duration: 520ms;
-	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	animation-duration: 300ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 ::view-transition-old(search-entry),
 ::view-transition-new(search-entry) {
-	animation-duration: 520ms;
-	animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	animation-duration: 300ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .container {
