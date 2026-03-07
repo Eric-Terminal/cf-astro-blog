@@ -144,12 +144,17 @@ function normalizeOptionalImagePath(value: unknown) {
 		return null;
 	}
 
+	const lowered = normalized.toLowerCase();
+	if (lowered === "null" || lowered === "undefined") {
+		return null;
+	}
+
 	if (normalized.startsWith("/")) {
 		return normalized.startsWith("//") ? null : normalized;
 	}
 
 	const mediaKey = sanitizeMediaKey(normalized);
-	if (mediaKey) {
+	if (mediaKey?.includes("/")) {
 		return `/media/${mediaKey}`;
 	}
 

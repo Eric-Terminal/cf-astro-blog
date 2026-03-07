@@ -73,6 +73,16 @@ describe("站点外观设置喵", () => {
 		);
 	});
 
+	test("normalizeSiteAppearanceInput 会过滤无效图片路径占位值喵", () => {
+		const normalized = normalizeSiteAppearanceInput({
+			heroLandscapeImagePath: "null",
+			heroPortraitImagePath: "hero_portrait_image_path",
+		});
+
+		assert.equal(normalized.heroLandscapeImagePath, null);
+		assert.equal(normalized.heroPortraitImagePath, null);
+	});
+
 	test("buildSiteNavLinks 会按顺序生成顶部导航数据喵", () => {
 		const links = buildSiteNavLinks(DEFAULT_SITE_APPEARANCE);
 
