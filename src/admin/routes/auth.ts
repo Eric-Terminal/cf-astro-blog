@@ -296,7 +296,7 @@ auth.get("/github/callback", async (c) => {
 	if (!timingSafeEqualText(profile.login, config.adminLogin)) {
 		return c.html(
 			loginPage({
-				error: `当前 GitHub 账号 ${profile.login} 没有后台权限喵，这个是我的 CMS，请回吧～`,
+				error: `当前 GitHub 账号 ${profile.login} 没有后台权限喵，这个是我的 CMS，请回吧～ 项目实现在 https://github.com/Eric-Terminal/cf-astro-blog-starter ，用 Cloudflare CI 构建，拿回去改改自己也能用。`,
 				githubLogin: config.adminLogin,
 				oauthEnabled: true,
 			}),
