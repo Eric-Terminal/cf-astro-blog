@@ -74,7 +74,10 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 			calc(var(--post-card-blur, 18px) * 1.6),
 			76px
 		);
-		--post-card-surface-alpha: calc((var(--post-card-opacity, 14) / 100) * 1.35);
+		--post-card-surface-alpha: min(
+			calc(var(--post-card-opacity, 14) / 100),
+			0.28
+		);
 		--post-card-cover-blur-effective: min(
 			calc(var(--post-card-blur, 18px) * 0.78),
 			36px
@@ -99,31 +102,9 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		opacity: 0;
 		animation: post-card-settle 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
 		transition:
-			transform var(--transition),
 			border-color var(--transition),
 			box-shadow var(--transition),
 			background-color var(--transition);
-	}
-
-	.post-card::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background:
-			linear-gradient(
-				120deg,
-				rgba(255, 255, 255, 0) 22%,
-				rgba(255, 255, 255, 0.16) 50%,
-				rgba(255, 255, 255, 0) 76%
-			);
-		opacity: 0;
-		transform: translate3d(-20%, 0, 0);
-		transition:
-			opacity 280ms ease,
-			transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-		pointer-events: none;
-		z-index: 1;
 	}
 
 	.post-card-cover {
@@ -294,30 +275,10 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 	}
 
 	.post-card:hover {
-		transform: translate3d(0, -4px, 0) scale(1.004);
 		border-color: rgba(10, 132, 255, 0.14);
 		box-shadow:
 			0 22px 38px -34px rgba(8, 18, 34, 0.22),
 			0 8px 18px -16px rgba(8, 18, 34, 0.16);
-	}
-
-	.post-card:hover::after {
-		opacity: 1;
-		transform: translate3d(16%, 0, 0);
-	}
-
-	.post-card:hover .post-card-cover img {
-		transform: scale(1.06);
-		filter: saturate(1.08);
-	}
-
-	.post-card-cover-right:hover .post-card-cover img {
-		transform-origin: right center;
-		transform: scale(0.94);
-	}
-
-	.post-card:hover .post-card-cover-fallback::before {
-		transform: rotate(6deg) scale(1.06);
 	}
 
 	@keyframes post-card-settle {
@@ -365,37 +326,6 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 		}
 	}
 
-	@media (hover: hover) and (pointer: fine) {
-		.post-card:hover {
-			transform: translate3d(0, -10px, 0) scale(1.01);
-			border-color: rgba(10, 132, 255, 0.18);
-			box-shadow:
-				0 30px 48px -34px rgba(8, 18, 34, 0.26),
-				0 10px 24px -18px rgba(8, 18, 34, 0.18);
-		}
-
-		.post-card:hover .pill-row {
-			transform: translate3d(0, -2px, 0);
-		}
-
-		.post-card:hover .post-card-title {
-			letter-spacing: -0.015em;
-			transform: translate3d(2px, 0, 0);
-		}
-
-		.post-card:hover .post-card-excerpt {
-			transform: translate3d(0, 2px, 0);
-		}
-
-		.post-card:hover .post-card-meta {
-			transform: translate3d(0, 3px, 0);
-		}
-
-		.post-card:hover .post-card-readmore {
-			transform: translate3d(4px, 0, 0);
-		}
-	}
-
 	@media (hover: none), (pointer: coarse) {
 		.post-card:hover {
 			transform: none;
@@ -405,7 +335,6 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 
 	@media (prefers-reduced-motion: reduce) {
 		.post-card,
-		.post-card::after,
 		.post-card-cover img,
 		.post-card-cover-fallback::before,
 		.pill-row,

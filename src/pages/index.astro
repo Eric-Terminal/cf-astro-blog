@@ -184,7 +184,10 @@ function isInternalHref(href: string) {
 		--hero-opacity-scale: calc(var(--hero-card-opacity, 14) / 14);
 		--glass-panel-blur: var(--hero-card-blur, 18px);
 		--hero-blur-effective: min(calc(var(--hero-card-blur, 18px) * 1.6), 84px);
-		--hero-surface-alpha: calc((var(--hero-card-opacity, 14) / 100) * 1.35);
+		--hero-surface-alpha: min(
+			calc(var(--hero-card-opacity, 14) / 100),
+			0.32
+		);
 		position: relative;
 		display: grid;
 		grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.9fr);
