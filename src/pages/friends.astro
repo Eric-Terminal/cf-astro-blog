@@ -102,6 +102,12 @@ try {
 
 	.friends-list,
 	.friend-apply-entry {
+		display: grid;
+		gap: 0;
+		overflow: hidden;
+	}
+
+	.friends-list {
 		padding: 1.2rem;
 		display: grid;
 		gap: 1rem;
@@ -159,22 +165,25 @@ try {
 	}
 
 	.friend-apply-link {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-md);
 		width: 100%;
+		min-height: 5.5rem;
 		padding: 1.05rem 1.2rem;
-		border-radius: var(--radius-inner);
-		background: rgba(255, 255, 255, 0.08);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: transparent;
+		border: none;
 		color: inherit;
 		text-decoration: none;
+		cursor: pointer;
+		text-align: left;
 	}
 
 	.friend-apply-copy {
 		display: grid;
-		gap: 0.2rem;
+		gap: 0.24rem;
+		min-width: 0;
 	}
 
 	.friend-apply-copy strong {
@@ -186,6 +195,7 @@ try {
 		font-size: 0.86rem;
 		color: var(--color-text-muted);
 		line-height: 1.65;
+		max-width: 62ch;
 	}
 
 	.friend-apply-icon {
@@ -209,5 +219,12 @@ try {
 		transform: rotate(90deg);
 		background: var(--color-accent-soft);
 		border-color: rgba(10, 132, 255, 0.16);
+	}
+
+	@media (max-width: 640px) {
+		.friend-apply-link {
+			padding-inline: 1rem;
+			min-height: 5.8rem;
+		}
 	}
 </style>
