@@ -8,6 +8,19 @@ export interface SiteNavLink {
 	href: string;
 }
 
+const MAX_DYNAMIC_LINK_ITEMS = 16;
+
+const DEFAULT_NAV_LINKS: SiteNavLink[] = [
+	{ label: "首页", href: "/" },
+	{ label: "归档", href: "/blog" },
+	{ label: "搜索", href: "/search" },
+];
+
+const DEFAULT_HERO_ACTIONS: SiteNavLink[] = [
+	{ label: "进入归档", href: "/blog" },
+	{ label: "站内搜索", href: "/search" },
+];
+
 export interface SiteAppearance {
 	backgroundImageKey: string | null;
 	backgroundBlur: number;
@@ -15,6 +28,7 @@ export interface SiteAppearance {
 	backgroundPositionX: number;
 	backgroundPositionY: number;
 	headerSubtitle: string;
+	navLinks: SiteNavLink[];
 	navLink1Label: string;
 	navLink1Href: string;
 	navLink2Label: string;
@@ -24,6 +38,7 @@ export interface SiteAppearance {
 	heroKicker: string;
 	heroTitle: string;
 	heroIntro: string;
+	heroActions: SiteNavLink[];
 	heroPrimaryLabel: string;
 	heroPrimaryHref: string;
 	heroSecondaryLabel: string;
@@ -35,6 +50,11 @@ export interface SiteAppearance {
 	heroWritingText: string;
 }
 
+export type SiteAppearanceInput = Partial<SiteAppearance> & {
+	navLinksJson?: unknown;
+	heroActionsJson?: unknown;
+};
+
 export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
 	backgroundImageKey: null,
 	backgroundBlur: 24,
@@ -42,20 +62,22 @@ export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
 	backgroundPositionX: 50,
 	backgroundPositionY: 50,
 	headerSubtitle: "流畅、克制、持续更新的技术写作",
-	navLink1Label: "首页",
-	navLink1Href: "/",
-	navLink2Label: "归档",
-	navLink2Href: "/blog",
-	navLink3Label: "搜索",
-	navLink3Href: "/search",
+	navLinks: [...DEFAULT_NAV_LINKS],
+	navLink1Label: DEFAULT_NAV_LINKS[0].label,
+	navLink1Href: DEFAULT_NAV_LINKS[0].href,
+	navLink2Label: DEFAULT_NAV_LINKS[1].label,
+	navLink2Href: DEFAULT_NAV_LINKS[1].href,
+	navLink3Label: DEFAULT_NAV_LINKS[2].label,
+	navLink3Href: DEFAULT_NAV_LINKS[2].href,
 	heroKicker: "云端记录",
 	heroTitle: "把工程判断写清楚，把技术细节写漂亮。",
 	heroIntro:
 		"这里记录 Cloudflare、前端工程、调试过程和系统设计里那些值得反复回看的瞬间。界面会继续打磨，但内容先要足够清晰、足够耐读。",
-	heroPrimaryLabel: "进入归档",
-	heroPrimaryHref: "/blog",
-	heroSecondaryLabel: "站内搜索",
-	heroSecondaryHref: "/search",
+	heroActions: [...DEFAULT_HERO_ACTIONS],
+	heroPrimaryLabel: DEFAULT_HERO_ACTIONS[0].label,
+	heroPrimaryHref: DEFAULT_HERO_ACTIONS[0].href,
+	heroSecondaryLabel: DEFAULT_HERO_ACTIONS[1].label,
+	heroSecondaryHref: DEFAULT_HERO_ACTIONS[1].href,
 	heroSignalLabel: "Scene Depth",
 	heroSignalHeading: "首页会跟着你的视线轻轻转一下",
 	heroSignalCopy:
@@ -94,29 +116,148 @@ function normalizeLongText(
 	return normalized || fallback;
 }
 
-function normalizeLinkHref(value: unknown, fallback: string) {
+function normalizeOptionalLinkHref(value: unknown) {
 	const normalized = sanitizePlainText(value, 240);
 	if (!normalized) {
-		return fallback;
+		return null;
 	}
 
 	if (normalized.startsWith("/")) {
-		return normalized.startsWith("//") ? fallback : normalized;
+		return normalized.startsWith("//") ? null : normalized;
 	}
 
 	try {
 		const url = new URL(normalized);
-		return ["http:", "https:"].includes(url.protocol)
-			? url.toString()
-			: fallback;
+		return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
 	} catch {
-		return fallback;
+		return null;
 	}
 }
 
+function normalizeLinkHref(value: unknown, fallback: string) {
+	return normalizeOptionalLinkHref(value) ?? fallback;
+}
+
+function normalizeLinkItems(
+	source: unknown,
+	fallbackItems: SiteNavLink[],
+): SiteNavLink[] {
+	let rawItems: unknown[] = [];
+
+	if (Array.isArray(source)) {
+		rawItems = source;
+	} else if (typeof source === "string" && source.trim()) {
+		try {
+			const parsed = JSON.parse(source);
+			if (Array.isArray(parsed)) {
+				rawItems = parsed;
+			}
+		} catch {
+			rawItems = [];
+		}
+	}
+
+	const normalizedItems: SiteNavLink[] = [];
+	for (const rawItem of rawItems.slice(0, MAX_DYNAMIC_LINK_ITEMS)) {
+		if (!rawItem || typeof rawItem !== "object") {
+			continue;
+		}
+
+		const label = sanitizePlainText(
+			(rawItem as Record<string, unknown>).label,
+			24,
+		);
+		const href = normalizeOptionalLinkHref(
+			(rawItem as Record<string, unknown>).href,
+		);
+
+		if (!label || !href) {
+			continue;
+		}
+
+		normalizedItems.push({ label, href });
+	}
+
+	if (normalizedItems.length === 0) {
+		return fallbackItems.map((item) => ({ ...item }));
+	}
+
+	return normalizedItems;
+}
+
 export function normalizeSiteAppearanceInput(
-	input: Partial<SiteAppearance>,
+	input: SiteAppearanceInput,
 ): SiteAppearance {
+	const legacyNavLink1Label = normalizeText(
+		input.navLink1Label,
+		24,
+		DEFAULT_SITE_APPEARANCE.navLink1Label,
+	);
+	const legacyNavLink1Href = normalizeLinkHref(
+		input.navLink1Href,
+		DEFAULT_SITE_APPEARANCE.navLink1Href,
+	);
+	const legacyNavLink2Label = normalizeText(
+		input.navLink2Label,
+		24,
+		DEFAULT_SITE_APPEARANCE.navLink2Label,
+	);
+	const legacyNavLink2Href = normalizeLinkHref(
+		input.navLink2Href,
+		DEFAULT_SITE_APPEARANCE.navLink2Href,
+	);
+	const legacyNavLink3Label = normalizeText(
+		input.navLink3Label,
+		24,
+		DEFAULT_SITE_APPEARANCE.navLink3Label,
+	);
+	const legacyNavLink3Href = normalizeLinkHref(
+		input.navLink3Href,
+		DEFAULT_SITE_APPEARANCE.navLink3Href,
+	);
+	const fallbackNavLinks: SiteNavLink[] = [
+		{ label: legacyNavLink1Label, href: legacyNavLink1Href },
+		{ label: legacyNavLink2Label, href: legacyNavLink2Href },
+		{ label: legacyNavLink3Label, href: legacyNavLink3Href },
+	];
+
+	const legacyHeroPrimaryLabel = normalizeText(
+		input.heroPrimaryLabel,
+		24,
+		DEFAULT_SITE_APPEARANCE.heroPrimaryLabel,
+	);
+	const legacyHeroPrimaryHref = normalizeLinkHref(
+		input.heroPrimaryHref,
+		DEFAULT_SITE_APPEARANCE.heroPrimaryHref,
+	);
+	const legacyHeroSecondaryLabel = normalizeText(
+		input.heroSecondaryLabel,
+		24,
+		DEFAULT_SITE_APPEARANCE.heroSecondaryLabel,
+	);
+	const legacyHeroSecondaryHref = normalizeLinkHref(
+		input.heroSecondaryHref,
+		DEFAULT_SITE_APPEARANCE.heroSecondaryHref,
+	);
+	const fallbackHeroActions: SiteNavLink[] = [
+		{ label: legacyHeroPrimaryLabel, href: legacyHeroPrimaryHref },
+		{ label: legacyHeroSecondaryLabel, href: legacyHeroSecondaryHref },
+	];
+
+	const navLinks = normalizeLinkItems(
+		input.navLinks ?? input.navLinksJson,
+		fallbackNavLinks,
+	);
+	const heroActions = normalizeLinkItems(
+		input.heroActions ?? input.heroActionsJson,
+		fallbackHeroActions,
+	);
+	const normalizedNavLink1 = navLinks[0] ?? DEFAULT_NAV_LINKS[0];
+	const normalizedNavLink2 = navLinks[1] ?? DEFAULT_NAV_LINKS[1];
+	const normalizedNavLink3 = navLinks[2] ?? DEFAULT_NAV_LINKS[2];
+	const normalizedHeroPrimary = heroActions[0] ?? DEFAULT_HERO_ACTIONS[0];
+	const normalizedHeroSecondary = heroActions[1] ?? DEFAULT_HERO_ACTIONS[1];
+
 	return {
 		backgroundImageKey: input.backgroundImageKey
 			? sanitizeMediaKey(input.backgroundImageKey)
@@ -150,33 +291,13 @@ export function normalizeSiteAppearanceInput(
 			120,
 			DEFAULT_SITE_APPEARANCE.headerSubtitle,
 		),
-		navLink1Label: normalizeText(
-			input.navLink1Label,
-			24,
-			DEFAULT_SITE_APPEARANCE.navLink1Label,
-		),
-		navLink1Href: normalizeLinkHref(
-			input.navLink1Href,
-			DEFAULT_SITE_APPEARANCE.navLink1Href,
-		),
-		navLink2Label: normalizeText(
-			input.navLink2Label,
-			24,
-			DEFAULT_SITE_APPEARANCE.navLink2Label,
-		),
-		navLink2Href: normalizeLinkHref(
-			input.navLink2Href,
-			DEFAULT_SITE_APPEARANCE.navLink2Href,
-		),
-		navLink3Label: normalizeText(
-			input.navLink3Label,
-			24,
-			DEFAULT_SITE_APPEARANCE.navLink3Label,
-		),
-		navLink3Href: normalizeLinkHref(
-			input.navLink3Href,
-			DEFAULT_SITE_APPEARANCE.navLink3Href,
-		),
+		navLinks,
+		navLink1Label: normalizedNavLink1.label,
+		navLink1Href: normalizedNavLink1.href,
+		navLink2Label: normalizedNavLink2.label,
+		navLink2Href: normalizedNavLink2.href,
+		navLink3Label: normalizedNavLink3.label,
+		navLink3Href: normalizedNavLink3.href,
 		heroKicker: normalizeText(
 			input.heroKicker,
 			24,
@@ -192,24 +313,11 @@ export function normalizeSiteAppearanceInput(
 			600,
 			DEFAULT_SITE_APPEARANCE.heroIntro,
 		),
-		heroPrimaryLabel: normalizeText(
-			input.heroPrimaryLabel,
-			24,
-			DEFAULT_SITE_APPEARANCE.heroPrimaryLabel,
-		),
-		heroPrimaryHref: normalizeLinkHref(
-			input.heroPrimaryHref,
-			DEFAULT_SITE_APPEARANCE.heroPrimaryHref,
-		),
-		heroSecondaryLabel: normalizeText(
-			input.heroSecondaryLabel,
-			24,
-			DEFAULT_SITE_APPEARANCE.heroSecondaryLabel,
-		),
-		heroSecondaryHref: normalizeLinkHref(
-			input.heroSecondaryHref,
-			DEFAULT_SITE_APPEARANCE.heroSecondaryHref,
-		),
+		heroActions,
+		heroPrimaryLabel: normalizedHeroPrimary.label,
+		heroPrimaryHref: normalizedHeroPrimary.href,
+		heroSecondaryLabel: normalizedHeroSecondary.label,
+		heroSecondaryHref: normalizedHeroSecondary.href,
 		heroSignalLabel: normalizeText(
 			input.heroSignalLabel,
 			30,
@@ -239,20 +347,13 @@ export function normalizeSiteAppearanceInput(
 }
 
 export function buildSiteNavLinks(appearance: SiteAppearance): SiteNavLink[] {
-	return [
-		{
-			label: appearance.navLink1Label,
-			href: appearance.navLink1Href,
-		},
-		{
-			label: appearance.navLink2Label,
-			href: appearance.navLink2Href,
-		},
-		{
-			label: appearance.navLink3Label,
-			href: appearance.navLink3Href,
-		},
-	];
+	return normalizeLinkItems(appearance.navLinks, DEFAULT_NAV_LINKS);
+}
+
+export function buildHeroActionLinks(
+	appearance: SiteAppearance,
+): SiteNavLink[] {
+	return normalizeLinkItems(appearance.heroActions, DEFAULT_HERO_ACTIONS);
 }
 
 export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
@@ -270,6 +371,7 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 			navLink2Href: siteAppearanceSettings.navLink2Href,
 			navLink3Label: siteAppearanceSettings.navLink3Label,
 			navLink3Href: siteAppearanceSettings.navLink3Href,
+			navLinksJson: siteAppearanceSettings.navLinksJson,
 			heroKicker: siteAppearanceSettings.heroKicker,
 			heroTitle: siteAppearanceSettings.heroTitle,
 			heroIntro: siteAppearanceSettings.heroIntro,
@@ -277,6 +379,7 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 			heroPrimaryHref: siteAppearanceSettings.heroPrimaryHref,
 			heroSecondaryLabel: siteAppearanceSettings.heroSecondaryLabel,
 			heroSecondaryHref: siteAppearanceSettings.heroSecondaryHref,
+			heroActionsJson: siteAppearanceSettings.heroActionsJson,
 			heroSignalLabel: siteAppearanceSettings.heroSignalLabel,
 			heroSignalHeading: siteAppearanceSettings.heroSignalHeading,
 			heroSignalCopy: siteAppearanceSettings.heroSignalCopy,
@@ -296,9 +399,11 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 
 export async function saveSiteAppearance(
 	db: Database,
-	input: Partial<SiteAppearance>,
+	input: SiteAppearanceInput,
 ) {
 	const normalized = normalizeSiteAppearanceInput(input);
+	const navLinksJson = JSON.stringify(normalized.navLinks);
+	const heroActionsJson = JSON.stringify(normalized.heroActions);
 
 	await db
 		.insert(siteAppearanceSettings)
@@ -316,6 +421,7 @@ export async function saveSiteAppearance(
 			navLink2Href: normalized.navLink2Href,
 			navLink3Label: normalized.navLink3Label,
 			navLink3Href: normalized.navLink3Href,
+			navLinksJson,
 			heroKicker: normalized.heroKicker,
 			heroTitle: normalized.heroTitle,
 			heroIntro: normalized.heroIntro,
@@ -323,6 +429,7 @@ export async function saveSiteAppearance(
 			heroPrimaryHref: normalized.heroPrimaryHref,
 			heroSecondaryLabel: normalized.heroSecondaryLabel,
 			heroSecondaryHref: normalized.heroSecondaryHref,
+			heroActionsJson,
 			heroSignalLabel: normalized.heroSignalLabel,
 			heroSignalHeading: normalized.heroSignalHeading,
 			heroSignalCopy: normalized.heroSignalCopy,
@@ -344,6 +451,7 @@ export async function saveSiteAppearance(
 				navLink2Href: normalized.navLink2Href,
 				navLink3Label: normalized.navLink3Label,
 				navLink3Href: normalized.navLink3Href,
+				navLinksJson,
 				heroKicker: normalized.heroKicker,
 				heroTitle: normalized.heroTitle,
 				heroIntro: normalized.heroIntro,
@@ -351,6 +459,7 @@ export async function saveSiteAppearance(
 				heroPrimaryHref: normalized.heroPrimaryHref,
 				heroSecondaryLabel: normalized.heroSecondaryLabel,
 				heroSecondaryHref: normalized.heroSecondaryHref,
+				heroActionsJson,
 				heroSignalLabel: normalized.heroSignalLabel,
 				heroSignalHeading: normalized.heroSignalHeading,
 				heroSignalCopy: normalized.heroSignalCopy,

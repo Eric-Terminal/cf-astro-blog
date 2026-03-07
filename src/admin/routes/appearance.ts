@@ -11,6 +11,7 @@ import {
 	buildBackgroundImageUrl,
 	DEFAULT_SITE_APPEARANCE,
 	getSiteAppearance,
+	type SiteNavLink,
 	saveSiteAppearance,
 } from "@/lib/site-appearance";
 import {
@@ -23,9 +24,111 @@ import { adminLayout } from "../views/layout";
 
 const appearance = new Hono<AdminAppEnv>();
 
-function getBodyText(body: Record<string, string | File>, key: string): string {
+type AppearanceFormValue = string | File | (string | File)[];
+type AppearanceFormBody = Record<string, AppearanceFormValue>;
+
+function getBodyText(body: AppearanceFormBody, key: string): string {
 	const value = body[key];
+	if (Array.isArray(value)) {
+		const firstText = value.find(
+			(item): item is string => typeof item === "string",
+		);
+		return firstText?.trim() ?? "";
+	}
+
 	return typeof value === "string" ? value : "";
+}
+
+function getBodyTexts(body: AppearanceFormBody, key: string): string[] {
+	const value = body[key];
+	if (Array.isArray(value)) {
+		return value
+			.filter((item): item is string => typeof item === "string")
+			.map((item) => item.trim());
+	}
+
+	if (typeof value === "string") {
+		return [value.trim()];
+	}
+
+	return [];
+}
+
+function buildLinkItemsFromBody(
+	labels: string[],
+	hrefs: string[],
+): SiteNavLink[] {
+	const maxLength = Math.max(labels.length, hrefs.length);
+	const items: SiteNavLink[] = [];
+	for (let index = 0; index < maxLength; index += 1) {
+		const label = labels[index]?.trim() ?? "";
+		const href = hrefs[index]?.trim() ?? "";
+		if (!label || !href) {
+			continue;
+		}
+
+		items.push({ label, href });
+	}
+
+	return items;
+}
+
+function renderLinkRow(options: {
+	labelName: string;
+	hrefName: string;
+	labelText: string;
+	hrefText: string;
+	labelValue: string;
+	hrefValue: string;
+	hrefPlaceholder: string;
+	removeLabel: string;
+}) {
+	return `
+		<div class="appearance-link-row" data-link-row>
+			<div class="appearance-link-field">
+				<label>${escapeHtml(options.labelText)}</label>
+				<input
+					name="${escapeAttribute(options.labelName)}"
+					class="form-input"
+					value="${escapeAttribute(options.labelValue)}"
+					maxlength="24"
+					placeholder="例如：归档"
+				/>
+			</div>
+			<div class="appearance-link-field">
+				<label>${escapeHtml(options.hrefText)}</label>
+				<input
+					name="${escapeAttribute(options.hrefName)}"
+					class="form-input"
+					value="${escapeAttribute(options.hrefValue)}"
+					maxlength="240"
+					placeholder="${escapeAttribute(options.hrefPlaceholder)}"
+				/>
+			</div>
+			<button type="button" class="btn appearance-link-remove" data-link-remove>
+				${escapeHtml(options.removeLabel)}
+			</button>
+		</div>
+	`;
+}
+
+function renderLinkRows(
+	items: SiteNavLink[],
+	options: Omit<
+		Parameters<typeof renderLinkRow>[0],
+		"labelValue" | "hrefValue"
+	>,
+) {
+	const safeItems = items.length > 0 ? items : [{ label: "", href: "" }];
+	return safeItems
+		.map((item) =>
+			renderLinkRow({
+				...options,
+				labelValue: item.label,
+				hrefValue: item.href,
+			}),
+		)
+		.join("");
 }
 
 function renderAppearancePage(options: {
@@ -174,6 +277,56 @@ function renderAppearancePage(options: {
 				gap: 0.85rem;
 			}
 
+			.appearance-list-head {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				flex-wrap: wrap;
+				gap: 0.75rem;
+				margin-bottom: 0.8rem;
+			}
+
+			.appearance-list-head h3,
+			.appearance-list-head h4 {
+				margin: 0;
+			}
+
+			.appearance-note {
+				margin: 0 0 0.8rem;
+				color: var(--text-muted);
+				font-size: 0.85rem;
+			}
+
+			.appearance-link-list {
+				display: grid;
+				gap: 0.75rem;
+			}
+
+			.appearance-link-row {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+				gap: 0.75rem;
+				align-items: end;
+				padding: 0.8rem;
+				border: 1px solid var(--border);
+				border-radius: 0.8rem;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
+			.appearance-link-field {
+				display: grid;
+				gap: 0.4rem;
+			}
+
+			.appearance-link-field label {
+				font-size: 0.82rem;
+				color: var(--text-secondary);
+			}
+
+			.appearance-link-remove {
+				align-self: center;
+			}
+
 			.appearance-content-fieldset {
 				margin-top: 1.25rem;
 				border-top: 1px solid var(--border);
@@ -229,6 +382,14 @@ function renderAppearancePage(options: {
 				.appearance-inline-grid {
 					grid-template-columns: 1fr;
 				}
+
+				.appearance-link-row {
+					grid-template-columns: 1fr;
+				}
+
+				.appearance-link-remove {
+					justify-self: start;
+				}
 			}
 		</style>
 		${alertHtml}
@@ -260,7 +421,10 @@ function renderAppearancePage(options: {
 						/>
 					</div>
 					<div class="appearance-content-fieldset">
-						<h3>顶部状态栏与导航索引</h3>
+						<div class="appearance-list-head">
+							<h3>顶部状态栏与导航索引</h3>
+							<button type="button" class="btn" data-link-add="nav">+ 新增导航</button>
+						</div>
 						<div class="form-group">
 							<label for="headerSubtitle">顶部状态栏文案</label>
 							<input
@@ -271,71 +435,29 @@ function renderAppearancePage(options: {
 								maxlength="120"
 							/>
 						</div>
-						<div class="appearance-inline-grid">
-							<div class="form-group">
-								<label for="navLink1Label">导航 1 文案</label>
-								<input
-									id="navLink1Label"
-									name="navLink1Label"
-									class="form-input"
-									value="${escapeAttribute(settings.navLink1Label)}"
-									maxlength="24"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="navLink1Href">导航 1 链接</label>
-								<input
-									id="navLink1Href"
-									name="navLink1Href"
-									class="form-input"
-									value="${escapeAttribute(settings.navLink1Href)}"
-									maxlength="240"
-									placeholder="/"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="navLink2Label">导航 2 文案</label>
-								<input
-									id="navLink2Label"
-									name="navLink2Label"
-									class="form-input"
-									value="${escapeAttribute(settings.navLink2Label)}"
-									maxlength="24"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="navLink2Href">导航 2 链接</label>
-								<input
-									id="navLink2Href"
-									name="navLink2Href"
-									class="form-input"
-									value="${escapeAttribute(settings.navLink2Href)}"
-									maxlength="240"
-									placeholder="/blog"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="navLink3Label">导航 3 文案</label>
-								<input
-									id="navLink3Label"
-									name="navLink3Label"
-									class="form-input"
-									value="${escapeAttribute(settings.navLink3Label)}"
-									maxlength="24"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="navLink3Href">导航 3 链接</label>
-								<input
-									id="navLink3Href"
-									name="navLink3Href"
-									class="form-input"
-									value="${escapeAttribute(settings.navLink3Href)}"
-									maxlength="240"
-									placeholder="/search"
-								/>
-							</div>
+						<p class="appearance-note">导航支持无限新增，前台会自动换行适配。</p>
+						<div class="appearance-link-list" data-link-list="nav">
+							${renderLinkRows(settings.navLinks, {
+								labelName: "navLinkLabel",
+								hrefName: "navLinkHref",
+								labelText: "导航文案",
+								hrefText: "导航链接",
+								hrefPlaceholder: "/blog",
+								removeLabel: "移除",
+							})}
 						</div>
+						<template data-link-template="nav">
+							${renderLinkRow({
+								labelName: "navLinkLabel",
+								hrefName: "navLinkHref",
+								labelText: "导航文案",
+								hrefText: "导航链接",
+								labelValue: "",
+								hrefValue: "",
+								hrefPlaceholder: "/blog",
+								removeLabel: "移除",
+							})}
+						</template>
 					</div>
 					<div class="appearance-content-fieldset">
 						<h3>首页首屏文案</h3>
@@ -363,48 +485,33 @@ function renderAppearancePage(options: {
 							<label for="heroIntro">简介</label>
 							<textarea id="heroIntro" name="heroIntro" class="form-textarea" maxlength="600">${escapeHtml(settings.heroIntro)}</textarea>
 						</div>
-						<div class="appearance-inline-grid">
-							<div class="form-group">
-								<label for="heroPrimaryLabel">主按钮文案</label>
-								<input
-									id="heroPrimaryLabel"
-									name="heroPrimaryLabel"
-									class="form-input"
-									value="${escapeAttribute(settings.heroPrimaryLabel)}"
-									maxlength="24"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="heroPrimaryHref">主按钮链接</label>
-								<input
-									id="heroPrimaryHref"
-									name="heroPrimaryHref"
-									class="form-input"
-									value="${escapeAttribute(settings.heroPrimaryHref)}"
-									maxlength="240"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="heroSecondaryLabel">次按钮文案</label>
-								<input
-									id="heroSecondaryLabel"
-									name="heroSecondaryLabel"
-									class="form-input"
-									value="${escapeAttribute(settings.heroSecondaryLabel)}"
-									maxlength="24"
-								/>
-							</div>
-							<div class="form-group">
-								<label for="heroSecondaryHref">次按钮链接</label>
-								<input
-									id="heroSecondaryHref"
-									name="heroSecondaryHref"
-									class="form-input"
-									value="${escapeAttribute(settings.heroSecondaryHref)}"
-									maxlength="240"
-								/>
-							</div>
+						<div class="appearance-list-head">
+							<h4>首页按钮</h4>
+							<button type="button" class="btn" data-link-add="hero">+ 新增按钮</button>
 						</div>
+						<p class="appearance-note">第一个按钮使用主样式，其余按钮会自动使用次级样式。</p>
+						<div class="appearance-link-list" data-link-list="hero">
+							${renderLinkRows(settings.heroActions, {
+								labelName: "heroActionLabel",
+								hrefName: "heroActionHref",
+								labelText: "按钮文案",
+								hrefText: "按钮链接",
+								hrefPlaceholder: "/search",
+								removeLabel: "移除",
+							})}
+						</div>
+						<template data-link-template="hero">
+							${renderLinkRow({
+								labelName: "heroActionLabel",
+								hrefName: "heroActionHref",
+								labelText: "按钮文案",
+								hrefText: "按钮链接",
+								labelValue: "",
+								hrefValue: "",
+								hrefPlaceholder: "/search",
+								removeLabel: "移除",
+							})}
+						</template>
 						<div class="form-group">
 							<label for="heroSignalLabel">右侧卡片标签</label>
 							<input
@@ -571,8 +678,8 @@ appearance.get("/", async (c) => {
 
 appearance.post("/", async (c) => {
 	const session = getAuthenticatedSession(c);
-	const body = (await c.req.parseBody()) as Record<string, string | File>;
-	if (!assertCsrfToken(body._csrf, session)) {
+	const body = (await c.req.parseBody({ all: true })) as AppearanceFormBody;
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
 		return c.text("CSRF 校验失败喵", 403);
 	}
 
@@ -586,24 +693,26 @@ appearance.post("/", async (c) => {
 
 	await saveSiteAppearance(getDb(c.env.DB), {
 		backgroundImageKey: backgroundImageKey || null,
-		backgroundBlur: Number(body.backgroundBlur ?? Number.NaN),
-		backgroundScale: Number(body.backgroundScale ?? Number.NaN),
-		backgroundPositionX: Number(body.backgroundPositionX ?? Number.NaN),
-		backgroundPositionY: Number(body.backgroundPositionY ?? Number.NaN),
+		backgroundBlur: Number(getBodyText(body, "backgroundBlur") || Number.NaN),
+		backgroundScale: Number(getBodyText(body, "backgroundScale") || Number.NaN),
+		backgroundPositionX: Number(
+			getBodyText(body, "backgroundPositionX") || Number.NaN,
+		),
+		backgroundPositionY: Number(
+			getBodyText(body, "backgroundPositionY") || Number.NaN,
+		),
 		headerSubtitle: getBodyText(body, "headerSubtitle"),
-		navLink1Label: getBodyText(body, "navLink1Label"),
-		navLink1Href: getBodyText(body, "navLink1Href"),
-		navLink2Label: getBodyText(body, "navLink2Label"),
-		navLink2Href: getBodyText(body, "navLink2Href"),
-		navLink3Label: getBodyText(body, "navLink3Label"),
-		navLink3Href: getBodyText(body, "navLink3Href"),
+		navLinks: buildLinkItemsFromBody(
+			getBodyTexts(body, "navLinkLabel"),
+			getBodyTexts(body, "navLinkHref"),
+		),
 		heroKicker: getBodyText(body, "heroKicker"),
 		heroTitle: getBodyText(body, "heroTitle"),
 		heroIntro: getBodyText(body, "heroIntro"),
-		heroPrimaryLabel: getBodyText(body, "heroPrimaryLabel"),
-		heroPrimaryHref: getBodyText(body, "heroPrimaryHref"),
-		heroSecondaryLabel: getBodyText(body, "heroSecondaryLabel"),
-		heroSecondaryHref: getBodyText(body, "heroSecondaryHref"),
+		heroActions: buildLinkItemsFromBody(
+			getBodyTexts(body, "heroActionLabel"),
+			getBodyTexts(body, "heroActionHref"),
+		),
 		heroSignalLabel: getBodyText(body, "heroSignalLabel"),
 		heroSignalHeading: getBodyText(body, "heroSignalHeading"),
 		heroSignalCopy: getBodyText(body, "heroSignalCopy"),

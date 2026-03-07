@@ -35,8 +35,12 @@ describe("后台界面风格保护喵", () => {
 		const source = await readFile("src/admin/routes/appearance.ts", "utf8");
 
 		assert.match(source, /headerSubtitle/u);
-		assert.match(source, /navLink1Label/u);
-		assert.match(source, /navLink1Href/u);
+		assert.match(source, /data-link-add="nav"/u);
+		assert.match(source, /navLinkLabel/u);
+		assert.match(source, /navLinkHref/u);
+		assert.match(source, /data-link-add="hero"/u);
+		assert.match(source, /heroActionLabel/u);
+		assert.match(source, /heroActionHref/u);
 		assert.match(source, /heroTitle/u);
 		assert.match(source, /heroIntro/u);
 		assert.match(source, /heroSignalHeading/u);

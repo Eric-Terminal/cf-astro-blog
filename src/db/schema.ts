@@ -95,6 +95,7 @@ export const siteAppearanceSettings = sqliteTable("site_appearance_settings", {
 	navLink2Href: text("nav_link_2_href").notNull().default("/blog"),
 	navLink3Label: text("nav_link_3_label").notNull().default("搜索"),
 	navLink3Href: text("nav_link_3_href").notNull().default("/search"),
+	navLinksJson: text("nav_links_json"),
 	heroKicker: text("hero_kicker").notNull().default("云端记录"),
 	heroTitle: text("hero_title")
 		.notNull()
@@ -110,6 +111,7 @@ export const siteAppearanceSettings = sqliteTable("site_appearance_settings", {
 		.notNull()
 		.default("站内搜索"),
 	heroSecondaryHref: text("hero_secondary_href").notNull().default("/search"),
+	heroActionsJson: text("hero_actions_json"),
 	heroSignalLabel: text("hero_signal_label").notNull().default("Scene Depth"),
 	heroSignalHeading: text("hero_signal_heading")
 		.notNull()

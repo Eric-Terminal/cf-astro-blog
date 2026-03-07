@@ -430,6 +430,81 @@ for (const form of document.querySelectorAll("form[data-confirm-message]")) {
 	});
 }
 
+function syncDynamicLinkRemoveButtons(list) {
+	if (!(list instanceof HTMLElement)) {
+		return;
+	}
+
+	const rows = Array.from(list.querySelectorAll("[data-link-row]"));
+	for (const row of rows) {
+		if (!(row instanceof HTMLElement)) {
+			continue;
+		}
+
+		const removeButton = row.querySelector("[data-link-remove]");
+		if (removeButton instanceof HTMLButtonElement) {
+			removeButton.disabled = rows.length <= 1;
+		}
+	}
+}
+
+function bindDynamicLinkRow(list, row) {
+	if (!(list instanceof HTMLElement) || !(row instanceof HTMLElement)) {
+		return;
+	}
+
+	if (row.dataset.linkRowBound === "true") {
+		return;
+	}
+
+	row.dataset.linkRowBound = "true";
+	const removeButton = row.querySelector("[data-link-remove]");
+	removeButton?.addEventListener("click", () => {
+		const rows = list.querySelectorAll("[data-link-row]");
+		if (rows.length <= 1) {
+			return;
+		}
+
+		row.remove();
+		syncDynamicLinkRemoveButtons(list);
+	});
+}
+
+function initDynamicLinkEditor(name) {
+	const list = document.querySelector(`[data-link-list="${name}"]`);
+	const template = document.querySelector(`template[data-link-template="${name}"]`);
+	const addButton = document.querySelector(`[data-link-add="${name}"]`);
+
+	if (!(list instanceof HTMLElement) || !(template instanceof HTMLTemplateElement)) {
+		return;
+	}
+
+	for (const row of list.querySelectorAll("[data-link-row]")) {
+		bindDynamicLinkRow(list, row);
+	}
+	syncDynamicLinkRemoveButtons(list);
+
+	addButton?.addEventListener("click", () => {
+		const fragment = template.content.cloneNode(true);
+		list.appendChild(fragment);
+
+		const rows = list.querySelectorAll("[data-link-row]");
+		const newestRow = rows[rows.length - 1];
+		if (newestRow instanceof HTMLElement) {
+			bindDynamicLinkRow(list, newestRow);
+			const firstInput = newestRow.querySelector("input");
+			if (firstInput instanceof HTMLInputElement) {
+				firstInput.focus();
+			}
+		}
+
+		syncDynamicLinkRemoveButtons(list);
+	});
+}
+
+initDynamicLinkEditor("nav");
+initDynamicLinkEditor("hero");
+
 const appearanceStage = document.querySelector("[data-appearance-stage]");
 const appearanceFocus = document.querySelector("[data-appearance-focus]");
 const appearanceEmpty = document.querySelector("[data-appearance-empty]");

@@ -7,6 +7,7 @@ import { getDb } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
 import {
+	buildHeroActionLinks,
 	DEFAULT_SITE_APPEARANCE,
 	getSiteAppearance,
 } from "@/lib/site-appearance";
@@ -51,6 +52,7 @@ try {
 const latestUpdate = recentPosts[0]?.publishedAt
 	? formatDate(recentPosts[0].publishedAt)
 	: "等待第一篇正式发布的文章";
+const heroActions = buildHeroActionLinks(homepageAppearance);
 
 function isInternalHref(href: string) {
 	return href.startsWith("/") && !href.startsWith("//");
@@ -70,32 +72,31 @@ function isInternalHref(href: string) {
 			<h1 class="page-title">{homepageAppearance.heroTitle}</h1>
 			<p class="page-intro">{homepageAppearance.heroIntro}</p>
 			<div class="hero-actions">
-				<a
-					href={homepageAppearance.heroPrimaryHref}
-					class="button"
-					target={isInternalHref(homepageAppearance.heroPrimaryHref)
-						? undefined
-						: "_blank"}
-					rel={isInternalHref(homepageAppearance.heroPrimaryHref)
-						? undefined
-						: "noopener noreferrer"}
-				>
-					{homepageAppearance.heroPrimaryLabel}
-				</a>
-				<span class="hero-search-bridge" transition:name="search-entry">
-					<a
-						href={homepageAppearance.heroSecondaryHref}
-						class="button button-secondary"
-						target={isInternalHref(homepageAppearance.heroSecondaryHref)
-							? undefined
-							: "_blank"}
-						rel={isInternalHref(homepageAppearance.heroSecondaryHref)
-							? undefined
-							: "noopener noreferrer"}
-					>
-						{homepageAppearance.heroSecondaryLabel}
-					</a>
-				</span>
+				{
+					heroActions.map((action, index) => (
+						index === 1 ? (
+							<span class="hero-search-bridge" transition:name="search-entry">
+								<a
+									href={action.href}
+									class:list={["button", { "button-secondary": index > 0 }]}
+									target={isInternalHref(action.href) ? undefined : "_blank"}
+									rel={isInternalHref(action.href) ? undefined : "noopener noreferrer"}
+								>
+									{action.label}
+								</a>
+							</span>
+						) : (
+							<a
+								href={action.href}
+								class:list={["button", { "button-secondary": index > 0 }]}
+								target={isInternalHref(action.href) ? undefined : "_blank"}
+								rel={isInternalHref(action.href) ? undefined : "noopener noreferrer"}
+							>
+								{action.label}
+							</a>
+						)
+					))
+				}
 			</div>
 		</div>
 		<div class="home-hero-side">

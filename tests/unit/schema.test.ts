@@ -94,6 +94,7 @@ describe("数据库结构喵", () => {
 		assert.ok(columns.includes("navLink2Href"));
 		assert.ok(columns.includes("navLink3Label"));
 		assert.ok(columns.includes("navLink3Href"));
+		assert.ok(columns.includes("navLinksJson"));
 		assert.ok(columns.includes("heroKicker"));
 		assert.ok(columns.includes("heroTitle"));
 		assert.ok(columns.includes("heroIntro"));
@@ -101,6 +102,7 @@ describe("数据库结构喵", () => {
 		assert.ok(columns.includes("heroPrimaryHref"));
 		assert.ok(columns.includes("heroSecondaryLabel"));
 		assert.ok(columns.includes("heroSecondaryHref"));
+		assert.ok(columns.includes("heroActionsJson"));
 		assert.ok(columns.includes("heroSignalLabel"));
 		assert.ok(columns.includes("heroSignalHeading"));
 		assert.ok(columns.includes("heroSignalCopy"));
