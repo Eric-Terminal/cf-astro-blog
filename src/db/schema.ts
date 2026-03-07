@@ -105,8 +105,6 @@ export const siteAppearanceSettings = sqliteTable("site_appearance_settings", {
 		.default(
 			"这里记录 Cloudflare、前端工程、调试过程和系统设计里那些值得反复回看的瞬间。界面会继续打磨，但内容先要足够清晰、足够耐读。",
 		),
-	heroLandscapeImagePath: text("hero_landscape_image_path"),
-	heroPortraitImagePath: text("hero_portrait_image_path"),
 	heroPrimaryLabel: text("hero_primary_label").notNull().default("进入归档"),
 	heroPrimaryHref: text("hero_primary_href").notNull().default("/blog"),
 	heroSecondaryLabel: text("hero_secondary_label")

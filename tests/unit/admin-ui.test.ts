@@ -43,8 +43,6 @@ describe("后台界面风格保护喵", () => {
 		assert.match(source, /heroActionHref/u);
 		assert.match(source, /heroTitle/u);
 		assert.match(source, /heroIntro/u);
-		assert.match(source, /heroLandscapeImagePath/u);
-		assert.match(source, /heroPortraitImagePath/u);
 		assert.match(source, /heroSignalHeading/u);
 		assert.match(source, /heroTopicText/u);
 		assert.match(source, /heroWritingText/u);

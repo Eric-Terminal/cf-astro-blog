@@ -38,8 +38,6 @@ export interface SiteAppearance {
 	heroKicker: string;
 	heroTitle: string;
 	heroIntro: string;
-	heroLandscapeImagePath: string | null;
-	heroPortraitImagePath: string | null;
 	heroActions: SiteNavLink[];
 	heroPrimaryLabel: string;
 	heroPrimaryHref: string;
@@ -75,8 +73,6 @@ export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
 	heroTitle: "把工程判断写清楚，把技术细节写漂亮。",
 	heroIntro:
 		"这里记录 Cloudflare、前端工程、调试过程和系统设计里那些值得反复回看的瞬间。界面会继续打磨，但内容先要足够清晰、足够耐读。",
-	heroLandscapeImagePath: null,
-	heroPortraitImagePath: null,
 	heroActions: [...DEFAULT_HERO_ACTIONS],
 	heroPrimaryLabel: DEFAULT_HERO_ACTIONS[0].label,
 	heroPrimaryHref: DEFAULT_HERO_ACTIONS[0].href,
@@ -128,34 +124,6 @@ function normalizeOptionalLinkHref(value: unknown) {
 
 	if (normalized.startsWith("/")) {
 		return normalized.startsWith("//") ? null : normalized;
-	}
-
-	try {
-		const url = new URL(normalized);
-		return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
-	} catch {
-		return null;
-	}
-}
-
-function normalizeOptionalImagePath(value: unknown) {
-	const normalized = sanitizePlainText(value, 320);
-	if (!normalized) {
-		return null;
-	}
-
-	const lowered = normalized.toLowerCase();
-	if (lowered === "null" || lowered === "undefined") {
-		return null;
-	}
-
-	if (normalized.startsWith("/")) {
-		return normalized.startsWith("//") ? null : normalized;
-	}
-
-	const mediaKey = sanitizeMediaKey(normalized);
-	if (mediaKey?.includes("/")) {
-		return `/media/${mediaKey}`;
 	}
 
 	try {
@@ -345,12 +313,6 @@ export function normalizeSiteAppearanceInput(
 			600,
 			DEFAULT_SITE_APPEARANCE.heroIntro,
 		),
-		heroLandscapeImagePath:
-			normalizeOptionalImagePath(input.heroLandscapeImagePath) ??
-			DEFAULT_SITE_APPEARANCE.heroLandscapeImagePath,
-		heroPortraitImagePath:
-			normalizeOptionalImagePath(input.heroPortraitImagePath) ??
-			DEFAULT_SITE_APPEARANCE.heroPortraitImagePath,
 		heroActions,
 		heroPrimaryLabel: normalizedHeroPrimary.label,
 		heroPrimaryHref: normalizedHeroPrimary.href,
@@ -413,8 +375,6 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 			heroKicker: siteAppearanceSettings.heroKicker,
 			heroTitle: siteAppearanceSettings.heroTitle,
 			heroIntro: siteAppearanceSettings.heroIntro,
-			heroLandscapeImagePath: siteAppearanceSettings.heroLandscapeImagePath,
-			heroPortraitImagePath: siteAppearanceSettings.heroPortraitImagePath,
 			heroPrimaryLabel: siteAppearanceSettings.heroPrimaryLabel,
 			heroPrimaryHref: siteAppearanceSettings.heroPrimaryHref,
 			heroSecondaryLabel: siteAppearanceSettings.heroSecondaryLabel,
@@ -465,8 +425,6 @@ export async function saveSiteAppearance(
 			heroKicker: normalized.heroKicker,
 			heroTitle: normalized.heroTitle,
 			heroIntro: normalized.heroIntro,
-			heroLandscapeImagePath: normalized.heroLandscapeImagePath,
-			heroPortraitImagePath: normalized.heroPortraitImagePath,
 			heroPrimaryLabel: normalized.heroPrimaryLabel,
 			heroPrimaryHref: normalized.heroPrimaryHref,
 			heroSecondaryLabel: normalized.heroSecondaryLabel,
@@ -497,8 +455,6 @@ export async function saveSiteAppearance(
 				heroKicker: normalized.heroKicker,
 				heroTitle: normalized.heroTitle,
 				heroIntro: normalized.heroIntro,
-				heroLandscapeImagePath: normalized.heroLandscapeImagePath,
-				heroPortraitImagePath: normalized.heroPortraitImagePath,
 				heroPrimaryLabel: normalized.heroPrimaryLabel,
 				heroPrimaryHref: normalized.heroPrimaryHref,
 				heroSecondaryLabel: normalized.heroSecondaryLabel,

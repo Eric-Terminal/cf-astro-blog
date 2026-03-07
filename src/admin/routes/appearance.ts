@@ -567,31 +567,6 @@ function renderAppearancePage(options: {
 						<label for="heroIntro">简介</label>
 						<textarea id="heroIntro" name="heroIntro" class="form-textarea" maxlength="600">${escapeHtml(settings.heroIntro)}</textarea>
 					</div>
-					<div class="appearance-inline-grid">
-						<div class="form-group">
-							<label for="heroLandscapeImagePath">首屏横图路径（左上）</label>
-							<input
-								id="heroLandscapeImagePath"
-								name="heroLandscapeImagePath"
-								class="form-input appearance-key-input"
-								value="${escapeAttribute(settings.heroLandscapeImagePath ?? "")}"
-								maxlength="320"
-								placeholder="/media/appearance/home/hero-landscape.webp"
-							/>
-						</div>
-						<div class="form-group">
-							<label for="heroPortraitImagePath">首屏竖图路径（右下）</label>
-							<input
-								id="heroPortraitImagePath"
-								name="heroPortraitImagePath"
-								class="form-input appearance-key-input"
-								value="${escapeAttribute(settings.heroPortraitImagePath ?? "")}"
-								maxlength="320"
-								placeholder="/media/appearance/home/hero-portrait.webp"
-							/>
-						</div>
-					</div>
-					<p class="appearance-note">支持填写 /media/...、站内绝对路径或 https:// 外链。</p>
 					<div class="appearance-list-head">
 						<h4>首页按钮</h4>
 						<button type="button" class="btn" data-link-add="hero">+ 新增按钮</button>
@@ -815,8 +790,6 @@ appearance.post("/", async (c) => {
 		heroKicker: getBodyText(body, "heroKicker"),
 		heroTitle: getBodyText(body, "heroTitle"),
 		heroIntro: getBodyText(body, "heroIntro"),
-		heroLandscapeImagePath: getBodyText(body, "heroLandscapeImagePath"),
-		heroPortraitImagePath: getBodyText(body, "heroPortraitImagePath"),
 		heroActions: buildLinkItemsFromBody(
 			getBodyTexts(body, "heroActionLabel"),
 			getBodyTexts(body, "heroActionHref"),
