@@ -211,37 +211,17 @@ export const adminSharedStyles = `
 
 		.sidebar-brand {
 			position: relative;
-			padding: 1.15rem 1.15rem 1.25rem;
+			padding: 1rem 1.15rem;
 			border-radius: calc(var(--radius-lg) - 8px);
 			background: var(--bg-tertiary);
 			border: 1px solid var(--border);
 			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 		}
 
-		.sidebar-brand-badge {
-			display: inline-flex;
-			align-items: center;
-			padding: 0.3rem 0.7rem;
-			margin-bottom: 0.8rem;
-			border-radius: var(--radius-pill);
-			background: var(--accent-soft);
-			color: var(--accent);
-			font-size: 0.8rem;
-			font-weight: 600;
-			letter-spacing: 0.02em;
-		}
-
 		.sidebar-brand-title {
-			font-size: 1.45rem;
+			font-size: 1.2rem;
 			font-weight: 700;
 			letter-spacing: -0.03em;
-		}
-
-		.sidebar-brand-copy {
-			margin-top: 0.5rem;
-			color: var(--text-muted);
-			font-size: 0.92rem;
-			line-height: 1.75;
 		}
 
 		.sidebar-nav {
@@ -294,17 +274,11 @@ export const adminSharedStyles = `
 
 		.sidebar-footer {
 			display: grid;
-			gap: 0.85rem;
+			gap: 0.65rem;
 			padding: 1rem;
 			border-radius: calc(var(--radius-lg) - 8px);
 			background: var(--bg-tertiary);
 			border: 1px solid var(--border);
-		}
-
-		.sidebar-footer-copy {
-			color: var(--text-muted);
-			font-size: 0.86rem;
-			line-height: 1.75;
 		}
 
 		.sidebar-footer-links {
@@ -330,30 +304,13 @@ export const adminSharedStyles = `
 			align-items: center;
 			justify-content: space-between;
 			gap: 1rem;
-			padding: 1.15rem 1.35rem;
-		}
-
-		.admin-toolbar-copy {
-			display: grid;
-			gap: 0.22rem;
-		}
-
-		.admin-toolbar-kicker {
-			color: var(--text-muted);
-			font-size: 0.82rem;
-			letter-spacing: 0.08em;
-			text-transform: uppercase;
+			padding: 1rem 1.35rem;
 		}
 
 		.admin-toolbar-title {
-			font-size: 1.05rem;
-			font-weight: 600;
+			font-size: 1.15rem;
+			font-weight: 700;
 			color: var(--text);
-		}
-
-		.admin-toolbar-note {
-			color: var(--text-secondary);
-			font-size: 0.9rem;
 		}
 
 		.admin-toolbar-actions {
@@ -1023,15 +980,12 @@ ${adminSharedStyles}
 		<aside class="sidebar">
 			<div class="sidebar-panel">
 				<div class="sidebar-brand">
-					<span class="sidebar-brand-badge">主页同款视觉</span>
 					<div class="sidebar-brand-title">管理后台</div>
-					<p class="sidebar-brand-copy">和前台共用胶囊、毛玻璃与柔和缓动，减少后台和站点主界面的割裂感。</p>
 				</div>
 				<nav class="sidebar-nav">
 					${renderNav(title)}
 				</nav>
 				<div class="sidebar-footer">
-					<p class="sidebar-footer-copy">当前后台仅支持 GitHub OAuth 登录，并继续沿用前台那套轻量玻璃面板语言。</p>
 					<div class="sidebar-footer-links">
 						<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看站点</a>
 					</div>
@@ -1041,11 +995,7 @@ ${adminSharedStyles}
 		</aside>
 		<main class="main-content">
 			<header class="admin-toolbar">
-				<div class="admin-toolbar-copy">
-					<span class="admin-toolbar-kicker">后台工作台</span>
-					<div class="admin-toolbar-title">${escapeHtml(title)}</div>
-					<p class="admin-toolbar-note">在内容管理、媒体维护和站点配置之间保持和主页一致的浮层体验。</p>
-				</div>
+				<div class="admin-toolbar-title">${escapeHtml(title)}</div>
 				<div class="admin-toolbar-actions">
 					<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm">打开前台</a>
 				</div>
