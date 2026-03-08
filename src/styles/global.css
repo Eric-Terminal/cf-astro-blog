@@ -643,6 +643,55 @@ html[data-admin-preview="true"] .site-main {
 	-webkit-backdrop-filter: blur(10px) saturate(120%);
 }
 
+.prose details {
+	margin-bottom: 1.35rem;
+	border-radius: var(--radius-inner);
+	border: 1px solid var(--color-border);
+	background: rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(10px) saturate(120%);
+	-webkit-backdrop-filter: blur(10px) saturate(120%);
+	overflow: hidden;
+}
+
+.prose details summary {
+	cursor: pointer;
+	padding: 0.85rem 1.1rem;
+	font-weight: 600;
+	color: var(--color-text);
+	list-style-position: inside;
+}
+
+.prose details summary:hover {
+	background: rgba(10, 132, 255, 0.08);
+}
+
+.prose details > :not(summary) {
+	padding: 0 1.1rem 1rem;
+}
+
+.prose details > :not(summary):last-child {
+	margin-bottom: 0;
+}
+
+.prose .prose-spoiler {
+	display: inline;
+	padding: 0.08em 0.32em;
+	border-radius: 0.38em;
+	background: rgba(15, 23, 42, 0.22);
+	filter: blur(0.38em);
+	transition:
+		filter var(--transition),
+		background-color var(--transition);
+	cursor: help;
+}
+
+.prose .prose-spoiler:hover,
+.prose .prose-spoiler:focus,
+.prose .prose-spoiler:focus-visible {
+	filter: blur(0);
+	background: rgba(10, 132, 255, 0.12);
+}
+
 .prose pre {
 	position: relative;
 	padding: 3rem 1.2rem 1.25rem;

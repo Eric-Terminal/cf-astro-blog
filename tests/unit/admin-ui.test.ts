@@ -93,7 +93,9 @@ describe("后台界面风格保护", () => {
 		assert.match(editorSource, /markdown-editor-shell/u);
 		assert.match(adminScriptSource, /\[data-markdown-preview='true'\]/u);
 		assert.match(adminScriptSource, /renderMarkdownPreview/u);
+		assert.match(adminScriptSource, /extractPreviewSpoilerShortcodes/u);
 		assert.match(layoutSource, /markdown-preview-body/u);
+		assert.match(layoutSource, /markdown-preview-spoiler/u);
 	});
 
 	test("文章列表提供取消定时和历史分类标签删除入口", async () => {

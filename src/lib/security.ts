@@ -200,7 +200,107 @@ function sanitizeUrl(
 	}
 }
 
+interface DetailsShortcodeBlock {
+	placeholder: string;
+	summary: string;
+	content: string;
+}
+
+interface SpoilerShortcodeBlock {
+	placeholder: string;
+	content: string;
+}
+
+function extractDetailsShortcodes(markdown: string): {
+	markdown: string;
+	blocks: DetailsShortcodeBlock[];
+} {
+	const pattern =
+		/\[details(?:=(?:"([^"\n]*)"|'([^'\n]*)'|([^\]\n]+)))?\]([\s\S]*?)\[\/details\]/giu;
+	let index = 0;
+	const blocks: DetailsShortcodeBlock[] = [];
+
+	const markdownWithPlaceholders = markdown.replace(
+		pattern,
+		(
+			_match,
+			doubleQuotedSummary,
+			singleQuotedSummary,
+			plainSummary,
+			content,
+		) => {
+			const summarySource =
+				doubleQuotedSummary ?? singleQuotedSummary ?? plainSummary ?? "";
+			const summary = String(summarySource).trim() || "详情";
+			const cleanedContent = String(content ?? "")
+				.replaceAll(/\r/g, "")
+				.replace(/^\n/u, "")
+				.replace(/\n$/u, "");
+			const placeholder = `@@DETAILS_BLOCK_${index}@@`;
+
+			blocks.push({
+				placeholder,
+				summary,
+				content: cleanedContent,
+			});
+
+			index += 1;
+			return `\n\n${placeholder}\n\n`;
+		},
+	);
+
+	return {
+		markdown: markdownWithPlaceholders,
+		blocks,
+	};
+}
+
+function extractSpoilerShortcodes(markdown: string): {
+	markdown: string;
+	blocks: SpoilerShortcodeBlock[];
+} {
+	const pattern = /\[spoiler\]([\s\S]*?)\[\/spoiler\]/giu;
+	let index = 0;
+	const blocks: SpoilerShortcodeBlock[] = [];
+
+	const markdownWithPlaceholders = markdown.replace(
+		pattern,
+		(_match, content) => {
+			const cleanedContent = String(content ?? "").replaceAll(/\r/g, "");
+			const placeholder = `@@SPOILER_BLOCK_${index}@@`;
+
+			blocks.push({
+				placeholder,
+				content: cleanedContent,
+			});
+
+			index += 1;
+			return placeholder;
+		},
+	);
+
+	return {
+		markdown: markdownWithPlaceholders,
+		blocks,
+	};
+}
+
+function escapeRegExp(value: string): string {
+	return value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function renderSafeMarkdown(markdown: string): Promise<string> {
+	return renderSafeMarkdownInternal(markdown, 0);
+}
+
+async function renderSafeMarkdownInternal(
+	markdown: string,
+	depth: number,
+): Promise<string> {
+	if (depth > 5) {
+		return escapeHtml(markdown);
+	}
+
 	const renderer = new marked.Renderer();
 
 	renderer.html = (token: Tokens.HTML | Tokens.Tag) => {
@@ -235,11 +335,35 @@ export async function renderSafeMarkdown(markdown: string): Promise<string> {
 		return `<img src="${escapeAttribute(href)}" alt="${escapeAttribute(String(token.text ?? ""))}"${title} loading="lazy" decoding="async" />`;
 	};
 
-	const rendered = marked.parse(markdown, {
+	const extracted = extractDetailsShortcodes(markdown);
+	const extractedSpoilers = extractSpoilerShortcodes(extracted.markdown);
+	const rendered = marked.parse(extractedSpoilers.markdown, {
 		gfm: true,
 		breaks: true,
 		renderer,
 	});
+	let html = typeof rendered === "string" ? rendered : await rendered;
 
-	return typeof rendered === "string" ? rendered : await rendered;
+	for (const block of extractedSpoilers.blocks) {
+		const spoilerHtml = `<span class="prose-spoiler">${escapeHtml(block.content).replaceAll("\n", "<br>")}</span>`;
+		const placeholderPattern = escapeRegExp(block.placeholder);
+		html = html.replaceAll(new RegExp(placeholderPattern, "gu"), spoilerHtml);
+	}
+
+	for (const block of extracted.blocks) {
+		const innerHtml = await renderSafeMarkdownInternal(
+			block.content,
+			depth + 1,
+		);
+		const detailsHtml = `<details class="prose-details"><summary>${escapeHtml(block.summary)}</summary>${innerHtml}</details>`;
+		const placeholderPattern = escapeRegExp(block.placeholder);
+
+		html = html.replaceAll(
+			new RegExp(`<p>${placeholderPattern}</p>\\n?`, "gu"),
+			detailsHtml,
+		);
+		html = html.replaceAll(new RegExp(placeholderPattern, "gu"), detailsHtml);
+	}
+
+	return html;
 }

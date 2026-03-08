@@ -44,6 +44,48 @@ describe("安全工具", () => {
 		assert.match(html, /<p>第一行<br>第二行<br>第三行<\/p>/u);
 	});
 
+	test("renderSafeMarkdown 支持 details 短代码语法", async () => {
+		const html = await renderSafeMarkdown(
+			'前文\n\n[details="总结"]\n隐藏 **内容**\n[/details]\n\n后文',
+		);
+
+		assert.match(
+			html,
+			/<details class="prose-details"><summary>总结<\/summary>/u,
+		);
+		assert.match(html, /隐藏 <strong>内容<\/strong>/u);
+		assert.match(html, /<p>后文<\/p>/u);
+	});
+
+	test("renderSafeMarkdown 会转义 details 标题中的危险标签", async () => {
+		const html = await renderSafeMarkdown(
+			'[details="<img src=x onerror=alert(1)>"]\n测试\n[/details]',
+		);
+
+		assert.ok(!html.includes('onerror="'));
+		assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/u);
+	});
+
+	test("renderSafeMarkdown 支持 spoiler 短代码语法", async () => {
+		const html = await renderSafeMarkdown(
+			"这是一段文本 [spoiler]此文本将被模糊处理[/spoiler] 结束。",
+		);
+
+		assert.match(
+			html,
+			/<span class="prose-spoiler">此文本将被模糊处理<\/span>/u,
+		);
+	});
+
+	test("renderSafeMarkdown 会转义 spoiler 内的危险标签", async () => {
+		const html = await renderSafeMarkdown(
+			"[spoiler]<img src=x onerror=alert(1)>[/spoiler]",
+		);
+
+		assert.ok(!html.includes("<img"));
+		assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/u);
+	});
+
 	test("verifyPassword 支持新的 PBKDF2 哈希", async () => {
 		const password = "correct-horse-battery-staple";
 		const hash = await hashPassword(password);

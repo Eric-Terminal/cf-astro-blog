@@ -690,6 +690,43 @@ export const adminSharedStyles = `
 			border-radius: 0 12px 12px 0;
 		}
 
+		.markdown-preview-body details {
+			margin: 0.2rem 0 0.9rem;
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			background: rgba(10, 132, 255, 0.06);
+			overflow: hidden;
+		}
+
+		.markdown-preview-body details summary {
+			cursor: pointer;
+			padding: 0.64rem 0.82rem;
+			font-weight: 600;
+		}
+
+		.markdown-preview-body details > :not(summary) {
+			padding: 0 0.82rem 0.82rem;
+		}
+
+		.markdown-preview-body .markdown-preview-spoiler {
+			display: inline;
+			padding: 0.08em 0.32em;
+			border-radius: 0.38em;
+			background: rgba(15, 23, 42, 0.22);
+			filter: blur(0.38em);
+			transition:
+				filter var(--transition-fast),
+				background-color var(--transition-fast);
+			cursor: help;
+		}
+
+		.markdown-preview-body .markdown-preview-spoiler:hover,
+		.markdown-preview-body .markdown-preview-spoiler:focus,
+		.markdown-preview-body .markdown-preview-spoiler:focus-visible {
+			filter: blur(0);
+			background: rgba(10, 132, 255, 0.12);
+		}
+
 		.markdown-preview-body pre {
 			margin: 0.2rem 0 0.9rem;
 			padding: 0.7rem 0.82rem;

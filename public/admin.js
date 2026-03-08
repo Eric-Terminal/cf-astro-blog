@@ -189,13 +189,78 @@ function renderInlineMarkdown(source) {
 	return escaped;
 }
 
-function renderMarkdownPreview(markdown) {
+function extractPreviewDetailsShortcodes(markdown) {
+	const pattern =
+		/\[details(?:=(?:"([^"\n]*)"|'([^'\n]*)'|([^\]\n]+)))?\]([\s\S]*?)\[\/details\]/giu;
+	let index = 0;
+	const blocks = [];
+
+	const markdownWithPlaceholders = markdown.replace(
+		pattern,
+		(_match, doubleQuotedSummary, singleQuotedSummary, plainSummary, content) => {
+			const summarySource =
+				doubleQuotedSummary ?? singleQuotedSummary ?? plainSummary ?? "";
+			const summary = String(summarySource).trim() || "详情";
+			const cleanedContent = String(content ?? "")
+				.replaceAll("\r", "")
+				.replace(/^\n/u, "")
+				.replace(/\n$/u, "");
+			const placeholder = `@@MD_PREVIEW_DETAILS_${index}@@`;
+			blocks.push({
+				placeholder,
+				summary,
+				content: cleanedContent,
+			});
+			index += 1;
+			return `\n\n${placeholder}\n\n`;
+		},
+	);
+
+	return {
+		markdown: markdownWithPlaceholders,
+		blocks,
+	};
+}
+
+function extractPreviewSpoilerShortcodes(markdown) {
+	const pattern = /\[spoiler\]([\s\S]*?)\[\/spoiler\]/giu;
+	let index = 0;
+	const blocks = [];
+
+	const markdownWithPlaceholders = markdown.replace(pattern, (_match, content) => {
+		const cleanedContent = String(content ?? "").replaceAll("\r", "");
+		const placeholder = `@@MD_PREVIEW_SPOILER_${index}@@`;
+		blocks.push({
+			placeholder,
+			content: cleanedContent,
+		});
+		index += 1;
+		return placeholder;
+	});
+
+	return {
+		markdown: markdownWithPlaceholders,
+		blocks,
+	};
+}
+
+function escapeRegExp(value) {
+	return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderMarkdownPreview(markdown, showEmptyHint = true) {
 	const normalized = String(markdown ?? "").replaceAll("\r", "");
+	const extractedDetails = extractPreviewDetailsShortcodes(normalized);
+	const extractedSpoilers = extractPreviewSpoilerShortcodes(
+		extractedDetails.markdown,
+	);
 	if (!normalized.trim()) {
-		return '<p class="markdown-preview-empty">开始输入 Markdown，这里会实时预览</p>';
+		return showEmptyHint
+			? '<p class="markdown-preview-empty">开始输入 Markdown，这里会实时预览</p>'
+			: "";
 	}
 
-	const lines = normalized.split("\n");
+	const lines = extractedSpoilers.markdown.split("\n");
 	const blocks = [];
 	let paragraphLines = [];
 	let listItems = [];
@@ -327,7 +392,26 @@ function renderMarkdownPreview(markdown) {
 	flushQuote();
 	flushCodeBlock();
 
-	return blocks.join("");
+	let html = blocks.join("");
+	for (const block of extractedSpoilers.blocks) {
+		const spoilerHtml = `<span class="markdown-preview-spoiler">${escapePreviewHtml(block.content).replaceAll("\n", "<br>")}</span>`;
+		const placeholderPattern = escapeRegExp(block.placeholder);
+		html = html.replace(new RegExp(placeholderPattern, "gu"), spoilerHtml);
+	}
+
+	for (const block of extractedDetails.blocks) {
+		const innerHtml = renderMarkdownPreview(block.content, false);
+		const summaryHtml = renderInlineMarkdown(block.summary);
+		const detailsHtml = `<details class="markdown-preview-details"><summary>${summaryHtml}</summary>${innerHtml}</details>`;
+		const placeholderPattern = escapeRegExp(block.placeholder);
+		html = html.replace(
+			new RegExp(`<p>${placeholderPattern}</p>\\n?`, "gu"),
+			detailsHtml,
+		);
+		html = html.replace(new RegExp(placeholderPattern, "gu"), detailsHtml);
+	}
+
+	return html;
 }
 
 let markdownPreviewRafId = 0;
