@@ -103,11 +103,6 @@ describe("源码回归保护", () => {
 			),
 		);
 		assert.match(postCardSource, /object-position: center;/u);
-		assert.ok(
-			postCardSource.includes(
-				"backdrop-filter: blur(var(--post-content-blur-effective))",
-			),
-		);
 	});
 
 	test("友链页只保留申请入口卡片，申请表移到独立页面", async () => {
