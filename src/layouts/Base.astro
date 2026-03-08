@@ -56,7 +56,13 @@ const surfaceStyle = `--hero-card-opacity: ${siteAppearance.heroCardOpacity}; --
 		{!isAdminPreview && <script is:inline src="/home-motion.js"></script>}
 		{!isAdminPreview && <script is:inline src="/footer-reveal.js"></script>}
 	</head>
-	<body class="site-shell" style={surfaceStyle}>
+		<body
+			class:list={[
+				"site-shell",
+				{ "site-shell-has-background-image": Boolean(backgroundImageUrl) },
+			]}
+			style={surfaceStyle}
+		>
 		<div class="site-background" aria-hidden="true">
 			{backgroundImageUrl && (
 				<img

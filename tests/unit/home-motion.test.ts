@@ -7,6 +7,7 @@ describe("首页灵动交互保护", () => {
 		const baseLayoutSource = await readFile("src/layouts/Base.astro", "utf8");
 
 		assert.match(baseLayoutSource, /home-motion\.js/u);
+		assert.match(baseLayoutSource, /site-shell-has-background-image/u);
 	});
 
 	test("首页会提供景深 Hero 和 3D 胶囊结构", async () => {

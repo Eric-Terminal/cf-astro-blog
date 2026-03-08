@@ -151,6 +151,10 @@ body {
 		var(--color-bg);
 }
 
+body.site-shell-has-background-image {
+	background: var(--color-bg);
+}
+
 body::before,
 body::after {
 	content: "";
@@ -164,6 +168,11 @@ body::after {
 	pointer-events: none;
 	z-index: -1;
 	animation: float-glow 16s ease-in-out infinite;
+}
+
+body.site-shell-has-background-image::before,
+body.site-shell-has-background-image::after {
+	display: none;
 }
 
 body::before {
@@ -328,6 +337,11 @@ pre code {
 		),
 		linear-gradient(180deg, rgba(7, 17, 31, 0.08), rgba(7, 17, 31, 0.46));
 	z-index: 2;
+}
+
+body.site-shell-has-background-image .site-background::before,
+body.site-shell-has-background-image .site-background::after {
+	background: none;
 }
 
 .site-background-image {
