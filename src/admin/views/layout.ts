@@ -573,6 +573,7 @@ export const adminSharedStyles = `
 			min-height: 320px;
 			resize: vertical;
 			font-family: var(--font-mono);
+			line-height: 1.7;
 		}
 
 		.form-textarea.is-dragover {
@@ -596,6 +597,136 @@ export const adminSharedStyles = `
 
 		.form-help.is-success {
 			color: var(--success);
+		}
+
+		.markdown-editor-shell {
+			display: grid;
+			grid-template-columns: minmax(0, 1.08fr) minmax(280px, 1fr);
+			gap: 0.85rem;
+			align-items: stretch;
+		}
+
+		.markdown-editor-shell .form-textarea {
+			min-height: 420px;
+		}
+
+		.markdown-preview-panel {
+			display: grid;
+			grid-template-rows: auto minmax(0, 1fr);
+			border-radius: var(--radius);
+			border: 1px solid var(--border);
+			background: rgba(255, 255, 255, 0.24);
+			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+			overflow: hidden;
+		}
+
+		.markdown-preview-head {
+			padding: 0.7rem 0.88rem;
+			font-size: 0.78rem;
+			color: var(--text-muted);
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			border-bottom: 1px solid var(--border);
+			background: rgba(255, 255, 255, 0.22);
+		}
+
+		.markdown-preview-body {
+			min-height: 420px;
+			max-height: 620px;
+			overflow: auto;
+			padding: 0.95rem 1rem 1.05rem;
+			color: var(--text);
+			line-height: 1.8;
+			word-break: break-word;
+		}
+
+		.markdown-preview-body .markdown-preview-empty {
+			color: var(--text-muted);
+			font-size: 0.9rem;
+		}
+
+		.markdown-preview-body h1,
+		.markdown-preview-body h2,
+		.markdown-preview-body h3,
+		.markdown-preview-body h4,
+		.markdown-preview-body h5,
+		.markdown-preview-body h6 {
+			margin: 0.2rem 0 0.72rem;
+			line-height: 1.35;
+			color: var(--text);
+		}
+
+		.markdown-preview-body h1 {
+			font-size: 1.5rem;
+		}
+
+		.markdown-preview-body h2 {
+			font-size: 1.3rem;
+		}
+
+		.markdown-preview-body h3 {
+			font-size: 1.14rem;
+		}
+
+		.markdown-preview-body p {
+			margin: 0 0 0.8rem;
+		}
+
+		.markdown-preview-body ul,
+		.markdown-preview-body ol {
+			margin: 0.2rem 0 0.8rem 1.1rem;
+		}
+
+		.markdown-preview-body li + li {
+			margin-top: 0.18rem;
+		}
+
+		.markdown-preview-body blockquote {
+			margin: 0.2rem 0 0.9rem;
+			padding: 0.12rem 0.82rem;
+			border-left: 3px solid rgba(10, 132, 255, 0.42);
+			color: var(--text-secondary);
+			background: rgba(10, 132, 255, 0.08);
+			border-radius: 0 12px 12px 0;
+		}
+
+		.markdown-preview-body pre {
+			margin: 0.2rem 0 0.9rem;
+			padding: 0.7rem 0.82rem;
+			border-radius: 12px;
+			background: rgba(15, 23, 42, 0.9);
+			color: #dbe7ff;
+			overflow: auto;
+			font-size: 0.86rem;
+			line-height: 1.62;
+		}
+
+		.markdown-preview-body code {
+			padding: 0.08rem 0.34rem;
+			border-radius: 8px;
+			background: rgba(10, 132, 255, 0.1);
+			font-family: var(--font-mono);
+			font-size: 0.84em;
+		}
+
+		.markdown-preview-body pre code {
+			padding: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+
+		.markdown-preview-body a {
+			color: var(--accent);
+			text-decoration: underline;
+			text-underline-offset: 0.14em;
+		}
+
+		.markdown-preview-body img {
+			display: block;
+			max-width: 100%;
+			height: auto;
+			margin: 0.3rem 0 0.9rem;
+			border-radius: 12px;
 		}
 
 		.form-readonly {
@@ -946,6 +1077,10 @@ export const adminSharedStyles = `
 			.editor-grid {
 				grid-template-columns: 1fr;
 			}
+
+			.markdown-editor-shell {
+				grid-template-columns: 1fr;
+			}
 		}
 
 		@media (max-width: 720px) {
@@ -980,6 +1115,11 @@ export const adminSharedStyles = `
 
 			.data-table th, .data-table td {
 				padding: 0.82rem 0.9rem;
+			}
+
+			.markdown-editor-shell .form-textarea,
+			.markdown-preview-body {
+				min-height: 300px;
 			}
 		}
 `;

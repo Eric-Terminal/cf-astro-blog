@@ -82,6 +82,20 @@ describe("后台界面风格保护", () => {
 		);
 	});
 
+	test("文章编辑页提供 Markdown 实时预览区域", async () => {
+		const [editorSource, adminScriptSource, layoutSource] = await Promise.all([
+			readFile("src/admin/views/posts/editor.ts", "utf8"),
+			readFile("public/admin.js", "utf8"),
+			readFile("src/admin/views/layout.ts", "utf8"),
+		]);
+
+		assert.match(editorSource, /data-markdown-preview="true"/u);
+		assert.match(editorSource, /markdown-editor-shell/u);
+		assert.match(adminScriptSource, /\[data-markdown-preview='true'\]/u);
+		assert.match(adminScriptSource, /renderMarkdownPreview/u);
+		assert.match(layoutSource, /markdown-preview-body/u);
+	});
+
 	test("文章列表提供取消定时和历史分类标签删除入口", async () => {
 		const source = await readFile("src/admin/views/posts/list.ts", "utf8");
 

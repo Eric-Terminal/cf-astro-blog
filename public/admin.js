@@ -10,6 +10,7 @@ const scheduleField = document.querySelector("[data-schedule-field='true']");
 const publishAtInput = document.querySelector("[data-publish-at-input='true']");
 const contentTextarea = document.getElementById("content");
 const contentUploadStatus = document.querySelector("[data-content-upload-status]");
+const markdownPreview = document.querySelector("[data-markdown-preview='true']");
 const editorForm = document.querySelector("form[data-editor-upload-url]");
 const editorUploadUrl =
 	editorForm instanceof HTMLFormElement
@@ -81,6 +82,285 @@ function setStatusMessage(target, message, mode = "") {
 	}
 }
 
+function escapePreviewHtml(value) {
+	return String(value)
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#39;");
+}
+
+function escapePreviewAttr(value) {
+	return escapePreviewHtml(value).replaceAll("`", "&#96;");
+}
+
+function sanitizePreviewUrl(rawValue) {
+	const normalized = String(rawValue ?? "").trim();
+	if (!normalized) {
+		return null;
+	}
+
+	if (normalized.startsWith("/")) {
+		return normalized.startsWith("//") ? null : normalized;
+	}
+
+	if (
+		normalized.startsWith("./") ||
+		normalized.startsWith("../") ||
+		normalized.startsWith("#")
+	) {
+		return normalized;
+	}
+
+	try {
+		const parsed = new URL(normalized);
+		if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+			return parsed.toString();
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
+
+function renderInlineMarkdown(source) {
+	const tokens = [];
+	const stash = (html) => {
+		const token = `@@MD_PREVIEW_${tokens.length}@@`;
+		tokens.push(html);
+		return token;
+	};
+
+	let text = String(source ?? "");
+
+	text = text.replace(/`([^`\n]+)`/g, (_, code) => {
+		return stash(`<code>${escapePreviewHtml(code)}</code>`);
+	});
+
+	text = text.replace(
+		/!\[([^\]]*?)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
+		(_, alt, href, title) => {
+			const safeHref = sanitizePreviewUrl(href);
+			if (!safeHref) {
+				return stash(escapePreviewHtml(alt || ""));
+			}
+
+			const titleAttr = title ? ` title="${escapePreviewAttr(title)}"` : "";
+			return stash(
+				`<img src="${escapePreviewAttr(safeHref)}" alt="${escapePreviewAttr(alt || "")}"${titleAttr} loading="lazy" decoding="async" />`,
+			);
+		},
+	);
+
+	text = text.replace(
+		/\[([^\]]+?)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g,
+		(_, label, href, title) => {
+			const safeHref = sanitizePreviewUrl(href);
+			const safeLabel = escapePreviewHtml(label);
+			if (!safeHref) {
+				return stash(safeLabel);
+			}
+
+			const titleAttr = title ? ` title="${escapePreviewAttr(title)}"` : "";
+			return stash(
+				`<a href="${escapePreviewAttr(safeHref)}"${titleAttr} target="_blank" rel="nofollow ugc noopener noreferrer">${safeLabel}</a>`,
+			);
+		},
+	);
+
+	text = text.replace(/\*\*([^*\n]+?)\*\*/g, (_, strongText) => {
+		return stash(`<strong>${escapePreviewHtml(strongText)}</strong>`);
+	});
+
+	text = text.replace(/\*([^*\n]+?)\*/g, (_, emText) => {
+		return stash(`<em>${escapePreviewHtml(emText)}</em>`);
+	});
+
+	text = text.replace(/~~([^~\n]+?)~~/g, (_, deletedText) => {
+		return stash(`<del>${escapePreviewHtml(deletedText)}</del>`);
+	});
+
+	let escaped = escapePreviewHtml(text);
+	escaped = escaped.replace(/@@MD_PREVIEW_(\d+)@@/g, (_, index) => {
+		return tokens[Number(index)] ?? "";
+	});
+
+	return escaped;
+}
+
+function renderMarkdownPreview(markdown) {
+	const normalized = String(markdown ?? "").replaceAll("\r", "");
+	if (!normalized.trim()) {
+		return '<p class="markdown-preview-empty">开始输入 Markdown，这里会实时预览</p>';
+	}
+
+	const lines = normalized.split("\n");
+	const blocks = [];
+	let paragraphLines = [];
+	let listItems = [];
+	let listTag = "";
+	let quoteLines = [];
+	let codeLines = [];
+	let codeLanguage = "";
+	let inCodeBlock = false;
+
+	const flushParagraph = () => {
+		if (paragraphLines.length === 0) {
+			return;
+		}
+		blocks.push(`<p>${paragraphLines.join("<br>")}</p>`);
+		paragraphLines = [];
+	};
+
+	const flushList = () => {
+		if (!listTag || listItems.length === 0) {
+			return;
+		}
+		blocks.push(`<${listTag}>${listItems.join("")}</${listTag}>`);
+		listTag = "";
+		listItems = [];
+	};
+
+	const flushQuote = () => {
+		if (quoteLines.length === 0) {
+			return;
+		}
+		const quoteBody = quoteLines.map((line) => renderInlineMarkdown(line));
+		blocks.push(`<blockquote><p>${quoteBody.join("<br>")}</p></blockquote>`);
+		quoteLines = [];
+	};
+
+	const flushCodeBlock = () => {
+		if (!inCodeBlock) {
+			return;
+		}
+		const safeLanguage = codeLanguage
+			.toLowerCase()
+			.replaceAll(/[^a-z0-9-]/g, "");
+		const languageClass = safeLanguage ? ` class="language-${safeLanguage}"` : "";
+		blocks.push(
+			`<pre><code${languageClass}>${escapePreviewHtml(codeLines.join("\n"))}</code></pre>`,
+		);
+		inCodeBlock = false;
+		codeLines = [];
+		codeLanguage = "";
+	};
+
+	for (const line of lines) {
+		if (inCodeBlock) {
+			if (/^```/u.test(line.trim())) {
+				flushCodeBlock();
+				continue;
+			}
+
+			codeLines.push(line);
+			continue;
+		}
+
+		const fenceMatch = line.match(/^```([a-zA-Z0-9_-]*)\s*$/u);
+		if (fenceMatch) {
+			flushParagraph();
+			flushList();
+			flushQuote();
+			inCodeBlock = true;
+			codeLines = [];
+			codeLanguage = fenceMatch[1] || "";
+			continue;
+		}
+
+		if (!line.trim()) {
+			flushParagraph();
+			flushList();
+			flushQuote();
+			continue;
+		}
+
+		const headingMatch = line.match(/^(#{1,6})\s+(.*)$/u);
+		if (headingMatch) {
+			flushParagraph();
+			flushList();
+			flushQuote();
+			const level = headingMatch[1].length;
+			blocks.push(`<h${level}>${renderInlineMarkdown(headingMatch[2].trim())}</h${level}>`);
+			continue;
+		}
+
+		const quoteMatch = line.match(/^>\s?(.*)$/u);
+		if (quoteMatch) {
+			flushParagraph();
+			flushList();
+			quoteLines.push(quoteMatch[1]);
+			continue;
+		}
+
+		flushQuote();
+
+		const orderedItemMatch = line.match(/^\d+\.\s+(.*)$/u);
+		if (orderedItemMatch) {
+			flushParagraph();
+			if (listTag !== "ol") {
+				flushList();
+				listTag = "ol";
+			}
+			listItems.push(`<li>${renderInlineMarkdown(orderedItemMatch[1].trim())}</li>`);
+			continue;
+		}
+
+		const unorderedItemMatch = line.match(/^[-*+]\s+(.*)$/u);
+		if (unorderedItemMatch) {
+			flushParagraph();
+			if (listTag !== "ul") {
+				flushList();
+				listTag = "ul";
+			}
+			listItems.push(`<li>${renderInlineMarkdown(unorderedItemMatch[1].trim())}</li>`);
+			continue;
+		}
+
+		flushList();
+		paragraphLines.push(renderInlineMarkdown(line));
+	}
+
+	flushParagraph();
+	flushList();
+	flushQuote();
+	flushCodeBlock();
+
+	return blocks.join("");
+}
+
+let markdownPreviewRafId = 0;
+
+function syncMarkdownPreview() {
+	if (
+		!(contentTextarea instanceof HTMLTextAreaElement) ||
+		!(markdownPreview instanceof HTMLElement)
+	) {
+		return;
+	}
+
+	markdownPreview.innerHTML = renderMarkdownPreview(contentTextarea.value);
+}
+
+function scheduleMarkdownPreview() {
+	if (
+		!(contentTextarea instanceof HTMLTextAreaElement) ||
+		!(markdownPreview instanceof HTMLElement)
+	) {
+		return;
+	}
+
+	if (markdownPreviewRafId) {
+		return;
+	}
+
+	markdownPreviewRafId = window.requestAnimationFrame(() => {
+		markdownPreviewRafId = 0;
+		syncMarkdownPreview();
+	});
+}
+
 async function uploadImageToMedia(file, uploadUrl, csrfToken) {
 	if (!file || !uploadUrl || !csrfToken) {
 		throw new Error("上传配置缺失，请刷新页面后重试");
@@ -139,6 +419,7 @@ function insertMarkdownImage(textarea, file, url) {
 
 	textarea.setRangeText(inserted, start, end, "end");
 	textarea.focus();
+	textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function syncNewCategoryInputVisibility() {
@@ -747,6 +1028,8 @@ const handleEditorImageUpload = async (file) => {
 	}
 };
 
+contentTextarea?.addEventListener("input", scheduleMarkdownPreview);
+
 contentTextarea?.addEventListener("dragover", (event) => {
 	const file = getFirstImageFile(event.dataTransfer?.files);
 	if (!file) {
@@ -790,6 +1073,7 @@ contentTextarea?.addEventListener("paste", (event) => {
 });
 
 updateSlugPreview();
+syncMarkdownPreview();
 if (slugInput instanceof HTMLInputElement && !slugInput.value) {
 	updateSlugFromTitle();
 }

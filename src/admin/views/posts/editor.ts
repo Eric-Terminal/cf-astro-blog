@@ -98,7 +98,14 @@ export function postEditorPage(data: EditorData): string {
 
 					<div class="form-group">
 						<label for="content">正文（Markdown）</label>
-						<textarea id="content" name="content" class="form-textarea" required>${escapeTextarea(post?.content || "")}</textarea>
+						<div class="markdown-editor-shell">
+							<textarea id="content" name="content" class="form-textarea" required data-markdown-input="true">${escapeTextarea(post?.content || "")}</textarea>
+							<section class="markdown-preview-panel" aria-label="Markdown 实时预览">
+								<div class="markdown-preview-head">实时预览</div>
+								<div class="markdown-preview-body" data-markdown-preview="true"></div>
+							</section>
+						</div>
+						<p class="form-help">输入内容后会在右侧实时预览，单换行也会保留显示。</p>
 						<p class="form-help" data-content-upload-status></p>
 					</div>
 				</div>
