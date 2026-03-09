@@ -15,6 +15,27 @@ const mockEnv = {
 	},
 } as unknown as Env;
 
+function createMockD1() {
+	const calls: Array<{ sql: string; params: unknown[] }> = [];
+
+	const db = {
+		prepare(sql: string) {
+			return {
+				bind(...params: unknown[]) {
+					return {
+						run: async () => {
+							calls.push({ sql, params });
+							return { success: true };
+						},
+					};
+				},
+			};
+		},
+	} as unknown as D1Database;
+
+	return { db, calls };
+}
+
 describe("后台接口", () => {
 	test("GET /health 会返回健康状态", async () => {
 		const res = await app.request("/health");
@@ -38,6 +59,91 @@ describe("后台接口", () => {
 		assert.match(html, /\/api\/auth\/github/u);
 		assert.ok(!html.includes('name="username"'));
 		assert.ok(!html.includes('name="password"'));
+	});
+
+	test("POST /analytics/track 接收有效事件并写入数据库", async () => {
+		const { db, calls } = createMockD1();
+		const res = await app.request(
+			"/analytics/track",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: "http://localhost",
+				},
+				body: JSON.stringify({
+					sessionId: "sid_test_1234567890abcd",
+					pageUrl: "/blog/test?from=home",
+					pageTitle: "测试文章",
+					referrer: "https://google.com",
+					utmSource: "google",
+					utmMedium: "organic",
+					utmCampaign: "spring",
+					touchSession: true,
+				}),
+			},
+			{
+				...mockEnv,
+				DB: db,
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 204);
+		assert.equal(calls.length, 2);
+		assert.match(calls[0]?.sql ?? "", /insert into analytics_sessions/iu);
+		assert.match(calls[1]?.sql ?? "", /insert into analytics_events/iu);
+	});
+
+	test("POST /analytics/track 会拒绝无效事件数据", async () => {
+		const { db, calls } = createMockD1();
+		const res = await app.request(
+			"/analytics/track",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: "http://localhost",
+				},
+				body: JSON.stringify({
+					sessionId: "bad",
+					pageUrl: "javascript:alert(1)",
+				}),
+			},
+			{
+				...mockEnv,
+				DB: db,
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 400);
+		assert.equal(calls.length, 0);
+	});
+
+	test("POST /analytics/track 在未触达会话时只写入事件表", async () => {
+		const { db, calls } = createMockD1();
+		const res = await app.request(
+			"/analytics/track",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: "http://localhost",
+				},
+				body: JSON.stringify({
+					sessionId: "sid_test_1234567890abcd",
+					pageUrl: "/",
+					touchSession: false,
+				}),
+			},
+			{
+				...mockEnv,
+				DB: db,
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 204);
+		assert.equal(calls.length, 1);
+		assert.match(calls[0]?.sql ?? "", /insert into analytics_events/iu);
 	});
 
 	test("未登录访问 /admin 会跳转到登录页", async () => {

@@ -8,6 +8,7 @@ import { friendLinksRoutes } from "./routes/friend-links";
 import { friendsRoutes } from "./routes/friends";
 import { mediaRoutes } from "./routes/media";
 import { postsRoutes } from "./routes/posts";
+import { publicAnalyticsRoutes } from "./routes/public-analytics";
 
 const app = new Hono<AdminAppEnv>();
 
@@ -73,6 +74,7 @@ app.use("*", async (c, next) => {
 });
 
 app.route("/auth", authRoutes);
+app.route("/analytics", publicAnalyticsRoutes);
 app.route("/admin", dashboardRoutes);
 app.route("/admin/appearance", appearanceRoutes);
 app.route("/admin/posts", postsRoutes);
