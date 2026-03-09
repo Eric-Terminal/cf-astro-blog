@@ -365,6 +365,13 @@ const cardClassName = `post-card glass-panel ${coverSide === "right" ? "post-car
 	}
 
 	@media (hover: none), (pointer: coarse) {
+		.post-card-cover-left .post-card-cover,
+		.post-card-cover-right .post-card-cover {
+			-webkit-clip-path: none;
+			clip-path: none;
+			border-radius: calc(var(--radius-panel) - 8px);
+		}
+
 		.post-card:hover {
 			transform: none;
 			box-shadow: var(--shadow-card);
