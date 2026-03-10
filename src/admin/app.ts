@@ -7,8 +7,10 @@ import { dashboardRoutes } from "./routes/dashboard";
 import { friendLinksRoutes } from "./routes/friend-links";
 import { friendsRoutes } from "./routes/friends";
 import { mediaRoutes } from "./routes/media";
+import { mentionsRoutes } from "./routes/mentions";
 import { postsRoutes } from "./routes/posts";
 import { publicAnalyticsRoutes } from "./routes/public-analytics";
+import { webmentionRoutes } from "./routes/webmention";
 
 const app = new Hono<AdminAppEnv>();
 
@@ -79,9 +81,11 @@ app.route("/admin", dashboardRoutes);
 app.route("/admin/appearance", appearanceRoutes);
 app.route("/admin/posts", postsRoutes);
 app.route("/admin/friends", friendsRoutes);
+app.route("/admin/mentions", mentionsRoutes);
 app.route("/admin/media", mediaRoutes);
 app.route("/admin/analytics", analyticsRoutes);
 app.route("/friend-links", friendLinksRoutes);
+app.route("/webmention", webmentionRoutes);
 
 app.get("/health", (c) =>
 	c.json({ status: "ok", timestamp: new Date().toISOString() }),

@@ -123,6 +123,7 @@ npm run hash:password -- 你的密码
 - `sitemap.xml`：由 `src/pages/sitemap.xml.ts` 动态输出，包含公开页面和可见文章。
 - `rss.xml`：由 `src/pages/rss.xml.ts` 动态输出，默认收录最近 30 篇公开文章。
 - `robots.txt`：由 `src/pages/robots.txt.ts` 输出，允许公开页面抓取，屏蔽后台登录与管理相关路径（`/api/auth`、`/api/admin`、`/admin`）。
+- `webmention`：由 `src/admin/routes/webmention.ts` 提供接收端点 `/api/webmention`，通过 `source/target` 校验后写入待审核队列；后台在 `/api/admin/mentions` 进行审核。
 
 ## 部署前检查
 

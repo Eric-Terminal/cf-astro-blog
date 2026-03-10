@@ -9,6 +9,7 @@ type AdminNavKey =
 	| "appearance"
 	| "posts"
 	| "friends"
+	| "mentions"
 	| "media"
 	| "analytics";
 
@@ -17,6 +18,7 @@ const navItems: Array<{ key: AdminNavKey; label: string; href: string }> = [
 	{ key: "appearance", label: "外观", href: "/api/admin/appearance" },
 	{ key: "posts", label: "文章", href: "/api/admin/posts" },
 	{ key: "friends", label: "友链", href: "/api/admin/friends" },
+	{ key: "mentions", label: "提及", href: "/api/admin/mentions" },
 	{ key: "media", label: "媒体", href: "/api/admin/media" },
 	{ key: "analytics", label: "统计", href: "/api/admin/analytics" },
 ];
@@ -1176,6 +1178,7 @@ export const adminSharedStyles = `
 function resolveActiveNav(title: string): AdminNavKey {
 	if (title.includes("外观")) return "appearance";
 	if (title.includes("友链")) return "friends";
+	if (title.includes("提及")) return "mentions";
 	if (
 		title.includes("文章") ||
 		title.includes("编辑") ||

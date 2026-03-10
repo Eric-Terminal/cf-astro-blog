@@ -36,6 +36,35 @@ function createMockD1() {
 	return { db, calls };
 }
 
+function createWebMentionMockD1() {
+	const calls: Array<{ sql: string; params: unknown[] }> = [];
+
+	const db = {
+		prepare(sql: string) {
+			return {
+				bind(...params: unknown[]) {
+					return {
+						run: async () => {
+							calls.push({ sql, params });
+							return { success: true };
+						},
+						all: async () => {
+							calls.push({ sql, params });
+							return { results: [] };
+						},
+						first: async () => {
+							calls.push({ sql, params });
+							return undefined;
+						},
+					};
+				},
+			};
+		},
+	} as unknown as D1Database;
+
+	return { db, calls };
+}
+
 describe("后台接口", () => {
 	test("GET /health 会返回健康状态", async () => {
 		const res = await app.request("/health");
@@ -186,6 +215,82 @@ describe("后台接口", () => {
 		});
 		assert.equal(res.status, 302);
 		assert.equal(res.headers.get("location"), "/api/auth/login");
+	});
+
+	test("未登录访问 /admin/mentions 会跳转到登录页", async () => {
+		const res = await app.request("/admin/mentions", {
+			redirect: "manual",
+		});
+		assert.equal(res.status, 302);
+		assert.equal(res.headers.get("location"), "/api/auth/login");
+	});
+
+	test("POST /webmention 缺少参数时会返回 400", async () => {
+		const res = await app.request(
+			"/webmention",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/x-www-form-urlencoded",
+				},
+				body: "source=&target=",
+			},
+			{
+				...mockEnv,
+				DB: createWebMentionMockD1().db,
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 400);
+		assert.match(await res.text(), /source 和 target 参数不能为空/u);
+	});
+
+	test("POST /webmention 成功时会写入待审核记录并返回 202", async () => {
+		const { db, calls } = createWebMentionMockD1();
+		const sourceUrl = "https://example.org/posts/webmention-demo";
+		const targetUrl = "https://blog.ericterminal.com/search";
+		const originalFetch = globalThis.fetch;
+
+		globalThis.fetch = async (input) => {
+			if (String(input) === sourceUrl) {
+				return new Response(
+					`<!doctype html><html><head><title>来源文章</title><meta name="description" content="一篇测试提及"></head><body><a href="${targetUrl}">提到你</a></body></html>`,
+					{
+						status: 200,
+						headers: { "content-type": "text/html; charset=utf-8" },
+					},
+				);
+			}
+
+			return new Response("not found", { status: 404 });
+		};
+
+		try {
+			const res = await app.request(
+				"/webmention",
+				{
+					method: "POST",
+					headers: {
+						"content-type": "application/x-www-form-urlencoded",
+					},
+					body: `source=${encodeURIComponent(sourceUrl)}&target=${encodeURIComponent(targetUrl)}`,
+				},
+				{
+					...mockEnv,
+					DB: db,
+				} as unknown as Env,
+			);
+
+			assert.equal(res.status, 202);
+			assert.match(await res.text(), /等待审核/u);
+			assert.ok(
+				calls.some((entry) =>
+					/insert into\s+"?web_mentions"?/iu.test(entry.sql),
+				),
+			);
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 
 	test("POST /auth/login 会拒绝密码表单登录", async () => {

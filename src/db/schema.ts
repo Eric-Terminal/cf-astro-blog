@@ -6,6 +6,7 @@ import {
 	primaryKey,
 	sqliteTable,
 	text,
+	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
 // ─── 文章分类 ────────────────────────────────────────────────────────────────
@@ -105,6 +106,34 @@ export const friendLinks = sqliteTable(
 		updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 	},
 	(table) => [index("friend_links_status_idx").on(table.status)],
+);
+
+// ─── Webmention 提及与审核 ──────────────────────────────────────────────────
+
+export const webMentions = sqliteTable(
+	"web_mentions",
+	{
+		id: integer("id").primaryKey({ autoIncrement: true }),
+		sourceUrl: text("source_url").notNull(),
+		targetUrl: text("target_url").notNull(),
+		sourceTitle: text("source_title"),
+		sourceExcerpt: text("source_excerpt"),
+		sourceAuthor: text("source_author"),
+		sourcePublishedAt: text("source_published_at"),
+		status: text("status").notNull().default("pending"),
+		reviewNote: text("review_note"),
+		reviewedAt: text("reviewed_at"),
+		lastCheckedAt: text("last_checked_at"),
+		createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+		updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+	},
+	(table) => [
+		index("web_mentions_status_idx").on(table.status, table.createdAt),
+		uniqueIndex("web_mentions_source_target_unique").on(
+			table.sourceUrl,
+			table.targetUrl,
+		),
+	],
 );
 
 // ─── 站点外观设置 ────────────────────────────────────────────────────────────
@@ -233,6 +262,9 @@ export type NewBlogPost = typeof blogPosts.$inferInsert;
 
 export type FriendLink = typeof friendLinks.$inferSelect;
 export type NewFriendLink = typeof friendLinks.$inferInsert;
+
+export type WebMention = typeof webMentions.$inferSelect;
+export type NewWebMention = typeof webMentions.$inferInsert;
 
 export type SiteAppearanceSetting = typeof siteAppearanceSettings.$inferSelect;
 export type NewSiteAppearanceSetting =

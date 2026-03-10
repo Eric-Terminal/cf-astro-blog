@@ -9,6 +9,8 @@ describe("SEO 与订阅输出", () => {
 		assert.ok(source.includes('rel="sitemap"'));
 		assert.ok(source.includes('type="application/rss+xml"'));
 		assert.ok(source.includes('href="/rss.xml"'));
+		assert.ok(source.includes('rel="webmention"'));
+		assert.ok(source.includes('href="/api/webmention"'));
 	});
 
 	test("robots 仅屏蔽后台登录与管理路径", async () => {

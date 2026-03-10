@@ -10,6 +10,7 @@ import {
 	friendLinks,
 	loginAttempts,
 	siteAppearanceSettings,
+	webMentions,
 } from "../../src/db/schema";
 
 describe("数据库结构", () => {
@@ -68,6 +69,23 @@ describe("数据库结构", () => {
 		assert.ok(columns.includes("status"));
 		assert.ok(columns.includes("reviewNote"));
 		assert.ok(columns.includes("reviewedAt"));
+		assert.ok(columns.includes("createdAt"));
+		assert.ok(columns.includes("updatedAt"));
+	});
+
+	test("webMentions 表包含必要字段", () => {
+		const columns = Object.keys(webMentions);
+		assert.ok(columns.includes("id"));
+		assert.ok(columns.includes("sourceUrl"));
+		assert.ok(columns.includes("targetUrl"));
+		assert.ok(columns.includes("sourceTitle"));
+		assert.ok(columns.includes("sourceExcerpt"));
+		assert.ok(columns.includes("sourceAuthor"));
+		assert.ok(columns.includes("sourcePublishedAt"));
+		assert.ok(columns.includes("status"));
+		assert.ok(columns.includes("reviewNote"));
+		assert.ok(columns.includes("reviewedAt"));
+		assert.ok(columns.includes("lastCheckedAt"));
 		assert.ok(columns.includes("createdAt"));
 		assert.ok(columns.includes("updatedAt"));
 	});
