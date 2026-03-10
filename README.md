@@ -118,6 +118,12 @@ npm run hash:password -- 你的密码
 | `npm run db:migrate:local` | 应用本地 D1 迁移 |
 | `npm run db:migrate:remote` | 应用线上 D1 迁移 |
 
+## SEO 与订阅
+
+- `sitemap.xml`：由 `src/pages/sitemap.xml.ts` 动态输出，包含公开页面和可见文章。
+- `rss.xml`：由 `src/pages/rss.xml.ts` 动态输出，默认收录最近 30 篇公开文章。
+- `robots.txt`：由 `src/pages/robots.txt.ts` 输出，允许公开页面抓取，屏蔽后台登录与管理相关路径（`/api/auth`、`/api/admin`、`/admin`）。
+
 ## 部署前检查
 
 1. 先确认 `JWT_SECRET`、`ADMIN_GITHUB_LOGIN`、`GITHUB_OAUTH_CLIENT_ID`、`GITHUB_OAUTH_CLIENT_SECRET` 已配置。

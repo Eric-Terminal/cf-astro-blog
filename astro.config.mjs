@@ -13,7 +13,7 @@ export default defineConfig({
 			enabled: true,
 		},
 	}),
-	site: "https://example.com",
+	site: "https://blog.ericterminal.com",
 	vite: {
 		resolve: {
 			alias: {
