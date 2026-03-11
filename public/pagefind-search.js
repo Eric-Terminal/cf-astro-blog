@@ -122,6 +122,21 @@ function updateSummary(summaryEl, text) {
 	summaryEl.textContent = text;
 }
 
+async function withTimeout(promise, ms, message) {
+	let timeoutId;
+	const timeout = new Promise((_, reject) => {
+		timeoutId = window.setTimeout(() => {
+			reject(new Error(message));
+		}, ms);
+	});
+
+	try {
+		return await Promise.race([promise, timeout]);
+	} finally {
+		window.clearTimeout(timeoutId);
+	}
+}
+
 async function performSearch(context, state, options = {}) {
 	const { metaData, resultsEl, summaryEl } = context;
 	const hasCriteria = Boolean(state.query || state.category || state.tags.length > 0);
@@ -138,9 +153,17 @@ async function performSearch(context, state, options = {}) {
 	if (state.query) {
 		try {
 			const pagefind = await loadPagefindModule();
-			const searchResponse = await pagefind.search(state.query);
+			const searchResponse = await withTimeout(
+				pagefind.search(state.query),
+				10000,
+				"Pagefind 搜索超时",
+			);
 			const results = searchResponse?.results ?? [];
-			const fetched = await Promise.all(results.map((result) => result.data()));
+			const fetched = await withTimeout(
+				Promise.all(results.map((result) => result.data())),
+				10000,
+				"Pagefind 结果加载超时",
+			);
 			const rankMap = new Map();
 			fetched.forEach((item, index) => {
 				const slug = extractSlugFromUrl(new URL(item.url, window.location.origin).pathname);

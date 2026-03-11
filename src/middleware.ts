@@ -18,6 +18,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 	if (!context.url.pathname.startsWith("/api/")) {
 		const frameAncestors = isAdminPreview ? "'self'" : "'none'";
+		const scriptSources = [
+			"'self'",
+			"https://giscus.app",
+			"https://challenges.cloudflare.com",
+		];
+		if (context.url.pathname.startsWith("/search")) {
+			scriptSources.push("'wasm-unsafe-eval'");
+		}
 		response.headers.set(
 			"Content-Security-Policy",
 			[
@@ -26,7 +34,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 				`frame-ancestors ${frameAncestors}`,
 				"object-src 'none'",
 				"form-action 'self'",
-				"script-src 'self' https://giscus.app https://challenges.cloudflare.com",
+				`script-src ${scriptSources.join(" ")}`,
 				"style-src 'self' 'unsafe-inline' https://giscus.app",
 				"img-src 'self' data: https://assets.ericterminal.com",
 				"font-src 'self'",

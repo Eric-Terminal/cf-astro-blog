@@ -139,6 +139,8 @@ describe("源码回归保护", () => {
 	test("公共页面 CSP 放行 Turnstile 域名", async () => {
 		const source = await readFile("src/middleware.ts", "utf8");
 		assert.ok(source.includes("https://challenges.cloudflare.com"));
+		assert.ok(source.includes('context.url.pathname.startsWith("/search")'));
+		assert.ok(source.includes("'wasm-unsafe-eval'"));
 	});
 
 	test("搜索组件将标签筛选放入折叠面板并外显已选标签", async () => {
