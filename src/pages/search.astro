@@ -194,32 +194,95 @@ const activeFilters = [
 
 	.search-result-card {
 		display: grid;
-		gap: 0.65rem;
-		padding: 1rem 1.1rem;
+		gap: 0.75rem;
+		padding: clamp(0.75rem, 0.56rem + 0.75vw, 1.05rem);
+		background-color: rgba(var(--card-surface-rgb), 0.2);
+		backdrop-filter: blur(24px) saturate(150%);
+		-webkit-backdrop-filter: blur(24px) saturate(150%);
+		border: 1px solid rgba(var(--card-border-rgb), 0.24);
+		transition:
+			transform var(--transition),
+			border-color var(--transition),
+			box-shadow var(--transition);
 	}
 
-	.search-result-card h3 {
-		margin: 0;
-		font-size: 1.1rem;
+	.search-result-card:hover {
+		transform: translate3d(0, -4px, 0);
+		border-color: rgba(10, 132, 255, 0.26);
+		box-shadow:
+			0 24px 34px -30px rgba(8, 18, 34, 0.45),
+			0 10px 20px -18px rgba(8, 18, 34, 0.28);
 	}
 
-	.search-result-card h3 a {
-		color: var(--color-text);
+	.search-result-card-inner {
+		display: grid;
+		gap: 0.72rem;
+	}
+
+	.search-result-pill-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.search-result-pill {
+		display: inline-flex;
+		align-items: center;
+		height: 1.7rem;
+		padding: 0 0.72rem;
+		border-radius: 999px;
+		background: rgba(var(--card-sheen-rgb), 0.22);
+		color: var(--color-text-muted);
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+
+	.search-result-link {
+		color: inherit;
 		text-decoration: none;
 	}
 
-	.search-result-card h3 a:hover {
-		color: var(--color-accent);
+	.search-result-title {
+		margin: 0;
+		font-size: clamp(1.2rem, 1.08rem + 0.46vw, 1.54rem);
+		line-height: 1.24;
+		letter-spacing: -0.02em;
+		overflow-wrap: anywhere;
+		color: var(--color-text);
 	}
 
-	.search-result-card p {
+	.search-result-link:hover .search-result-title {
+		color: var(--color-accent-hover);
+	}
+
+	.search-result-excerpt {
 		margin: 0;
 		color: var(--color-text-secondary);
+		font-size: 0.96rem;
+		line-height: 1.7;
+		overflow-wrap: anywhere;
 	}
 
 	.search-result-meta {
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.65rem;
 		color: var(--color-text-muted);
 		font-size: 0.86rem;
+	}
+
+	.search-result-readmore {
+		margin-left: auto;
+		color: var(--color-accent);
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.search-result-readmore:hover {
+		color: var(--color-accent-hover);
 	}
 
 	@media (max-width: 840px) {

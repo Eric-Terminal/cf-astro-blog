@@ -29,24 +29,25 @@ function formatDate(value) {
 }
 
 function createResultCard(post) {
-	const metaParts = [];
-	if (post.categoryName) {
-		metaParts.push(`分类：${post.categoryName}`);
-	}
-	if (Array.isArray(post.tagNames) && post.tagNames.length > 0) {
-		metaParts.push(`标签：${post.tagNames.join("、")}`);
-	}
-	if (post.publishedAt) {
-		const formatted = formatDate(post.publishedAt);
-		if (formatted) {
-			metaParts.push(`发布时间：${formatted}`);
-		}
-	}
+	const formattedDate = formatDate(post.publishedAt);
+	const tagNames = Array.isArray(post.tagNames) ? post.tagNames : [];
 
 	return `<article class="search-result-card glass-panel">
-	<h3><a href="${escapeHtml(post.url)}">${escapeHtml(post.title)}</a></h3>
-	<p>${escapeHtml(post.excerpt || "")}</p>
-	${metaParts.length > 0 ? `<p class="search-result-meta">${escapeHtml(metaParts.join(" · "))}</p>` : ""}
+	<div class="search-result-card-inner">
+		<div class="search-result-pill-row">
+			${formattedDate ? `<span class="search-result-pill">${escapeHtml(formattedDate)}</span>` : ""}
+			${post.categoryName ? `<span class="search-result-pill">${escapeHtml(post.categoryName)}</span>` : ""}
+		</div>
+		<a href="${escapeHtml(post.url)}" class="search-result-link">
+			<h3 class="search-result-title">${escapeHtml(post.title)}</h3>
+		</a>
+		<p class="search-result-excerpt">${escapeHtml(post.excerpt || "")}</p>
+		<div class="search-result-meta">
+			<span>${escapeHtml(post.authorName || "本站作者")}</span>
+			<span>${escapeHtml(tagNames.slice(0, 3).join(" · "))}</span>
+			<a href="${escapeHtml(post.url)}" class="search-result-readmore">继续阅读</a>
+		</div>
+	</div>
 </article>`;
 }
 
