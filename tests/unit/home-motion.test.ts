@@ -60,4 +60,11 @@ describe("首页灵动交互保护", () => {
 		assert.match(homeMotionSource, /--tilt-rotate-x/u);
 		assert.match(homeMotionSource, /pointermove/u);
 	});
+
+	test("首页首屏简介支持保留换行展示", async () => {
+		const homePageSource = await readFile("src/pages/index.astro", "utf8");
+
+		assert.match(homePageSource, /\.home-hero-copy \.page-intro/u);
+		assert.match(homePageSource, /white-space:\s*pre-line/u);
+	});
 });
