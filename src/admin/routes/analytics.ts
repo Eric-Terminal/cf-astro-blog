@@ -261,7 +261,7 @@ analytics.get("/", async (c) => {
 				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>页面</th><th>浏览量</th></tr></thead>
 				<tbody>
-					${stats.topPages.map((p) => `<tr><td>${escapeHtml(p.pageUrl || "-")}</td><td>${p.views}</td></tr>`).join("")}
+					${stats.topPages.map((p) => `<tr><td class="table-cell-break">${escapeHtml(p.pageUrl || "-")}</td><td>${p.views}</td></tr>`).join("")}
 				</tbody>
 			</table></div>`
 				: "<p class='empty-state'>当前还没有页面访问数据。</p>"
@@ -273,7 +273,7 @@ analytics.get("/", async (c) => {
 				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>来源</th><th>次数</th></tr></thead>
 				<tbody>
-					${stats.topReferrers.map((r) => `<tr><td>${escapeHtml(r.referrer)}</td><td>${r.count}</td></tr>`).join("")}
+					${stats.topReferrers.map((r) => `<tr><td class="table-cell-break">${escapeHtml(r.referrer)}</td><td>${r.count}</td></tr>`).join("")}
 				</tbody>
 			</table></div>`
 				: "<p class='empty-state'>当前还没有来源统计数据。</p>"
@@ -288,7 +288,7 @@ analytics.get("/", async (c) => {
 					${stats.recentSessions
 						.map(
 							(s) =>
-								`<tr><td>${escapeHtml(s.ipAddress || "-")}</td><td>${escapeHtml(`${s.browser || "Unknown"} / ${s.deviceType || "Unknown"}`)}</td><td>${escapeHtml(s.landingPage || "-")}</td><td>${escapeHtml(s.lastSeenAt)}</td></tr>`,
+								`<tr><td>${escapeHtml(s.ipAddress || "-")}</td><td>${escapeHtml(`${s.browser || "Unknown"} / ${s.deviceType || "Unknown"}`)}</td><td class="table-cell-break">${escapeHtml(s.landingPage || "-")}</td><td>${escapeHtml(s.lastSeenAt)}</td></tr>`,
 						)
 						.join("")}
 				</tbody>
@@ -308,7 +308,7 @@ analytics.get("/", async (c) => {
 				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>类型</th><th>页面</th><th>时间</th></tr></thead>
 				<tbody>
-					${stats.recentEvents.map((e) => `<tr><td>${escapeHtml(e.eventType)}</td><td>${escapeHtml(e.pageUrl || "-")}</td><td>${escapeHtml(e.timestamp)}</td></tr>`).join("")}
+					${stats.recentEvents.map((e) => `<tr><td>${escapeHtml(e.eventType)}</td><td class="table-cell-break">${escapeHtml(e.pageUrl || "-")}</td><td>${escapeHtml(e.timestamp)}</td></tr>`).join("")}
 				</tbody>
 			</table></div>
 			${renderPagination({

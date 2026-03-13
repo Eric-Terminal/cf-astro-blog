@@ -457,6 +457,12 @@ export const adminSharedStyles = `
 			font-weight: 600;
 		}
 
+		.table-cell-break {
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: anywhere;
+		}
+
 		.table-actions form {
 			display: inline-flex;
 		}

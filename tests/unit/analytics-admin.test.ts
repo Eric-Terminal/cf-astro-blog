@@ -27,8 +27,13 @@ describe("访问统计后台能力保护", () => {
 		]);
 
 		assert.match(analyticsRouteSource, /table-actions analytics-actions/u);
+		assert.match(analyticsRouteSource, /class="table-cell-break"/u);
 		assert.match(layoutSource, /\.analytics-actions \.btn/u);
 		assert.match(layoutSource, /\.table-card\s*\{[\s\S]*overflow-x: auto;/u);
+		assert.match(
+			layoutSource,
+			/\.table-cell-break\s*\{[\s\S]*overflow-wrap: anywhere;/u,
+		);
 		assert.match(
 			layoutSource,
 			/\.admin-page-content\s*\{[\s\S]*min-width: 0;/u,
