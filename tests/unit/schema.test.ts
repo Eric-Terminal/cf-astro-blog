@@ -153,5 +153,13 @@ describe("数据库结构", () => {
 		assert.ok(columns.includes("heroSignalChip1"));
 		assert.ok(columns.includes("heroSignalChip2"));
 		assert.ok(columns.includes("heroSignalChip3"));
+		assert.ok(columns.includes("aiInternalEnabled"));
+		assert.ok(columns.includes("aiInternalBaseUrl"));
+		assert.ok(columns.includes("aiInternalApiKey"));
+		assert.ok(columns.includes("aiInternalModel"));
+		assert.ok(columns.includes("aiPublicEnabled"));
+		assert.ok(columns.includes("aiPublicBaseUrl"));
+		assert.ok(columns.includes("aiPublicApiKey"));
+		assert.ok(columns.includes("aiPublicModel"));
 	});
 });

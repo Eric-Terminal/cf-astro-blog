@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { autoFillPostSeoWithInternalAi } from "@/admin/lib/ai-post-seo";
 import { triggerDeployHook } from "@/admin/lib/deploy-hook";
 import { blogCategories, blogPosts, blogPostTags, blogTags } from "@/db/schema";
 import { getDb } from "@/lib/db";
@@ -14,6 +15,7 @@ import {
 	sanitizePostStatus,
 	sanitizeSlug,
 } from "@/lib/security";
+import { DEFAULT_AI_SETTINGS, getAiSettings } from "@/lib/site-appearance";
 import {
 	type AdminAppEnv,
 	assertCsrfToken,
@@ -509,45 +511,50 @@ posts.post("/", async (c) => {
 	if ("error" in parsed) {
 		return c.html(renderPostErrorPage(session.csrfToken, parsed.error), 400);
 	}
+	const aiSettings = await getAiSettings(db).catch(() => DEFAULT_AI_SETTINGS);
+	const postInput = await autoFillPostSeoWithInternalAi(
+		parsed.data,
+		aiSettings.internal,
+	);
 
 	const now = new Date().toISOString();
 	const categoryId = await resolveCategoryId(
 		db,
-		parsed.data.categoryId,
-		parsed.data.newCategoryName,
+		postInput.categoryId,
+		postInput.newCategoryName,
 	);
 	const tagIds = await resolveTagIds(
 		db,
-		parsed.data.tagIds,
-		parsed.data.newTagNames,
+		postInput.tagIds,
+		postInput.newTagNames,
 	);
-	const slug = await resolveUniquePostSlug(db, parsed.data.slug);
+	const slug = await resolveUniquePostSlug(db, postInput.slug);
 	const publishAt =
-		parsed.data.status === "scheduled"
-			? parsed.data.publishAt
-			: parsed.data.status === "published"
+		postInput.status === "scheduled"
+			? postInput.publishAt
+			: postInput.status === "published"
 				? now
 				: null;
-	const publishedAt = parsed.data.status === "published" ? now : null;
+	const publishedAt = postInput.status === "published" ? now : null;
 
 	const [inserted] = await db
 		.insert(blogPosts)
 		.values({
-			title: parsed.data.title,
+			title: postInput.title,
 			slug,
-			content: parsed.data.content,
-			excerpt: parsed.data.excerpt,
-			status: parsed.data.status,
+			content: postInput.content,
+			excerpt: postInput.excerpt,
+			status: postInput.status,
 			publishAt,
 			publishedAt,
-			featuredImageKey: parsed.data.featuredImageKey,
-			featuredImageAlt: parsed.data.featuredImageAlt,
-			isPinned: parsed.data.isPinned,
-			pinnedOrder: parsed.data.pinnedOrder,
-			metaTitle: parsed.data.metaTitle,
-			metaDescription: parsed.data.metaDescription,
-			metaKeywords: parsed.data.metaKeywords,
-			canonicalUrl: parsed.data.canonicalUrl,
+			featuredImageKey: postInput.featuredImageKey,
+			featuredImageAlt: postInput.featuredImageAlt,
+			isPinned: postInput.isPinned,
+			pinnedOrder: postInput.pinnedOrder,
+			metaTitle: postInput.metaTitle,
+			metaDescription: postInput.metaDescription,
+			metaKeywords: postInput.metaKeywords,
+			canonicalUrl: postInput.canonicalUrl,
 			categoryId,
 			authorName: session.username,
 			createdAt: now,
@@ -564,12 +571,12 @@ posts.post("/", async (c) => {
 		);
 	}
 
-	if (isPostPublic(parsed.data.status, publishAt)) {
+	if (isPostPublic(postInput.status, publishAt)) {
 		await triggerDeployHook(c.env, {
 			event: "post-created",
 			postId: inserted?.id,
 			postSlug: slug,
-			postStatus: parsed.data.status,
+			postStatus: postInput.status,
 		});
 	}
 
@@ -629,6 +636,11 @@ posts.post("/:id", async (c) => {
 	if ("error" in parsed) {
 		return c.html(renderPostErrorPage(session.csrfToken, parsed.error), 400);
 	}
+	const aiSettings = await getAiSettings(db).catch(() => DEFAULT_AI_SETTINGS);
+	const postInput = await autoFillPostSeoWithInternalAi(
+		parsed.data,
+		aiSettings.internal,
+	);
 
 	const now = new Date().toISOString();
 
@@ -646,45 +658,45 @@ posts.post("/:id", async (c) => {
 	}
 
 	const publishedAt =
-		parsed.data.status === "published" && existing.status !== "published"
+		postInput.status === "published" && existing.status !== "published"
 			? now
 			: (existing.publishedAt ?? null);
 	const publishAt =
-		parsed.data.status === "scheduled"
-			? parsed.data.publishAt
-			: parsed.data.status === "published"
+		postInput.status === "scheduled"
+			? postInput.publishAt
+			: postInput.status === "published"
 				? now
 				: null;
 	const categoryId = await resolveCategoryId(
 		db,
-		parsed.data.categoryId,
-		parsed.data.newCategoryName,
+		postInput.categoryId,
+		postInput.newCategoryName,
 	);
 	const tagIds = await resolveTagIds(
 		db,
-		parsed.data.tagIds,
-		parsed.data.newTagNames,
+		postInput.tagIds,
+		postInput.newTagNames,
 	);
-	const slug = await resolveUniquePostSlug(db, parsed.data.slug, id);
+	const slug = await resolveUniquePostSlug(db, postInput.slug, id);
 
 	await db
 		.update(blogPosts)
 		.set({
-			title: parsed.data.title,
+			title: postInput.title,
 			slug,
-			content: parsed.data.content,
-			excerpt: parsed.data.excerpt,
-			status: parsed.data.status,
+			content: postInput.content,
+			excerpt: postInput.excerpt,
+			status: postInput.status,
 			publishAt,
 			publishedAt,
-			featuredImageKey: parsed.data.featuredImageKey,
-			featuredImageAlt: parsed.data.featuredImageAlt,
-			isPinned: parsed.data.isPinned,
-			pinnedOrder: parsed.data.pinnedOrder,
-			metaTitle: parsed.data.metaTitle,
-			metaDescription: parsed.data.metaDescription,
-			metaKeywords: parsed.data.metaKeywords,
-			canonicalUrl: parsed.data.canonicalUrl,
+			featuredImageKey: postInput.featuredImageKey,
+			featuredImageAlt: postInput.featuredImageAlt,
+			isPinned: postInput.isPinned,
+			pinnedOrder: postInput.pinnedOrder,
+			metaTitle: postInput.metaTitle,
+			metaDescription: postInput.metaDescription,
+			metaKeywords: postInput.metaKeywords,
+			canonicalUrl: postInput.canonicalUrl,
 			categoryId,
 			authorName: session.username,
 			updatedAt: now,
@@ -702,13 +714,13 @@ posts.post("/:id", async (c) => {
 	}
 
 	const wasPublic = isPostPublic(existing.status, existing.publishAt);
-	const willBePublic = isPostPublic(parsed.data.status, publishAt);
+	const willBePublic = isPostPublic(postInput.status, publishAt);
 	if (wasPublic || willBePublic) {
 		await triggerDeployHook(c.env, {
 			event: "post-updated",
 			postId: id,
 			postSlug: slug,
-			postStatus: parsed.data.status,
+			postStatus: postInput.status,
 		});
 	}
 

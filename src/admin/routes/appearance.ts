@@ -8,9 +8,13 @@ import {
 } from "@/lib/media";
 import { escapeAttribute, escapeHtml, sanitizeMediaKey } from "@/lib/security";
 import {
+	type AiSettings,
+	DEFAULT_AI_SETTINGS,
 	DEFAULT_SITE_APPEARANCE,
+	getAiSettings,
 	getSiteAppearance,
 	type SiteNavLink,
+	saveAiSettings,
 	saveSiteAppearance,
 } from "@/lib/site-appearance";
 import {
@@ -143,9 +147,10 @@ function renderLinkRows(
 function renderAppearancePage(options: {
 	csrfToken: string;
 	settings: typeof DEFAULT_SITE_APPEARANCE;
+	aiSettings: AiSettings;
 	alert?: { type: "success" | "error"; message: string };
 }) {
-	const { csrfToken, settings, alert } = options;
+	const { csrfToken, settings, aiSettings, alert } = options;
 	const backgroundScaleOffset = Math.min(
 		80,
 		Math.max(0, settings.backgroundScale - 100),
@@ -790,6 +795,112 @@ function renderAppearancePage(options: {
 					</div>
 				</section>
 				<section class="appearance-panel">
+					<h2>AI 模型接口（OpenAI 兼容）</h2>
+					<p class="appearance-note">内部接口用于自动摘要与 SEO 生成；公开接口先仅保存配置，后续可用于访客对话功能。</p>
+					<div class="appearance-content-fieldset">
+						<h3>内部接口（自动摘要与 SEO）</h3>
+						<div class="form-group">
+							<label>
+								<input
+									type="checkbox"
+									name="aiInternalEnabled"
+									value="1"
+									${aiSettings.internal.enabled ? "checked" : ""}
+								/>
+								启用内部 AI 自动生成
+							</label>
+						</div>
+						<div class="appearance-inline-grid">
+							<div class="form-group">
+								<label for="aiInternalBaseUrl">接口基地址</label>
+								<input
+									id="aiInternalBaseUrl"
+									name="aiInternalBaseUrl"
+									class="form-input"
+									value="${escapeAttribute(aiSettings.internal.baseUrl)}"
+									maxlength="240"
+									placeholder="https://api.openai.com/v1"
+								/>
+							</div>
+							<div class="form-group">
+								<label for="aiInternalModel">模型名称</label>
+								<input
+									id="aiInternalModel"
+									name="aiInternalModel"
+									class="form-input"
+									value="${escapeAttribute(aiSettings.internal.model)}"
+									maxlength="120"
+									placeholder="gpt-4o-mini"
+								/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="aiInternalApiKey">API Key</label>
+							<input
+								id="aiInternalApiKey"
+								name="aiInternalApiKey"
+								type="password"
+								class="form-input"
+								value="${escapeAttribute(aiSettings.internal.apiKey)}"
+								maxlength="400"
+								autocomplete="off"
+								placeholder="sk-..."
+							/>
+						</div>
+					</div>
+					<div class="appearance-content-fieldset">
+						<h3>公开接口（预留）</h3>
+						<div class="form-group">
+							<label>
+								<input
+									type="checkbox"
+									name="aiPublicEnabled"
+									value="1"
+									${aiSettings.public.enabled ? "checked" : ""}
+								/>
+								启用公开 AI 接口
+							</label>
+						</div>
+						<div class="appearance-inline-grid">
+							<div class="form-group">
+								<label for="aiPublicBaseUrl">接口基地址</label>
+								<input
+									id="aiPublicBaseUrl"
+									name="aiPublicBaseUrl"
+									class="form-input"
+									value="${escapeAttribute(aiSettings.public.baseUrl)}"
+									maxlength="240"
+									placeholder="https://api.openai.com/v1"
+								/>
+							</div>
+							<div class="form-group">
+								<label for="aiPublicModel">模型名称</label>
+								<input
+									id="aiPublicModel"
+									name="aiPublicModel"
+									class="form-input"
+									value="${escapeAttribute(aiSettings.public.model)}"
+									maxlength="120"
+									placeholder="gpt-4o-mini"
+								/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="aiPublicApiKey">API Key</label>
+							<input
+								id="aiPublicApiKey"
+								name="aiPublicApiKey"
+								type="password"
+								class="form-input"
+								value="${escapeAttribute(aiSettings.public.apiKey)}"
+								maxlength="400"
+								autocomplete="off"
+								placeholder="sk-..."
+							/>
+						</div>
+					</div>
+				</section>
+				<section class="appearance-panel">
 					<div class="appearance-actions">
 						<button type="submit" class="btn btn-primary">保存外观设置</button>
 						<a href="/api/admin/media" class="btn">打开媒体库</a>
@@ -830,11 +941,17 @@ appearance.use("*", requireAuth);
 appearance.get("/", async (c) => {
 	const session = getAuthenticatedSession(c);
 	let settings = DEFAULT_SITE_APPEARANCE;
+	let aiSettings = DEFAULT_AI_SETTINGS;
 
 	try {
 		settings = await getSiteAppearance(getDb(c.env.DB));
 	} catch {
 		// D1 未绑定时回退默认外观
+	}
+	try {
+		aiSettings = await getAiSettings(getDb(c.env.DB));
+	} catch {
+		// D1 未绑定时回退默认 AI 配置
 	}
 
 	return c.html(
@@ -843,6 +960,7 @@ appearance.get("/", async (c) => {
 			renderAppearancePage({
 				csrfToken: session.csrfToken,
 				settings,
+				aiSettings,
 				alert: getAppearanceAlert(c.req.url),
 			}),
 			{ csrfToken: session.csrfToken },
@@ -871,8 +989,9 @@ appearance.post("/", async (c) => {
 	const unifiedCardBlur = Number(
 		getBodyText(body, "heroCardBlur") || Number.NaN,
 	);
+	const db = getDb(c.env.DB);
 
-	await saveSiteAppearance(getDb(c.env.DB), {
+	await saveSiteAppearance(db, {
 		backgroundImageKey: backgroundImageKey || null,
 		backgroundBlur: Number(getBodyText(body, "backgroundBlur") || Number.NaN),
 		backgroundScale:
@@ -909,6 +1028,16 @@ appearance.post("/", async (c) => {
 		articleSidebarName: getBodyText(body, "articleSidebarName"),
 		articleSidebarBadge: getBodyText(body, "articleSidebarBadge"),
 		articleSidebarBio: getBodyText(body, "articleSidebarBio"),
+	});
+	await saveAiSettings(db, {
+		aiInternalEnabled: getBodyText(body, "aiInternalEnabled"),
+		aiInternalBaseUrl: getBodyText(body, "aiInternalBaseUrl"),
+		aiInternalApiKey: getBodyText(body, "aiInternalApiKey"),
+		aiInternalModel: getBodyText(body, "aiInternalModel"),
+		aiPublicEnabled: getBodyText(body, "aiPublicEnabled"),
+		aiPublicBaseUrl: getBodyText(body, "aiPublicBaseUrl"),
+		aiPublicApiKey: getBodyText(body, "aiPublicApiKey"),
+		aiPublicModel: getBodyText(body, "aiPublicModel"),
 	});
 
 	return c.redirect("/api/admin/appearance?status=saved");

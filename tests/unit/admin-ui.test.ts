@@ -54,6 +54,14 @@ describe("后台界面风格保护", () => {
 		assert.match(source, /articleSidebarName/u);
 		assert.match(source, /articleSidebarBadge/u);
 		assert.match(source, /articleSidebarBio/u);
+		assert.match(source, /aiInternalEnabled/u);
+		assert.match(source, /aiInternalBaseUrl/u);
+		assert.match(source, /aiInternalApiKey/u);
+		assert.match(source, /aiInternalModel/u);
+		assert.match(source, /aiPublicEnabled/u);
+		assert.match(source, /aiPublicBaseUrl/u);
+		assert.match(source, /aiPublicApiKey/u);
+		assert.match(source, /aiPublicModel/u);
 	});
 
 	test("文章封面上传会回填隐藏字段用于持久化保存", async () => {

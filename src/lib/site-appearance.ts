@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
 import { siteAppearanceSettings } from "@/db/schema";
 import type { Database } from "@/lib/db";
+import {
+	normalizeOpenAICompatibleBaseUrl,
+	type OpenAICompatibleEndpointConfig,
+} from "@/lib/openai-compatible";
 import { sanitizeMediaKey, sanitizePlainText } from "@/lib/security";
 
 export interface SiteNavLink {
@@ -61,9 +65,27 @@ export interface SiteAppearance {
 	articleSidebarBadge: string;
 }
 
+export interface AiSettings {
+	internal: OpenAICompatibleEndpointConfig;
+	public: OpenAICompatibleEndpointConfig;
+}
+
 export type SiteAppearanceInput = Partial<SiteAppearance> & {
 	navLinksJson?: unknown;
 	heroActionsJson?: unknown;
+};
+
+export type AiSettingsInput = {
+	internal?: Partial<OpenAICompatibleEndpointConfig>;
+	public?: Partial<OpenAICompatibleEndpointConfig>;
+	aiInternalEnabled?: unknown;
+	aiInternalBaseUrl?: unknown;
+	aiInternalApiKey?: unknown;
+	aiInternalModel?: unknown;
+	aiPublicEnabled?: unknown;
+	aiPublicBaseUrl?: unknown;
+	aiPublicApiKey?: unknown;
+	aiPublicModel?: unknown;
 };
 
 export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
@@ -108,6 +130,21 @@ export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
 	articleSidebarBadge: "文章作者",
 };
 
+export const DEFAULT_AI_SETTINGS: AiSettings = {
+	internal: {
+		enabled: false,
+		baseUrl: "https://api.openai.com/v1",
+		apiKey: "",
+		model: "gpt-4o-mini",
+	},
+	public: {
+		enabled: false,
+		baseUrl: "https://api.openai.com/v1",
+		apiKey: "",
+		model: "gpt-4o-mini",
+	},
+};
+
 function clampInteger(
 	value: unknown,
 	min: number,
@@ -135,6 +172,32 @@ function normalizeLongText(
 	const normalized = sanitizePlainText(value, maxLength, {
 		allowNewlines: true,
 	});
+	return normalized || fallback;
+}
+
+function normalizeBoolean(value: unknown, fallback: boolean) {
+	if (typeof value === "boolean") {
+		return value;
+	}
+
+	const normalized = sanitizePlainText(value, 12).toLowerCase();
+	if (["1", "true", "on", "yes"].includes(normalized)) {
+		return true;
+	}
+	if (["0", "false", "off", "no"].includes(normalized)) {
+		return false;
+	}
+
+	return fallback;
+}
+
+function normalizeApiKey(value: unknown, fallback: string) {
+	const normalized = sanitizePlainText(value, 400);
+	return normalized || fallback;
+}
+
+function normalizeModel(value: unknown, fallback: string) {
+	const normalized = sanitizePlainText(value, 120);
 	return normalized || fallback;
 }
 
@@ -245,6 +308,50 @@ function ensureFriendNavLink(items: SiteNavLink[]): SiteNavLink[] {
 	}
 
 	return nextItems.slice(0, MAX_DYNAMIC_LINK_ITEMS);
+}
+
+export function normalizeAiSettingsInput(input: AiSettingsInput): AiSettings {
+	const rawInternal = input.internal ?? {};
+	const rawPublic = input.public ?? {};
+
+	return {
+		internal: {
+			enabled: normalizeBoolean(
+				rawInternal.enabled ?? input.aiInternalEnabled,
+				DEFAULT_AI_SETTINGS.internal.enabled,
+			),
+			baseUrl: normalizeOpenAICompatibleBaseUrl(
+				rawInternal.baseUrl ?? input.aiInternalBaseUrl,
+				DEFAULT_AI_SETTINGS.internal.baseUrl,
+			),
+			apiKey: normalizeApiKey(
+				rawInternal.apiKey ?? input.aiInternalApiKey,
+				DEFAULT_AI_SETTINGS.internal.apiKey,
+			),
+			model: normalizeModel(
+				rawInternal.model ?? input.aiInternalModel,
+				DEFAULT_AI_SETTINGS.internal.model,
+			),
+		},
+		public: {
+			enabled: normalizeBoolean(
+				rawPublic.enabled ?? input.aiPublicEnabled,
+				DEFAULT_AI_SETTINGS.public.enabled,
+			),
+			baseUrl: normalizeOpenAICompatibleBaseUrl(
+				rawPublic.baseUrl ?? input.aiPublicBaseUrl,
+				DEFAULT_AI_SETTINGS.public.baseUrl,
+			),
+			apiKey: normalizeApiKey(
+				rawPublic.apiKey ?? input.aiPublicApiKey,
+				DEFAULT_AI_SETTINGS.public.apiKey,
+			),
+			model: normalizeModel(
+				rawPublic.model ?? input.aiPublicModel,
+				DEFAULT_AI_SETTINGS.public.model,
+			),
+		},
+	};
 }
 
 export function normalizeSiteAppearanceInput(
@@ -522,6 +629,62 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 	}
 
 	return normalizeSiteAppearanceInput(row);
+}
+
+export async function getAiSettings(db: Database): Promise<AiSettings> {
+	const [row] = await db
+		.select({
+			aiInternalEnabled: siteAppearanceSettings.aiInternalEnabled,
+			aiInternalBaseUrl: siteAppearanceSettings.aiInternalBaseUrl,
+			aiInternalApiKey: siteAppearanceSettings.aiInternalApiKey,
+			aiInternalModel: siteAppearanceSettings.aiInternalModel,
+			aiPublicEnabled: siteAppearanceSettings.aiPublicEnabled,
+			aiPublicBaseUrl: siteAppearanceSettings.aiPublicBaseUrl,
+			aiPublicApiKey: siteAppearanceSettings.aiPublicApiKey,
+			aiPublicModel: siteAppearanceSettings.aiPublicModel,
+		})
+		.from(siteAppearanceSettings)
+		.where(eq(siteAppearanceSettings.id, 1))
+		.limit(1);
+
+	if (!row) {
+		return DEFAULT_AI_SETTINGS;
+	}
+
+	return normalizeAiSettingsInput(row);
+}
+
+export async function saveAiSettings(db: Database, input: AiSettingsInput) {
+	const normalized = normalizeAiSettingsInput(input);
+
+	await db
+		.insert(siteAppearanceSettings)
+		.values({
+			id: 1,
+			aiInternalEnabled: normalized.internal.enabled,
+			aiInternalBaseUrl: normalized.internal.baseUrl,
+			aiInternalApiKey: normalized.internal.apiKey,
+			aiInternalModel: normalized.internal.model,
+			aiPublicEnabled: normalized.public.enabled,
+			aiPublicBaseUrl: normalized.public.baseUrl,
+			aiPublicApiKey: normalized.public.apiKey,
+			aiPublicModel: normalized.public.model,
+		})
+		.onConflictDoUpdate({
+			target: siteAppearanceSettings.id,
+			set: {
+				aiInternalEnabled: normalized.internal.enabled,
+				aiInternalBaseUrl: normalized.internal.baseUrl,
+				aiInternalApiKey: normalized.internal.apiKey,
+				aiInternalModel: normalized.internal.model,
+				aiPublicEnabled: normalized.public.enabled,
+				aiPublicBaseUrl: normalized.public.baseUrl,
+				aiPublicApiKey: normalized.public.apiKey,
+				aiPublicModel: normalized.public.model,
+			},
+		});
+
+	return normalized;
 }
 
 export async function saveSiteAppearance(

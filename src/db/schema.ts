@@ -199,6 +199,22 @@ export const siteAppearanceSettings = sqliteTable("site_appearance_settings", {
 	articleSidebarBadge: text("article_sidebar_badge")
 		.notNull()
 		.default("文章作者"),
+	aiInternalEnabled: integer("ai_internal_enabled", { mode: "boolean" })
+		.notNull()
+		.default(false),
+	aiInternalBaseUrl: text("ai_internal_base_url")
+		.notNull()
+		.default("https://api.openai.com/v1"),
+	aiInternalApiKey: text("ai_internal_api_key").notNull().default(""),
+	aiInternalModel: text("ai_internal_model").notNull().default("gpt-4o-mini"),
+	aiPublicEnabled: integer("ai_public_enabled", { mode: "boolean" })
+		.notNull()
+		.default(false),
+	aiPublicBaseUrl: text("ai_public_base_url")
+		.notNull()
+		.default("https://api.openai.com/v1"),
+	aiPublicApiKey: text("ai_public_api_key").notNull().default(""),
+	aiPublicModel: text("ai_public_model").notNull().default("gpt-4o-mini"),
 	updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 

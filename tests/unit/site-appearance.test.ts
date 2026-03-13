@@ -4,7 +4,9 @@ import {
 	buildBackgroundImageUrl,
 	buildHeroActionLinks,
 	buildSiteNavLinks,
+	DEFAULT_AI_SETTINGS,
 	DEFAULT_SITE_APPEARANCE,
+	normalizeAiSettingsInput,
 	normalizeSiteAppearanceInput,
 } from "../../src/lib/site-appearance";
 
@@ -122,6 +124,40 @@ describe("站点外观设置", () => {
 			normalized.articleSidebarBio,
 			"这里放作者简介，用于文章页左侧信息栏展示。",
 		);
+	});
+
+	test("normalizeAiSettingsInput 支持 OpenAI 兼容接口配置", () => {
+		const normalized = normalizeAiSettingsInput({
+			aiInternalEnabled: "1",
+			aiInternalBaseUrl: "https://api.openai.com/v1/",
+			aiInternalApiKey: "sk-internal",
+			aiInternalModel: "gpt-4.1-mini",
+			aiPublicEnabled: "true",
+			aiPublicBaseUrl: "https://llm.example.com/v1/",
+			aiPublicApiKey: "sk-public",
+			aiPublicModel: "qwen-plus",
+		});
+
+		assert.equal(normalized.internal.enabled, true);
+		assert.equal(normalized.internal.baseUrl, "https://api.openai.com/v1");
+		assert.equal(normalized.internal.apiKey, "sk-internal");
+		assert.equal(normalized.internal.model, "gpt-4.1-mini");
+		assert.equal(normalized.public.enabled, true);
+		assert.equal(normalized.public.baseUrl, "https://llm.example.com/v1");
+		assert.equal(normalized.public.apiKey, "sk-public");
+		assert.equal(normalized.public.model, "qwen-plus");
+	});
+
+	test("normalizeAiSettingsInput 在非法值下会回退默认配置", () => {
+		const normalized = normalizeAiSettingsInput({
+			aiInternalEnabled: "not-bool",
+			aiInternalBaseUrl: "javascript:alert(1)",
+			aiInternalApiKey: "",
+			aiInternalModel: "",
+		});
+
+		assert.deepEqual(normalized.internal, DEFAULT_AI_SETTINGS.internal);
+		assert.deepEqual(normalized.public, DEFAULT_AI_SETTINGS.public);
 	});
 
 	test("buildSiteNavLinks 会按顺序生成顶部导航数据", () => {
