@@ -43,6 +43,44 @@ const EDITOR_DRAFT_STORAGE_PREFIX = "cf-astro-blog:editor-draft";
 const EDITOR_DRAFT_SCHEMA_VERSION = 1;
 const EDITOR_DRAFT_SAVE_DEBOUNCE_MS = 600;
 
+function parseUtcDateForAdmin(value) {
+	const raw = String(value ?? "").trim();
+	if (!raw) {
+		return null;
+	}
+
+	let normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+	if (!/[zZ]$|[+-]\d{2}:\d{2}$/.test(normalized)) {
+		normalized = `${normalized}Z`;
+	}
+
+	const date = new Date(normalized);
+	return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatAdminLocalTime(date) {
+	return date.toLocaleString(undefined, { hour12: false });
+}
+
+function applyAdminLocalTimes() {
+	const nodes = document.querySelectorAll("time[data-admin-local-time='utc']");
+	for (const node of nodes) {
+		if (!(node instanceof HTMLTimeElement)) {
+			continue;
+		}
+
+		const rawValue = node.dataset.adminTimeValue || node.textContent || "";
+		const date = parseUtcDateForAdmin(rawValue);
+		if (!date) {
+			continue;
+		}
+
+		node.dateTime = date.toISOString();
+		node.textContent = formatAdminLocalTime(date);
+		node.title = date.toISOString();
+	}
+}
+
 function updateMediaUploadFilename(file) {
 	if (!(mediaUploadFilename instanceof HTMLElement)) {
 		return;
@@ -1189,6 +1227,7 @@ editorForm?.addEventListener("submit", () => {
 	clearEditorDraftStorage();
 	editorDraftState = null;
 });
+applyAdminLocalTimes();
 initEditorDraft();
 aiSeoGenerateButton?.addEventListener("click", () => {
 	void triggerAiSeoGeneration();

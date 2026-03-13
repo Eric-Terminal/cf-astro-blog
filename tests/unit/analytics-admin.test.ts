@@ -21,13 +21,17 @@ describe("访问统计后台能力保护", () => {
 	});
 
 	test("统计页操作区与表格容器具备响应式防遮挡样式", async () => {
-		const [analyticsRouteSource, layoutSource] = await Promise.all([
-			readFile("src/admin/routes/analytics.ts", "utf8"),
-			readFile("src/admin/views/layout.ts", "utf8"),
-		]);
+		const [analyticsRouteSource, layoutSource, adminScriptSource] =
+			await Promise.all([
+				readFile("src/admin/routes/analytics.ts", "utf8"),
+				readFile("src/admin/views/layout.ts", "utf8"),
+				readFile("public/admin.js", "utf8"),
+			]);
 
 		assert.match(analyticsRouteSource, /table-actions analytics-actions/u);
 		assert.match(analyticsRouteSource, /class="table-cell-break"/u);
+		assert.match(analyticsRouteSource, /data-admin-local-time="utc"/u);
+		assert.match(analyticsRouteSource, /data-admin-time-value/u);
 		assert.match(layoutSource, /\.analytics-actions \.btn/u);
 		assert.match(layoutSource, /\.table-card\s*\{[\s\S]*overflow-x: auto;/u);
 		assert.match(
@@ -38,6 +42,9 @@ describe("访问统计后台能力保护", () => {
 			layoutSource,
 			/\.admin-page-content\s*\{[\s\S]*min-width: 0;/u,
 		);
+		assert.match(adminScriptSource, /applyAdminLocalTimes/u);
+		assert.match(adminScriptSource, /data-admin-local-time='utc'/u);
+		assert.match(adminScriptSource, /toLocaleString\(undefined/u);
 	});
 
 	test("统计上报路由会按周期触发保留策略清理", async () => {

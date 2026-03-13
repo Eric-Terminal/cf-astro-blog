@@ -123,6 +123,29 @@ function formatExportTimestamp() {
 	return new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
 }
 
+function toUtcIsoString(value: string): string | null {
+	const raw = String(value ?? "").trim();
+	if (!raw) {
+		return null;
+	}
+
+	let normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+	if (!/[zZ]$|[+-]\d{2}:\d{2}$/u.test(normalized)) {
+		normalized = `${normalized}Z`;
+	}
+
+	return Number.isNaN(Date.parse(normalized)) ? null : normalized;
+}
+
+function renderLocalTimeCell(value: string): string {
+	const iso = toUtcIsoString(value);
+	if (!iso) {
+		return escapeHtml(value);
+	}
+
+	return `<time data-admin-local-time="utc" data-admin-time-value="${escapeAttribute(iso)}">${escapeHtml(value)}</time>`;
+}
+
 analytics.use("*", requireAuth);
 
 analytics.get("/", async (c) => {
@@ -288,7 +311,7 @@ analytics.get("/", async (c) => {
 					${stats.recentSessions
 						.map(
 							(s) =>
-								`<tr><td>${escapeHtml(s.ipAddress || "-")}</td><td>${escapeHtml(`${s.browser || "Unknown"} / ${s.deviceType || "Unknown"}`)}</td><td class="table-cell-break">${escapeHtml(s.landingPage || "-")}</td><td>${escapeHtml(s.lastSeenAt)}</td></tr>`,
+								`<tr><td>${escapeHtml(s.ipAddress || "-")}</td><td>${escapeHtml(`${s.browser || "Unknown"} / ${s.deviceType || "Unknown"}`)}</td><td class="table-cell-break">${escapeHtml(s.landingPage || "-")}</td><td>${renderLocalTimeCell(s.lastSeenAt)}</td></tr>`,
 						)
 						.join("")}
 				</tbody>
@@ -308,7 +331,7 @@ analytics.get("/", async (c) => {
 				? `<div class="table-card"><table class="data-table">
 				<thead><tr><th>类型</th><th>页面</th><th>时间</th></tr></thead>
 				<tbody>
-					${stats.recentEvents.map((e) => `<tr><td>${escapeHtml(e.eventType)}</td><td class="table-cell-break">${escapeHtml(e.pageUrl || "-")}</td><td>${escapeHtml(e.timestamp)}</td></tr>`).join("")}
+					${stats.recentEvents.map((e) => `<tr><td>${escapeHtml(e.eventType)}</td><td class="table-cell-break">${escapeHtml(e.pageUrl || "-")}</td><td>${renderLocalTimeCell(e.timestamp)}</td></tr>`).join("")}
 				</tbody>
 			</table></div>
 			${renderPagination({
