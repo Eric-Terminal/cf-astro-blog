@@ -51,6 +51,7 @@
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "^12.6.12",
+		"@modelcontextprotocol/sdk": "^1.27.1",
 		"astro": "^5.17.1",
 		"drizzle-orm": "^0.45.1",
 		"hono": "^4.11.6",

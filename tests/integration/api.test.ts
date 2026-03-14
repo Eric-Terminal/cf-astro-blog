@@ -65,6 +65,57 @@ function createWebMentionMockD1() {
 	return { db, calls };
 }
 
+function createMcpPostMockD1() {
+	const calls: Array<{ sql: string; params: unknown[] }> = [];
+
+	const db = {
+		prepare(sql: string) {
+			return {
+				bind(...params: unknown[]) {
+					return {
+						run: async () => {
+							calls.push({ sql, params });
+							return { success: true };
+						},
+						raw: async () => {
+							calls.push({ sql, params });
+							if (
+								/insert into\s+"?blog_posts"?/iu.test(sql) &&
+								/returning/iu.test(sql)
+							) {
+								return [[9527]];
+							}
+							return [];
+						},
+						all: async () => {
+							calls.push({ sql, params });
+							if (
+								/insert into\s+"?blog_posts"?/iu.test(sql) &&
+								/returning/iu.test(sql)
+							) {
+								return { results: [{ id: 9527 }] };
+							}
+							return { results: [] };
+						},
+						first: async () => {
+							calls.push({ sql, params });
+							if (
+								/insert into\s+"?blog_posts"?/iu.test(sql) &&
+								/returning/iu.test(sql)
+							) {
+								return { id: 9527 };
+							}
+							return undefined;
+						},
+					};
+				},
+			};
+		},
+	} as unknown as D1Database;
+
+	return { db, calls };
+}
+
 describe("后台接口", () => {
 	test("GET /health 会返回健康状态", async () => {
 		const res = await app.request("/health");
@@ -283,6 +334,211 @@ describe("后台接口", () => {
 
 		assert.equal(res.status, 429);
 		assert.match(await res.text(), /请求过于频繁/u);
+	});
+
+	test("POST /mcp 缺少 Bearer 时返回 401", async () => {
+		const initializeRequest = {
+			jsonrpc: "2.0",
+			id: 1,
+			method: "initialize",
+			params: {
+				protocolVersion: "2025-11-25",
+				clientInfo: {
+					name: "integration-test-client",
+					version: "1.0.0",
+				},
+				capabilities: {},
+			},
+		};
+
+		const res = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+				},
+				body: JSON.stringify(initializeRequest),
+			},
+			{
+				...mockEnv,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 401);
+		assert.match(await res.text(), /MCP 鉴权失败/u);
+	});
+
+	test("POST /mcp 在 create_post 缺少 authorName 时返回工具错误", async () => {
+		const initializeRequest = {
+			jsonrpc: "2.0",
+			id: 1,
+			method: "initialize",
+			params: {
+				protocolVersion: "2025-11-25",
+				clientInfo: {
+					name: "integration-test-client",
+					version: "1.0.0",
+				},
+				capabilities: {},
+			},
+		};
+
+		const initRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+				},
+				body: JSON.stringify(initializeRequest),
+			},
+			{
+				...mockEnv,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(initRes.status, 200);
+
+		const sessionId = initRes.headers.get("mcp-session-id");
+		assert.ok(sessionId);
+
+		const createRequest = {
+			jsonrpc: "2.0",
+			id: 2,
+			method: "tools/call",
+			params: {
+				name: "create_post",
+				arguments: {
+					title: "MCP 测试文章",
+					content: "这是一段测试正文",
+				},
+			},
+		};
+
+		const callRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+					"mcp-session-id": sessionId as string,
+				},
+				body: JSON.stringify(createRequest),
+			},
+			{
+				...mockEnv,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(callRes.status, 200);
+
+		const payload = (await callRes.json()) as {
+			result?: { isError?: boolean; content?: Array<{ text?: string }> };
+		};
+		assert.equal(payload?.result?.isError, true);
+		assert.match(
+			String(payload?.result?.content?.[0]?.text || ""),
+			/authorName/u,
+		);
+	});
+
+	test("POST /mcp 在 create_post 成功时会写入 author_name 且默认已发布", async () => {
+		const { db, calls } = createMcpPostMockD1();
+		const initializeRequest = {
+			jsonrpc: "2.0",
+			id: 1,
+			method: "initialize",
+			params: {
+				protocolVersion: "2025-11-25",
+				clientInfo: {
+					name: "integration-test-client",
+					version: "1.0.0",
+				},
+				capabilities: {},
+			},
+		};
+
+		const initRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+				},
+				body: JSON.stringify(initializeRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(initRes.status, 200);
+
+		const sessionId = initRes.headers.get("mcp-session-id");
+		assert.ok(sessionId);
+
+		const createRequest = {
+			jsonrpc: "2.0",
+			id: 2,
+			method: "tools/call",
+			params: {
+				name: "create_post",
+				arguments: {
+					title: "MCP 发布测试",
+					content: "# 标题\\n\\n这是一段测试内容",
+					authorName: "AI-Agent",
+				},
+			},
+		};
+
+		const callRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+					"mcp-session-id": sessionId as string,
+				},
+				body: JSON.stringify(createRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(callRes.status, 200);
+
+		const payload = (await callRes.json()) as {
+			result?: { isError?: boolean; content?: Array<{ text?: string }> };
+		};
+		assert.notEqual(payload?.result?.isError, true);
+		assert.match(
+			String(payload?.result?.content?.[0]?.text || ""),
+			/"authorName":\s*"AI-Agent"/u,
+		);
+		assert.match(
+			String(payload?.result?.content?.[0]?.text || ""),
+			/"status":\s*"published"/u,
+		);
+
+		const insertCall = calls.find((entry) =>
+			/insert into\s+"?blog_posts"?/iu.test(entry.sql),
+		);
+		assert.ok(insertCall);
+		assert.ok(insertCall?.params.includes("AI-Agent"));
+		assert.ok(insertCall?.params.includes("published"));
 	});
 
 	test("未登录访问 /admin 会跳转到登录页", async () => {

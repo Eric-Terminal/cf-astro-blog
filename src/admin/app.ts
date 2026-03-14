@@ -6,6 +6,7 @@ import { authRoutes } from "./routes/auth";
 import { dashboardRoutes } from "./routes/dashboard";
 import { friendLinksRoutes } from "./routes/friend-links";
 import { friendsRoutes } from "./routes/friends";
+import { mcpRoutes } from "./routes/mcp";
 import { mediaRoutes } from "./routes/media";
 import { mentionsRoutes } from "./routes/mentions";
 import { postsRoutes } from "./routes/posts";
@@ -79,6 +80,7 @@ app.use("*", async (c, next) => {
 app.route("/auth", authRoutes);
 app.route("/analytics", publicAnalyticsRoutes);
 app.route("/ai", publicAiRoutes);
+app.route("/mcp", mcpRoutes);
 app.route("/admin", dashboardRoutes);
 app.route("/admin/appearance", appearanceRoutes);
 app.route("/admin/posts", postsRoutes);

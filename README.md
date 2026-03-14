@@ -78,6 +78,7 @@ npm run hash:password -- 你的密码
 | `GITHUB_OAUTH_CLIENT_SECRET` | Secret | GitHub OAuth 客户端密钥 |
 | `TURNSTILE_SECRET_KEY` | Secret，可选 | 开启登录页与友链申请的人机验证时使用 |
 | `TURNSTILE_SITE_KEY` | Variable，可选 | 登录页/友链申请页渲染 Turnstile 时使用 |
+| `MCP_BEARER_TOKEN` | Secret，可选 | `/api/mcp` 的 Bearer 鉴权令牌（不使用 OAuth） |
 
 ## Cloudflare Dashboard 关联仓库部署
 
@@ -96,6 +97,8 @@ npm run hash:password -- 你的密码
 | `TURNSTILE_SECRET_KEY` | Secret | 否 | Cloudflare Secret | 可选，登录页与友链申请验证码服务端密钥 |
 | `AUTO_DEPLOY_WEBHOOK_URL` | Variable | 否 | Cloudflare Variable | 可选，后台发布公开文章后触发外部部署钩子 |
 | `AUTO_DEPLOY_WEBHOOK_SECRET` | Secret | 否 | Cloudflare Secret | 可选，部署钩子鉴权令牌（请求头 `x-deploy-token`） |
+| `MCP_BEARER_TOKEN` | Secret | 否 | Cloudflare Secret | 可选，对外 MCP 端点 `/api/mcp` 的 Bearer 鉴权令牌 |
+| `MCP_RATE_LIMIT_PER_MINUTE` | Variable | 否 | Cloudflare Variable | 可选，MCP 每分钟每 IP 限流，默认 `30` |
 | `SITE_NAME` | Variable | 建议 | Cloudflare Variable | 站点名称 |
 | `SITE_URL` | Variable | 建议 | Cloudflare Variable | 站点主域名 |
 
@@ -154,6 +157,17 @@ npm run hash:password -- 你的密码
   - 若未配置 `CLOUDFLARE_API_TOKEN`，则尝试使用 `CLOUDFLARE_REFRESH_TOKEN` 动态换取 Access Token；
   - 若换取成功且返回新的 refresh token，会自动回写 `CLOUDFLARE_REFRESH_TOKEN`（需要额外配置 `GH_ADMIN_TOKEN`，且具备仓库 secrets 写权限）。
 - 当 Cloudflare 凭据缺失或 refresh token 失效时，工作流会记录“已跳过部署”的原因，不再直接失败。
+
+## MCP 发帖（HTTP + Streamable）
+
+- 端点：`/api/mcp`（MCP Streamable HTTP）。
+- 鉴权：`Authorization: Bearer <MCP_BEARER_TOKEN>`，不走 OAuth。
+- 第一版内置工具：`create_post`。
+  - 必填参数：`title`、`content`、`authorName`。
+  - 默认 `status=published`（可显式传 `draft` 或 `scheduled`）。
+- 安全策略：
+  - 若未配置 `MCP_BEARER_TOKEN`，端点会返回服务不可用。
+  - 默认启用每分钟每 IP 限流（可通过 `MCP_RATE_LIMIT_PER_MINUTE` 调整）。
 
 ## 部署前检查
 
