@@ -11,7 +11,7 @@ const isCommentConfigReady = Boolean(
 ---
 
 <section
-	class="comments-panel glass-panel"
+	class="comments-panel"
 	data-comments-panel
 	data-comments-ready={isCommentConfigReady ? "true" : "false"}
 	data-comments-provider={commentsConfig.provider}
@@ -69,6 +69,9 @@ const isCommentConfigReady = Boolean(
 		display: grid;
 		gap: 0;
 		overflow: hidden;
+		border-radius: var(--radius-inner);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: rgba(255, 255, 255, 0.04);
 	}
 
 	.comments-toggle {
@@ -83,6 +86,16 @@ const isCommentConfigReady = Boolean(
 		color: inherit;
 		cursor: pointer;
 		text-align: left;
+		border-bottom: 1px solid transparent;
+		transition:
+			background-color var(--transition),
+			border-color var(--transition);
+	}
+
+	.comments-toggle:hover,
+	.comments-toggle:focus-visible {
+		background: rgba(255, 255, 255, 0.05);
+		outline: none;
 	}
 
 	.comments-toggle-copy {
@@ -122,6 +135,10 @@ const isCommentConfigReady = Boolean(
 		transform: rotate(45deg);
 	}
 
+	.comments-panel.is-open .comments-toggle {
+		border-bottom-color: rgba(255, 255, 255, 0.1);
+	}
+
 	.comments-body {
 		padding: 0 1.2rem 1.2rem;
 	}
@@ -132,10 +149,8 @@ const isCommentConfigReady = Boolean(
 		gap: 0.9rem;
 		padding: 1rem;
 		border-radius: var(--radius-inner);
-		background: rgba(255, 255, 255, 0.08);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		backdrop-filter: blur(12px) saturate(120%);
-		-webkit-backdrop-filter: blur(12px) saturate(120%);
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.12);
 	}
 
 	.comments-note,
@@ -152,6 +167,25 @@ const isCommentConfigReady = Boolean(
 	.comments-panel.is-open .comments-toggle:hover .comments-toggle-icon {
 		background: var(--color-accent-soft);
 		border-color: rgba(10, 132, 255, 0.16);
+	}
+
+	:global(html.article-opaque-mode) .comments-panel {
+		background: rgba(var(--card-surface-rgb), 0.92);
+		border-color: rgba(255, 255, 255, 0.14);
+	}
+
+	:global(html.article-opaque-mode) .comments-surface,
+	:global(html.article-opaque-mode) .comments-empty-state {
+		background: rgba(var(--card-surface-rgb), 0.96);
+		border-color: rgba(255, 255, 255, 0.16);
+	}
+
+	:global(html.article-opaque-mode) .comments-toggle {
+		background: rgba(var(--card-surface-rgb), 0.94);
+	}
+
+	:global(html.article-opaque-mode) .comments-toggle-icon {
+		background: rgba(255, 255, 255, 0.1);
 	}
 
 	@media (max-width: 640px) {

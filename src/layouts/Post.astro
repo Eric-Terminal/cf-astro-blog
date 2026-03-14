@@ -147,13 +147,15 @@ const tocEntries = (toc ?? [])
 					{categoryName && <span class="pill">{categoryName}</span>}
 				</div>
 			</header>
-			<div class="article-body glass-panel">
-				<div class="prose article-prose">
-					<slot />
+				<div class="article-body glass-panel">
+					<div class="prose article-prose">
+						<slot />
+					</div>
+					<div class="article-comments-slot">
+						<CommentsPanel />
+					</div>
 				</div>
 			</div>
-			<CommentsPanel />
-		</div>
 		</article>
 	<script is:inline src="/article-transparency-toggle.js"></script>
 </Base>
@@ -424,6 +426,14 @@ const tocEntries = (toc ?? [])
 
 	.article-prose {
 		margin-inline: auto;
+	}
+
+	.article-comments-slot {
+		margin: clamp(1.6rem, 1.1rem + 1.2vw, 2.3rem) auto 0;
+		padding-top: clamp(1rem, 0.8rem + 0.5vw, 1.4rem);
+		border-top: 1px solid rgba(255, 255, 255, 0.12);
+		max-width: var(--max-width-prose);
+		width: 100%;
 	}
 
 	@media (max-width: 1024px) {

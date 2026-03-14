@@ -10,9 +10,11 @@ describe("评论组件保护", () => {
 		]);
 
 		assert.match(postLayoutSource, /<CommentsPanel/u);
+		assert.match(postLayoutSource, /article-comments-slot/u);
 		assert.match(commentsComponentSource, /data-comments-panel/u);
 		assert.match(commentsComponentSource, /data-comments-toggle/u);
 		assert.match(commentsComponentSource, /aria-expanded="false"/u);
+		assert.match(commentsComponentSource, /article-opaque-mode/u);
 	});
 
 	test("评论脚本会按展开时机懒加载 giscus 并同步主题", async () => {
