@@ -35,5 +35,5 @@ MCP_BEARER_TOKEN=
 MCP_RATE_LIMIT_PER_MINUTE=30
 # 可选：MCP 鉴权失败每分钟每 IP 次数上限，超过会进入临时封禁，默认 20 喵
 MCP_AUTH_FAIL_LIMIT_PER_MINUTE=20
-# 可选：MCP 鉴权失败触发封禁后的封禁秒数，默认 300 喵
-MCP_AUTH_BLOCK_SECONDS=300
+# 可选：MCP 鉴权失败触发封禁后的封禁秒数，默认 3600（1小时）喵
+MCP_AUTH_BLOCK_SECONDS=3600

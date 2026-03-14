@@ -100,7 +100,7 @@ npm run hash:password -- 你的密码
 | `MCP_BEARER_TOKEN` | Secret | 否 | Cloudflare Secret | 可选，对外 MCP 端点 `/api/mcp` 的 Bearer 鉴权令牌 |
 | `MCP_RATE_LIMIT_PER_MINUTE` | Variable | 否 | Cloudflare Variable | 可选，MCP 每分钟每 IP 限流，默认 `30` |
 | `MCP_AUTH_FAIL_LIMIT_PER_MINUTE` | Variable | 否 | Cloudflare Variable | 可选，MCP 鉴权失败每分钟每 IP 上限，默认 `20` |
-| `MCP_AUTH_BLOCK_SECONDS` | Variable | 否 | Cloudflare Variable | 可选，触发鉴权失败封禁后的封禁秒数，默认 `300` |
+| `MCP_AUTH_BLOCK_SECONDS` | Variable | 否 | Cloudflare Variable | 可选，触发鉴权失败封禁后的封禁秒数，默认 `3600` |
 | `SITE_NAME` | Variable | 建议 | Cloudflare Variable | 站点名称 |
 | `SITE_URL` | Variable | 建议 | Cloudflare Variable | 站点主域名 |
 

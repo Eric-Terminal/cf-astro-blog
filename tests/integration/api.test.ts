@@ -443,7 +443,7 @@ describe("后台接口", () => {
 			SESSION: kv,
 			MCP_BEARER_TOKEN: "mcp-secret",
 			MCP_AUTH_FAIL_LIMIT_PER_MINUTE: "1",
-			MCP_AUTH_BLOCK_SECONDS: "300",
+			MCP_AUTH_BLOCK_SECONDS: "3600",
 		} as unknown as Env;
 
 		const firstRes = await app.request(
