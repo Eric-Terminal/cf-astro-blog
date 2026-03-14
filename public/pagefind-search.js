@@ -75,7 +75,7 @@ function readSearchState(form) {
 	return { query, category, tags };
 }
 
-function updateAddressBar(state) {
+function buildSearchHref(state) {
 	const url = new URL(window.location.href);
 	url.searchParams.delete("q");
 	url.searchParams.delete("category");
@@ -91,7 +91,23 @@ function updateAddressBar(state) {
 		url.searchParams.append("tags", tag);
 	}
 
-	window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+	return `${url.pathname}${url.search}`;
+}
+
+function updateAddressBar(state, options = {}) {
+	const mode = options.mode === "replace" ? "replace" : "push";
+	const nextHref = buildSearchHref(state);
+	const currentHref = `${window.location.pathname}${window.location.search}`;
+	if (nextHref === currentHref) {
+		return;
+	}
+
+	if (mode === "replace") {
+		window.history.replaceState({}, "", nextHref);
+		return;
+	}
+
+	window.history.pushState({}, "", nextHref);
 }
 
 function rankPosts(posts) {
@@ -174,7 +190,7 @@ async function withTimeout(promise, ms, message) {
 	}
 }
 
-async function performSearch(context, state, options = {}) {
+async function performSearch(context, state) {
 	const { metaData, resultsEl, summaryEl } = context;
 	const hasCriteria = Boolean(state.query || state.category || state.tags.length > 0);
 	let usingFallbackSearch = false;
@@ -245,10 +261,6 @@ async function performSearch(context, state, options = {}) {
 			? `共找到 ${limited.length} 条结果（基础搜索回退）`
 			: `共找到 ${limited.length} 条结果`,
 	);
-
-	if (options.updateUrl) {
-		updateAddressBar(state);
-	}
 }
 
 async function loadMetaData() {
@@ -300,7 +312,9 @@ async function initPagefindSearch() {
 
 	form.addEventListener("submit", async (event) => {
 		event.preventDefault();
-		await performSearch(context, readSearchState(form), { updateUrl: true });
+		const state = readSearchState(form);
+		updateAddressBar(state, { mode: "push" });
+		await performSearch(context, state);
 	});
 }
 
