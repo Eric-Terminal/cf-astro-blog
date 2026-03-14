@@ -288,12 +288,11 @@ function extractLooseGeneratedSeoPayload(
 					}
 				: null;
 		})
-		.filter(Boolean)
-		.sort((left, right) => left.index - right.index) as Array<{
-		key: string;
-		index: number;
-		valueStart: number;
-	}>;
+		.filter(
+			(item): item is { key: string; index: number; valueStart: number } =>
+				item !== null,
+		)
+		.sort((left, right) => left.index - right.index);
 
 	if (matches.length === 0) {
 		return null;
