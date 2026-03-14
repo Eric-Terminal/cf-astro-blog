@@ -3,6 +3,11 @@ import { desc } from "drizzle-orm";
 import { blogPosts } from "@/db/schema";
 import { getDb } from "@/lib/db";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
+import {
+	DEFAULT_SITE_APPEARANCE,
+	getSiteAppearance,
+	resolveSiteDescriptionFromAppearance,
+} from "@/lib/site-appearance";
 import { siteConfig } from "@/lib/types";
 
 interface FeedPost {
@@ -48,24 +53,33 @@ function buildDescription(post: FeedPost): string {
 
 export const GET: APIRoute = async (context) => {
 	let posts: FeedPost[] = [];
+	let feedDescription = siteConfig.description;
 
 	try {
 		const { env } = context.locals.runtime;
 		const db = getDb(env.DB);
 
-		posts = await db
-			.select({
-				title: blogPosts.title,
-				slug: blogPosts.slug,
-				excerpt: blogPosts.excerpt,
-				content: blogPosts.content,
-				publishedAt: blogPosts.publishedAt,
-				updatedAt: blogPosts.updatedAt,
-			})
-			.from(blogPosts)
-			.where(getPublicPostVisibilityCondition())
-			.orderBy(desc(blogPosts.publishedAt), desc(blogPosts.updatedAt))
-			.limit(30);
+		const [postRows, appearance] = await Promise.all([
+			db
+				.select({
+					title: blogPosts.title,
+					slug: blogPosts.slug,
+					excerpt: blogPosts.excerpt,
+					content: blogPosts.content,
+					publishedAt: blogPosts.publishedAt,
+					updatedAt: blogPosts.updatedAt,
+				})
+				.from(blogPosts)
+				.where(getPublicPostVisibilityCondition())
+				.orderBy(desc(blogPosts.publishedAt), desc(blogPosts.updatedAt))
+				.limit(30),
+			getSiteAppearance(db).catch(() => DEFAULT_SITE_APPEARANCE),
+		]);
+		posts = postRows;
+		feedDescription = resolveSiteDescriptionFromAppearance(
+			appearance,
+			siteConfig.description,
+		);
 	} catch {
 		// D1 未绑定时回退为空 Feed
 	}
@@ -92,7 +106,7 @@ export const GET: APIRoute = async (context) => {
 <channel>
 	<title>${escapeXml(siteConfig.name)}</title>
 	<link>${siteConfig.url}</link>
-	<description>${escapeXml(siteConfig.description)}</description>
+	<description>${escapeXml(feedDescription)}</description>
 	<language>${siteConfig.language}</language>
 	<atom:link href="${siteConfig.url}/rss.xml" rel="self" type="application/rss+xml" />
 	<lastBuildDate>${now}</lastBuildDate>

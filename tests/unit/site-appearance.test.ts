@@ -9,6 +9,7 @@ import {
 	normalizeAiSettingsInput,
 	normalizeSiteAppearanceInput,
 	resolveAiSettingsWithSecrets,
+	resolveSiteDescriptionFromAppearance,
 } from "../../src/lib/site-appearance";
 
 describe("站点外观设置", () => {
@@ -210,6 +211,42 @@ describe("站点外观设置", () => {
 		assert.equal(resolved.settings.public.apiKey, "sk-web-public");
 		assert.equal(resolved.keySource.internal, "cloudflare-secret");
 		assert.equal(resolved.keySource.public, "web-config");
+	});
+
+	test("resolveSiteDescriptionFromAppearance 会优先使用首页简介", () => {
+		const description = resolveSiteDescriptionFromAppearance(
+			{
+				heroIntro: "  第一行\n第二行  ",
+				headerSubtitle: "顶部副标题",
+			},
+			"默认描述",
+		);
+
+		assert.equal(description, "第一行 第二行");
+	});
+
+	test("resolveSiteDescriptionFromAppearance 会在简介为空时回退顶部文案", () => {
+		const description = resolveSiteDescriptionFromAppearance(
+			{
+				heroIntro: " ",
+				headerSubtitle: "顶部副标题",
+			},
+			"默认描述",
+		);
+
+		assert.equal(description, "顶部副标题");
+	});
+
+	test("resolveSiteDescriptionFromAppearance 会在外观为空时回退默认描述", () => {
+		const description = resolveSiteDescriptionFromAppearance(
+			{
+				heroIntro: " ",
+				headerSubtitle: " ",
+			},
+			"默认描述",
+		);
+
+		assert.equal(description, "默认描述");
 	});
 
 	test("buildSiteNavLinks 会按顺序生成顶部导航数据", () => {

@@ -10,6 +10,7 @@ import {
 	buildHeroActionLinks,
 	DEFAULT_SITE_APPEARANCE,
 	getSiteAppearance,
+	resolveSiteDescriptionFromAppearance,
 } from "@/lib/site-appearance";
 import { siteConfig } from "@/lib/types";
 
@@ -94,13 +95,17 @@ const recentSectionSubheading =
 		? ""
 		: "保留最近发布的文章，首页只做精选入口，完整内容请进入归档页查看。";
 const heroActions = buildHeroActionLinks(homepageAppearance);
+const homepageMetaDescription = resolveSiteDescriptionFromAppearance(
+	homepageAppearance,
+	siteConfig.description,
+);
 
 function isInternalHref(href: string) {
 	return href.startsWith("/") && !href.startsWith("//");
 }
 ---
 
-<Base title={siteConfig.name} description={siteConfig.description}>
+<Base title={siteConfig.name} description={homepageMetaDescription}>
 	<section class="home-hero glass-panel" data-hero-depth>
 		<div class="hero-atmosphere" aria-hidden="true">
 			<span class="hero-aura hero-aura-primary"></span>

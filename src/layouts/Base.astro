@@ -7,6 +7,7 @@ import {
 	buildBackgroundImageUrl,
 	DEFAULT_SITE_APPEARANCE,
 	getSiteAppearance,
+	resolveSiteDescriptionFromAppearance,
 } from "@/lib/site-appearance";
 import { siteConfig } from "@/lib/types";
 import "@/styles/global.css";
@@ -36,6 +37,9 @@ const backgroundImageStyle = backgroundImageUrl
 	? `--bg-focus-x: ${siteAppearance.backgroundPositionX}; --bg-focus-y: ${siteAppearance.backgroundPositionY}; --bg-blur: ${siteAppearance.backgroundBlur}px; --bg-scale: ${siteAppearance.backgroundScale / 100}; --bg-opacity: ${siteAppearance.backgroundOpacity / 100};`
 	: "";
 const surfaceStyle = `--hero-card-opacity: ${siteAppearance.heroCardOpacity}; --hero-card-blur: ${siteAppearance.heroCardBlur}px; --post-card-opacity: ${siteAppearance.postCardOpacity}; --post-card-blur: ${siteAppearance.postCardBlur}px; --article-panel-opacity: ${siteAppearance.articlePanelOpacity}; --article-panel-blur: ${siteAppearance.articlePanelBlur}px;`;
+const resolvedDescription =
+	description ??
+	resolveSiteDescriptionFromAppearance(siteAppearance, siteConfig.description);
 ---
 
 <!doctype html>
@@ -46,7 +50,7 @@ const surfaceStyle = `--hero-card-opacity: ${siteAppearance.heroCardOpacity}; --
 	<head>
 		<BaseHead
 			title={title}
-			description={description}
+			description={resolvedDescription}
 			image={image}
 			canonicalUrl={canonicalUrl}
 		/>

@@ -27,9 +27,18 @@ describe("SEO 与订阅输出", () => {
 		const source = await readFile("src/pages/rss.xml.ts", "utf8");
 
 		assert.ok(source.includes("getPublicPostVisibilityCondition"));
+		assert.ok(source.includes("getSiteAppearance"));
+		assert.ok(source.includes("resolveSiteDescriptionFromAppearance"));
 		assert.ok(source.includes('<rss version="2.0"'));
 		assert.ok(source.includes("application/rss+xml; charset=utf-8"));
 		assert.match(source, /\/blog\/\$\{post\.slug\}/u);
 		assert.ok(source.includes(".limit(30)"));
+	});
+
+	test("基础布局会将外观简介作为默认 description", async () => {
+		const source = await readFile("src/layouts/Base.astro", "utf8");
+
+		assert.ok(source.includes("resolveSiteDescriptionFromAppearance"));
+		assert.match(source, /description \?\?/u);
 	});
 });

@@ -671,6 +671,29 @@ export function buildHeroActionLinks(
 	return normalizeLinkItems(appearance.heroActions, DEFAULT_HERO_ACTIONS);
 }
 
+export function resolveSiteDescriptionFromAppearance(
+	appearance: Pick<SiteAppearance, "heroIntro" | "headerSubtitle">,
+	fallbackDescription: string,
+): string {
+	const heroIntro = sanitizePlainText(appearance.heroIntro, 600, {
+		allowNewlines: true,
+	})
+		.replace(/\s+/g, " ")
+		.trim();
+	if (heroIntro) {
+		return heroIntro;
+	}
+
+	const headerSubtitle = sanitizePlainText(appearance.headerSubtitle, 120)
+		.replace(/\s+/g, " ")
+		.trim();
+	if (headerSubtitle) {
+		return headerSubtitle;
+	}
+
+	return fallbackDescription;
+}
+
 export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 	const [row] = await db
 		.select({
