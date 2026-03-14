@@ -1,11 +1,17 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import * as z from "zod/v3";
 import { triggerDeployHook } from "@/admin/lib/deploy-hook";
-import { blogCategories, blogPosts, blogPostTags, blogTags } from "@/db/schema";
+import {
+	blogCategories,
+	blogPosts,
+	blogPostTags,
+	blogTags,
+	siteAppearanceSettings,
+} from "@/db/schema";
 import { getDb } from "@/lib/db";
 import { timingSafeEqualText } from "@/lib/password";
 import {
@@ -35,6 +41,8 @@ const MAX_TAG_NAME_LENGTH = 60;
 const MAX_TAG_COUNT = 20;
 const MAX_FEATURED_IMAGE_KEY_LENGTH = 255;
 const MAX_FEATURED_IMAGE_ALT_LENGTH = 200;
+const MAX_LIST_LIMIT = 50;
+const MAX_KEYWORD_LENGTH = 120;
 
 const DEFAULT_MCP_RATE_LIMIT_PER_MINUTE = 30;
 const DEFAULT_MCP_AUTH_FAIL_LIMIT_PER_MINUTE = 20;
@@ -66,6 +74,56 @@ type ParseCreatePostInputResult =
 	| {
 			error: string;
 	  };
+
+interface ListPostsInput {
+	limit: number;
+	status: "draft" | "published" | "scheduled" | null;
+	keyword: string | null;
+	includeContent: boolean;
+}
+
+type ParseListPostsInputResult =
+	| {
+			data: ListPostsInput;
+	  }
+	| {
+			error: string;
+	  };
+
+interface GetPostInput {
+	id: number | null;
+	slug: string | null;
+	includeContent: boolean;
+}
+
+type ParseGetPostInputResult =
+	| {
+			data: GetPostInput;
+	  }
+	| {
+			error: string;
+	  };
+
+interface PostReadRow {
+	id: number;
+	title: string;
+	slug: string;
+	content: string;
+	excerpt: string | null;
+	status: string;
+	publishAt: string | null;
+	publishedAt: string | null;
+	featuredImageKey: string | null;
+	featuredImageAlt: string | null;
+	metaTitle: string | null;
+	metaDescription: string | null;
+	metaKeywords: string | null;
+	canonicalUrl: string | null;
+	categoryName: string | null;
+	authorName: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
 
 interface McpSessionState {
 	server: McpServer;
@@ -129,6 +187,30 @@ function parseLimit(
 	}
 
 	return Math.min(max, Math.max(min, parsed));
+}
+
+function parseBoolean(value: unknown, fallback: boolean): boolean {
+	if (typeof value === "boolean") {
+		return value;
+	}
+
+	const normalized = sanitizePlainText(value, 12).toLowerCase();
+	if (["1", "true", "on", "yes"].includes(normalized)) {
+		return true;
+	}
+	if (["0", "false", "off", "no"].includes(normalized)) {
+		return false;
+	}
+
+	return fallback;
+}
+
+function parsePositiveInt(value: unknown): number | null {
+	const parsed = Number.parseInt(String(value ?? ""), 10);
+	if (!Number.isInteger(parsed) || parsed <= 0) {
+		return null;
+	}
+	return parsed;
 }
 
 function getClientIp(c: Context<AdminAppEnv>): string {
@@ -584,6 +666,250 @@ function parseCreatePostInput(args: unknown): ParseCreatePostInputResult {
 	};
 }
 
+function parseListPostsInput(args: unknown): ParseListPostsInputResult {
+	const input =
+		args && typeof args === "object" ? (args as Record<string, unknown>) : {};
+	const statusRaw = sanitizePlainText(input.status, 24);
+	const status = statusRaw ? sanitizePostStatus(statusRaw) : null;
+	if (statusRaw && !status) {
+		return { error: "筛选状态不合法" };
+	}
+
+	return {
+		data: {
+			limit: parseLimit(input.limit, 10, 1, MAX_LIST_LIMIT),
+			status,
+			keyword:
+				sanitizePlainText(
+					pickFirstDefined([input], ["keyword", "query"]),
+					MAX_KEYWORD_LENGTH,
+				) || null,
+			includeContent: parseBoolean(input.includeContent, false),
+		},
+	};
+}
+
+function parseGetPostInput(args: unknown): ParseGetPostInputResult {
+	if (!args || typeof args !== "object") {
+		return { error: "参数格式不合法，必须是对象" };
+	}
+
+	const input = args as Record<string, unknown>;
+	const idRaw = pickFirstDefined([input], ["id", "postId", "post_id"]);
+	const slugRaw = sanitizePlainText(
+		pickFirstDefined([input], ["slug", "postSlug", "post_slug"]),
+		MAX_SLUG_LENGTH,
+	).toLowerCase();
+	const id = parsePositiveInt(idRaw);
+	const slug = slugRaw ? sanitizeSlug(slugRaw) : null;
+
+	if (slugRaw && !slug) {
+		return { error: "slug 参数不合法" };
+	}
+	if (!id && !slug) {
+		return { error: "请至少提供 id 或 slug 其中一个参数" };
+	}
+
+	return {
+		data: {
+			id,
+			slug,
+			includeContent: parseBoolean(input.includeContent, true),
+		},
+	};
+}
+
+function buildPostReadPayload(
+	row: PostReadRow,
+	tags: string[],
+	includeContent: boolean,
+) {
+	return {
+		id: row.id,
+		title: row.title,
+		slug: row.slug,
+		content: includeContent ? row.content : undefined,
+		excerpt: row.excerpt,
+		status: row.status,
+		publishAt: row.publishAt,
+		publishedAt: row.publishedAt,
+		authorName: row.authorName,
+		categoryName: row.categoryName,
+		tags,
+		featuredImageKey: row.featuredImageKey,
+		featuredImageAlt: row.featuredImageAlt,
+		metaTitle: row.metaTitle,
+		metaDescription: row.metaDescription,
+		metaKeywords: row.metaKeywords,
+		canonicalUrl: row.canonicalUrl,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+		url: `/blog/${row.slug}`,
+	};
+}
+
+async function getPostTagsMap(db: BlogDb, postIds: number[]) {
+	if (postIds.length === 0) {
+		return new Map<number, string[]>();
+	}
+
+	const rows = await db
+		.select({
+			postId: blogPostTags.postId,
+			tagName: blogTags.name,
+		})
+		.from(blogPostTags)
+		.innerJoin(blogTags, eq(blogPostTags.tagId, blogTags.id))
+		.where(inArray(blogPostTags.postId, postIds));
+
+	const tagMap = new Map<number, string[]>();
+	for (const row of rows) {
+		if (!row.tagName) {
+			continue;
+		}
+		const existing = tagMap.get(row.postId) ?? [];
+		existing.push(row.tagName);
+		tagMap.set(row.postId, existing);
+	}
+
+	return tagMap;
+}
+
+async function listPostsFromMcpInput(env: Env, input: ListPostsInput) {
+	const db = getDb(env.DB);
+	const conditions = [];
+
+	if (input.status) {
+		conditions.push(eq(blogPosts.status, input.status));
+	}
+
+	if (input.keyword) {
+		const likeValue = `%${input.keyword}%`;
+		conditions.push(
+			or(
+				like(blogPosts.title, likeValue),
+				like(blogPosts.slug, likeValue),
+				like(blogPosts.excerpt, likeValue),
+			),
+		);
+	}
+
+	const whereCondition =
+		conditions.length === 0
+			? undefined
+			: conditions.length === 1
+				? conditions[0]
+				: and(...conditions);
+
+	const rows = whereCondition
+		? await db
+				.select({
+					id: blogPosts.id,
+					title: blogPosts.title,
+					slug: blogPosts.slug,
+					content: blogPosts.content,
+					excerpt: blogPosts.excerpt,
+					status: blogPosts.status,
+					publishAt: blogPosts.publishAt,
+					publishedAt: blogPosts.publishedAt,
+					featuredImageKey: blogPosts.featuredImageKey,
+					featuredImageAlt: blogPosts.featuredImageAlt,
+					metaTitle: blogPosts.metaTitle,
+					metaDescription: blogPosts.metaDescription,
+					metaKeywords: blogPosts.metaKeywords,
+					canonicalUrl: blogPosts.canonicalUrl,
+					categoryName: blogCategories.name,
+					authorName: blogPosts.authorName,
+					createdAt: blogPosts.createdAt,
+					updatedAt: blogPosts.updatedAt,
+				})
+				.from(blogPosts)
+				.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
+				.where(whereCondition)
+				.orderBy(desc(blogPosts.createdAt))
+				.limit(input.limit)
+		: await db
+				.select({
+					id: blogPosts.id,
+					title: blogPosts.title,
+					slug: blogPosts.slug,
+					content: blogPosts.content,
+					excerpt: blogPosts.excerpt,
+					status: blogPosts.status,
+					publishAt: blogPosts.publishAt,
+					publishedAt: blogPosts.publishedAt,
+					featuredImageKey: blogPosts.featuredImageKey,
+					featuredImageAlt: blogPosts.featuredImageAlt,
+					metaTitle: blogPosts.metaTitle,
+					metaDescription: blogPosts.metaDescription,
+					metaKeywords: blogPosts.metaKeywords,
+					canonicalUrl: blogPosts.canonicalUrl,
+					categoryName: blogCategories.name,
+					authorName: blogPosts.authorName,
+					createdAt: blogPosts.createdAt,
+					updatedAt: blogPosts.updatedAt,
+				})
+				.from(blogPosts)
+				.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
+				.orderBy(desc(blogPosts.createdAt))
+				.limit(input.limit);
+
+	const ids = rows.map((item) => item.id);
+	const tagMap = await getPostTagsMap(db, ids);
+	const posts = rows.map((row) =>
+		buildPostReadPayload(row, tagMap.get(row.id) ?? [], input.includeContent),
+	);
+
+	return {
+		total: posts.length,
+		posts,
+	};
+}
+
+async function getPostFromMcpInput(env: Env, input: GetPostInput) {
+	const db = getDb(env.DB);
+	const whereCondition = input.id
+		? eq(blogPosts.id, input.id)
+		: eq(blogPosts.slug, input.slug as string);
+
+	const [row] = await db
+		.select({
+			id: blogPosts.id,
+			title: blogPosts.title,
+			slug: blogPosts.slug,
+			content: blogPosts.content,
+			excerpt: blogPosts.excerpt,
+			status: blogPosts.status,
+			publishAt: blogPosts.publishAt,
+			publishedAt: blogPosts.publishedAt,
+			featuredImageKey: blogPosts.featuredImageKey,
+			featuredImageAlt: blogPosts.featuredImageAlt,
+			metaTitle: blogPosts.metaTitle,
+			metaDescription: blogPosts.metaDescription,
+			metaKeywords: blogPosts.metaKeywords,
+			canonicalUrl: blogPosts.canonicalUrl,
+			categoryName: blogCategories.name,
+			authorName: blogPosts.authorName,
+			createdAt: blogPosts.createdAt,
+			updatedAt: blogPosts.updatedAt,
+		})
+		.from(blogPosts)
+		.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
+		.where(whereCondition)
+		.limit(1);
+
+	if (!row) {
+		return null;
+	}
+
+	const tagMap = await getPostTagsMap(db, [row.id]);
+	return buildPostReadPayload(
+		row,
+		tagMap.get(row.id) ?? [],
+		input.includeContent,
+	);
+}
+
 async function createPostFromMcpInput(env: Env, input: CreatePostInput) {
 	const db = getDb(env.DB);
 	const now = new Date().toISOString();
@@ -796,6 +1122,149 @@ function createMcpServer(env: Env): McpServer {
 		},
 	);
 
+	server.registerTool(
+		"list_posts",
+		{
+			title: "读取文章列表",
+			description: "按条件读取博客文章列表，可用于 AI 选题、回顾与上下文检索。",
+			inputSchema: {
+				limit: z
+					.number()
+					.int()
+					.min(1)
+					.max(MAX_LIST_LIMIT)
+					.optional()
+					.describe(`返回数量，默认 10，最大 ${MAX_LIST_LIMIT}`),
+				status: z
+					.enum(["draft", "published", "scheduled"])
+					.optional()
+					.describe("按文章状态筛选，可选"),
+				keyword: z.string().optional().describe("按标题、slug、摘要模糊匹配"),
+				query: z.string().optional().describe("keyword 的别名"),
+				includeContent: z
+					.boolean()
+					.optional()
+					.describe("是否在列表中返回正文，默认 false"),
+			},
+		},
+		async (args) => {
+			const parsed = parseListPostsInput(args);
+			if ("error" in parsed) {
+				return {
+					isError: true,
+					content: [{ type: "text", text: parsed.error }],
+				};
+			}
+
+			try {
+				const result = await listPostsFromMcpInput(env, parsed.data);
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify(
+								{
+									success: true,
+									message: "文章列表读取成功",
+									...result,
+								},
+								null,
+								2,
+							),
+						},
+					],
+				};
+			} catch (error) {
+				console.error("[MCP list_posts] 读取失败", error);
+				return {
+					isError: true,
+					content: [
+						{
+							type: "text",
+							text:
+								error instanceof Error
+									? error.message
+									: "读取文章列表失败，请稍后重试",
+						},
+					],
+				};
+			}
+		},
+	);
+
+	server.registerTool(
+		"get_post",
+		{
+			title: "读取单篇文章",
+			description: "按 id 或 slug 读取单篇文章详情，默认包含正文内容。",
+			inputSchema: {
+				id: z.number().int().positive().optional().describe("文章 ID，可选"),
+				postId: z
+					.number()
+					.int()
+					.positive()
+					.optional()
+					.describe("id 的别名，可选"),
+				slug: z.string().optional().describe("文章 slug，可选"),
+				postSlug: z.string().optional().describe("slug 的别名，可选"),
+				includeContent: z
+					.boolean()
+					.optional()
+					.describe("是否返回正文，默认 true"),
+			},
+		},
+		async (args) => {
+			const parsed = parseGetPostInput(args);
+			if ("error" in parsed) {
+				return {
+					isError: true,
+					content: [{ type: "text", text: parsed.error }],
+				};
+			}
+
+			try {
+				const post = await getPostFromMcpInput(env, parsed.data);
+				if (!post) {
+					return {
+						isError: true,
+						content: [{ type: "text", text: "文章不存在" }],
+					};
+				}
+
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify(
+								{
+									success: true,
+									message: "文章读取成功",
+									post,
+								},
+								null,
+								2,
+							),
+						},
+					],
+				};
+			} catch (error) {
+				console.error("[MCP get_post] 读取失败", error);
+				return {
+					isError: true,
+					content: [
+						{
+							type: "text",
+							text:
+								error instanceof Error
+									? error.message
+									: "读取文章失败，请稍后重试",
+						},
+					],
+				};
+			}
+		},
+	);
+
 	return server;
 }
 
@@ -823,8 +1292,36 @@ async function pruneExpiredMcpSessions() {
 	}
 }
 
+async function isMcpFeatureEnabled(env: Env): Promise<boolean> {
+	const dbBinding = (env as Partial<Env>).DB;
+	if (!dbBinding) {
+		return true;
+	}
+
+	try {
+		const db = getDb(dbBinding);
+		const [row] = await db
+			.select({
+				mcpEnabled: siteAppearanceSettings.mcpEnabled,
+			})
+			.from(siteAppearanceSettings)
+			.where(eq(siteAppearanceSettings.id, 1))
+			.limit(1);
+		if (!row) {
+			return true;
+		}
+		return row.mcpEnabled;
+	} catch {
+		return true;
+	}
+}
+
 mcpRoutes.all("/", async (c) => {
 	await pruneExpiredMcpSessions();
+	const mcpEnabled = await isMcpFeatureEnabled(c.env);
+	if (!mcpEnabled) {
+		return c.text("Not Found", 404);
+	}
 	const ip = getClientIp(c);
 
 	const blocked = await isAuthBlocked(c, ip).catch(() => false);

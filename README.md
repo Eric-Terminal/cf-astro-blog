@@ -169,10 +169,14 @@ npm run hash:password -- 你的密码
   - 可选参数：`excerpt`、`categoryName`、`tagNames`、`metaTitle`、`metaDescription`、`metaKeywords` 等。
   - 兼容别名：`summary`、`category`、`tags`、`seoTitle`、`seoDescription`、`seoKeywords`，以及 `seo` 对象（`{ title, description, keywords, canonicalUrl }`）。
   - 默认 `status=published`（可显式传 `draft` 或 `scheduled`）。
+- 读帖子工具：
+  - `list_posts`：按状态/关键词读取文章列表，支持 `limit` 与 `includeContent`。
+  - `get_post`：按 `id` 或 `slug` 读取单篇文章详情。
 - 安全策略：
   - 若未配置 `MCP_BEARER_TOKEN` 或鉴权失败，端点统一返回 `404 Not Found`，降低被扫描识别价值。
   - 默认启用每分钟每 IP 限流（可通过 `MCP_RATE_LIMIT_PER_MINUTE` 调整）。
   - 对错误 Bearer 进行按 IP 失败计数，超过阈值后临时封禁（`MCP_AUTH_FAIL_LIMIT_PER_MINUTE` / `MCP_AUTH_BLOCK_SECONDS`）。
+  - 后台外观页提供 MCP 开关（`启用 MCP 接口（/api/mcp）`），关闭后端点统一返回 `404`。
 
 ## 部署前检查
 

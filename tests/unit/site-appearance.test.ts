@@ -133,6 +133,23 @@ describe("站点外观设置", () => {
 		);
 	});
 
+	test("normalizeSiteAppearanceInput 支持 MCP 开关并回退默认值", () => {
+		const enabled = normalizeSiteAppearanceInput({
+			mcpEnabled: "1",
+		});
+		assert.equal(enabled.mcpEnabled, true);
+
+		const disabled = normalizeSiteAppearanceInput({
+			mcpEnabled: "false",
+		});
+		assert.equal(disabled.mcpEnabled, false);
+
+		const fallback = normalizeSiteAppearanceInput({
+			mcpEnabled: "not-bool",
+		});
+		assert.equal(fallback.mcpEnabled, DEFAULT_SITE_APPEARANCE.mcpEnabled);
+	});
+
 	test("normalizeAiSettingsInput 支持 OpenAI 兼容接口配置", () => {
 		const normalized = normalizeAiSettingsInput({
 			aiInternalEnabled: "1",

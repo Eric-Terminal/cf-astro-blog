@@ -996,6 +996,21 @@ function renderAppearancePage(options: {
 							<p class="form-help">${escapeHtml(publicApiKeyHelp)}</p>
 						</div>
 					</div>
+					<div class="appearance-content-fieldset">
+						<h3>MCP 接口开关</h3>
+						<div class="form-group">
+							<label>
+								<input
+									type="checkbox"
+									name="mcpEnabled"
+									value="1"
+									${settings.mcpEnabled ? "checked" : ""}
+								/>
+								启用 MCP 接口（/api/mcp）
+							</label>
+							<p class="form-help">关闭后即使携带正确 Bearer，MCP 端点也会返回 404。</p>
+						</div>
+					</div>
 				</section>
 				<section class="appearance-panel">
 					<div class="appearance-actions">
@@ -1155,6 +1170,7 @@ appearance.post("/", async (c) => {
 		articleSidebarName: getBodyText(body, "articleSidebarName"),
 		articleSidebarBadge: getBodyText(body, "articleSidebarBadge"),
 		articleSidebarBio: getBodyText(body, "articleSidebarBio"),
+		mcpEnabled: getBodyText(body, "mcpEnabled"),
 	});
 	await saveAiSettings(db, {
 		aiInternalEnabled: getBodyText(body, "aiInternalEnabled"),

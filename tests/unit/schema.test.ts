@@ -161,5 +161,6 @@ describe("数据库结构", () => {
 		assert.ok(columns.includes("aiPublicBaseUrl"));
 		assert.ok(columns.includes("aiPublicApiKey"));
 		assert.ok(columns.includes("aiPublicModel"));
+		assert.ok(columns.includes("mcpEnabled"));
 	});
 });

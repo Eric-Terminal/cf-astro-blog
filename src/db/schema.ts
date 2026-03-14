@@ -218,6 +218,9 @@ export const siteAppearanceSettings = sqliteTable("site_appearance_settings", {
 		.default("https://api.openai.com/v1"),
 	aiPublicApiKey: text("ai_public_api_key").notNull().default(""),
 	aiPublicModel: text("ai_public_model").notNull().default("gpt-4o-mini"),
+	mcpEnabled: integer("mcp_enabled", { mode: "boolean" })
+		.notNull()
+		.default(true),
 	updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 

@@ -66,6 +66,7 @@ export interface SiteAppearance {
 	articleSidebarName: string;
 	articleSidebarBio: string;
 	articleSidebarBadge: string;
+	mcpEnabled: boolean;
 }
 
 export interface AiSettings {
@@ -83,9 +84,13 @@ export interface ResolvedAiSettings {
 	};
 }
 
-export type SiteAppearanceInput = Partial<SiteAppearance> & {
+export type SiteAppearanceInput = Omit<
+	Partial<SiteAppearance>,
+	"mcpEnabled"
+> & {
 	navLinksJson?: unknown;
 	heroActionsJson?: unknown;
+	mcpEnabled?: unknown;
 };
 
 export type AiSettingsInput = {
@@ -144,6 +149,7 @@ export const DEFAULT_SITE_APPEARANCE: SiteAppearance = {
 	articleSidebarName: "Eric-Terminal",
 	articleSidebarBio: "在比特海里未雨绸缪，身后养着一只叫晖的狐狸。",
 	articleSidebarBadge: "文章作者",
+	mcpEnabled: true,
 };
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -646,6 +652,10 @@ export function normalizeSiteAppearanceInput(
 			24,
 			DEFAULT_SITE_APPEARANCE.articleSidebarBadge,
 		),
+		mcpEnabled: normalizeBoolean(
+			input.mcpEnabled,
+			DEFAULT_SITE_APPEARANCE.mcpEnabled,
+		),
 	};
 }
 
@@ -704,6 +714,7 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 			articleSidebarName: siteAppearanceSettings.articleSidebarName,
 			articleSidebarBio: siteAppearanceSettings.articleSidebarBio,
 			articleSidebarBadge: siteAppearanceSettings.articleSidebarBadge,
+			mcpEnabled: siteAppearanceSettings.mcpEnabled,
 		})
 		.from(siteAppearanceSettings)
 		.where(eq(siteAppearanceSettings.id, 1))
@@ -832,6 +843,7 @@ export async function saveSiteAppearance(
 			articleSidebarName: normalized.articleSidebarName,
 			articleSidebarBio: normalized.articleSidebarBio,
 			articleSidebarBadge: normalized.articleSidebarBadge,
+			mcpEnabled: normalized.mcpEnabled,
 		})
 		.onConflictDoUpdate({
 			target: siteAppearanceSettings.id,
@@ -876,6 +888,7 @@ export async function saveSiteAppearance(
 				articleSidebarName: normalized.articleSidebarName,
 				articleSidebarBio: normalized.articleSidebarBio,
 				articleSidebarBadge: normalized.articleSidebarBadge,
+				mcpEnabled: normalized.mcpEnabled,
 			},
 		});
 

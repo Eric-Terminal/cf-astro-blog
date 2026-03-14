@@ -169,6 +169,85 @@ function createMcpPostMockD1() {
 	return { db, calls };
 }
 
+function createMcpReadMockD1(options?: { mcpEnabled?: boolean }) {
+	const calls: Array<{ sql: string; params: unknown[] }> = [];
+	const postRow = {
+		id: 88,
+		title: "MCP 读取测试文章",
+		slug: "mcp-read-demo",
+		content: "# 标题\n\n这里是用于 MCP 读取工具测试的正文。",
+		excerpt: "用于 MCP 读取的摘要",
+		status: "published",
+		publishAt: "2026-03-15T08:00:00.000Z",
+		publishedAt: "2026-03-15T08:00:00.000Z",
+		featuredImageKey: null,
+		featuredImageAlt: null,
+		metaTitle: "MCP 读取测试 SEO 标题",
+		metaDescription: "MCP 读取测试 SEO 描述",
+		metaKeywords: "MCP, 读取",
+		canonicalUrl: null,
+		categoryName: "工程实践",
+		authorName: "AI-Agent",
+		createdAt: "2026-03-15T08:00:00.000Z",
+		updatedAt: "2026-03-15T08:00:00.000Z",
+	};
+	const tagRows = [
+		{ postId: 88, tagName: "MCP" },
+		{ postId: 88, tagName: "工具测试" },
+	];
+
+	const db = {
+		prepare(sql: string) {
+			return {
+				bind(...params: unknown[]) {
+					const buildResults = () => {
+						if (/from\s+["`]?site_appearance_settings["`]?/iu.test(sql)) {
+							return [{ mcpEnabled: options?.mcpEnabled ?? 1 }];
+						}
+
+						if (
+							/from\s+["`]?blog_posts["`]?/iu.test(sql) &&
+							/left join\s+["`]?blog_categories["`]?/iu.test(sql)
+						) {
+							return [postRow];
+						}
+
+						if (
+							/from\s+["`]?blog_post_tags["`]?/iu.test(sql) &&
+							/join\s+["`]?blog_tags["`]?/iu.test(sql)
+						) {
+							return tagRows;
+						}
+
+						return [];
+					};
+
+					return {
+						run: async () => {
+							calls.push({ sql, params });
+							return { success: true };
+						},
+						raw: async () => {
+							calls.push({ sql, params });
+							return buildResults().map((item) => Object.values(item));
+						},
+						all: async () => {
+							calls.push({ sql, params });
+							return { results: buildResults() };
+						},
+						first: async () => {
+							calls.push({ sql, params });
+							return buildResults()[0];
+						},
+					};
+				},
+			};
+		},
+	} as unknown as D1Database;
+
+	return { db, calls };
+}
+
 describe("后台接口", () => {
 	test("GET /health 会返回健康状态", async () => {
 		const res = await app.request("/health");
@@ -415,6 +494,44 @@ describe("后台接口", () => {
 			},
 			{
 				...mockEnv,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 404);
+		assert.equal(await res.text(), "Not Found");
+	});
+
+	test("POST /mcp 在后台关闭开关时返回 404", async () => {
+		const { db } = createMcpReadMockD1({ mcpEnabled: false });
+		const initializeRequest = {
+			jsonrpc: "2.0",
+			id: 1,
+			method: "initialize",
+			params: {
+				protocolVersion: "2025-11-25",
+				clientInfo: {
+					name: "integration-test-client",
+					version: "1.0.0",
+				},
+				capabilities: {},
+			},
+		};
+
+		const res = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+				},
+				body: JSON.stringify(initializeRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
 				MCP_BEARER_TOKEN: "mcp-secret",
 			} as unknown as Env,
 		);
@@ -775,6 +892,177 @@ describe("后台接口", () => {
 			/insert into\s+"?blog_post_tags"?/iu.test(entry.sql),
 		);
 		assert.ok(relationInsertCall);
+	});
+
+	test("POST /mcp 在 list_posts 可读取文章列表", async () => {
+		const { db } = createMcpReadMockD1();
+		const initializeRequest = {
+			jsonrpc: "2.0",
+			id: 1,
+			method: "initialize",
+			params: {
+				protocolVersion: "2025-11-25",
+				clientInfo: {
+					name: "integration-test-client",
+					version: "1.0.0",
+				},
+				capabilities: {},
+			},
+		};
+
+		const initRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+				},
+				body: JSON.stringify(initializeRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(initRes.status, 200);
+
+		const sessionId = initRes.headers.get("mcp-session-id");
+		assert.ok(sessionId);
+
+		const listRequest = {
+			jsonrpc: "2.0",
+			id: 2,
+			method: "tools/call",
+			params: {
+				name: "list_posts",
+				arguments: {
+					limit: 5,
+					includeContent: false,
+				},
+			},
+		};
+
+		const callRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+					"mcp-session-id": sessionId as string,
+				},
+				body: JSON.stringify(listRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(callRes.status, 200);
+
+		const payload = (await callRes.json()) as {
+			result?: { isError?: boolean; content?: Array<{ text?: string }> };
+		};
+		assert.notEqual(payload?.result?.isError, true);
+
+		const text = String(payload?.result?.content?.[0]?.text ?? "{}");
+		const toolResult = JSON.parse(text) as {
+			total: number;
+			posts: Array<{ slug: string; content?: string }>;
+		};
+		assert.equal(toolResult.total, 1);
+		assert.equal(toolResult.posts[0]?.slug, "mcp-read-demo");
+		assert.equal(toolResult.posts[0]?.content, undefined);
+	});
+
+	test("POST /mcp 在 get_post 可按 slug 读取文章详情", async () => {
+		const { db } = createMcpReadMockD1();
+		const initializeRequest = {
+			jsonrpc: "2.0",
+			id: 1,
+			method: "initialize",
+			params: {
+				protocolVersion: "2025-11-25",
+				clientInfo: {
+					name: "integration-test-client",
+					version: "1.0.0",
+				},
+				capabilities: {},
+			},
+		};
+
+		const initRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+				},
+				body: JSON.stringify(initializeRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(initRes.status, 200);
+
+		const sessionId = initRes.headers.get("mcp-session-id");
+		assert.ok(sessionId);
+
+		const getRequest = {
+			jsonrpc: "2.0",
+			id: 2,
+			method: "tools/call",
+			params: {
+				name: "get_post",
+				arguments: {
+					slug: "mcp-read-demo",
+					includeContent: true,
+				},
+			},
+		};
+
+		const callRes = await app.request(
+			"/mcp",
+			{
+				method: "POST",
+				headers: {
+					accept: "application/json, text/event-stream",
+					"content-type": "application/json",
+					authorization: "Bearer mcp-secret",
+					"mcp-session-id": sessionId as string,
+				},
+				body: JSON.stringify(getRequest),
+			},
+			{
+				...mockEnv,
+				DB: db,
+				MCP_BEARER_TOKEN: "mcp-secret",
+			} as unknown as Env,
+		);
+		assert.equal(callRes.status, 200);
+
+		const payload = (await callRes.json()) as {
+			result?: { isError?: boolean; content?: Array<{ text?: string }> };
+		};
+		assert.notEqual(payload?.result?.isError, true);
+
+		const text = String(payload?.result?.content?.[0]?.text ?? "{}");
+		const toolResult = JSON.parse(text) as {
+			post: { slug: string; content: string; tags: string[] };
+		};
+		assert.equal(toolResult.post.slug, "mcp-read-demo");
+		assert.match(toolResult.post.content, /MCP 读取工具测试/u);
+		assert.ok(toolResult.post.tags.includes("MCP"));
 	});
 
 	test("未登录访问 /admin 会跳转到登录页", async () => {

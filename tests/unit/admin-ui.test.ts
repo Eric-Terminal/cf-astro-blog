@@ -62,6 +62,8 @@ describe("后台界面风格保护", () => {
 		assert.match(source, /aiPublicBaseUrl/u);
 		assert.match(source, /aiPublicApiKey/u);
 		assert.match(source, /aiPublicModel/u);
+		assert.match(source, /mcpEnabled/u);
+		assert.match(source, /启用 MCP 接口/u);
 		assert.doesNotMatch(
 			source,
 			/value="\$\{escapeAttribute\(aiSettings\.internal\.apiKey\)\}"/u,
