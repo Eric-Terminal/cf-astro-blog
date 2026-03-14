@@ -166,6 +166,7 @@ describe("源码回归保护", () => {
 		assert.ok(postLayoutSource.includes("article-sidebar"));
 		assert.ok(postLayoutSource.includes("article-profile-avatar"));
 		assert.ok(postLayoutSource.includes("article-toc"));
+		assert.ok(postLayoutSource.includes("align-self: stretch;"));
 		assert.ok(postLayoutSource.includes("data-article-transparency-toggle"));
 		assert.ok(postLayoutSource.includes("article-transparency-toggle-compact"));
 		assert.ok(postLayoutSource.includes("/article-transparency-toggle.js"));
