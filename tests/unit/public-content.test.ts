@@ -73,6 +73,11 @@ describe("源码回归保护", () => {
 		]);
 
 		assert.match(postPageSource, /getPublicPostBySlugCondition/u);
+		assert.match(postPageSource, /shouldCountPostViewOnce/u);
+		assert.match(postPageSource, /buildPostViewDedupKey/u);
+		assert.match(postPageSource, /VIEW_COUNT_DEDUP_TTL_SECONDS/u);
+		assert.match(postPageSource, /env\.SESSION\.get/u);
+		assert.match(postPageSource, /env\.SESSION\.put/u);
 		assert.match(
 			postPageSource,
 			/viewCount:\s*sql`\$\{blogPosts\.viewCount\}\s*\+\s*1`/u,
@@ -143,8 +148,18 @@ describe("源码回归保护", () => {
 	test("公共页面 CSP 放行 Turnstile 域名", async () => {
 		const source = await readFile("src/middleware.ts", "utf8");
 		assert.ok(source.includes("https://challenges.cloudflare.com"));
-		assert.ok(source.includes('context.url.pathname.startsWith("/search")'));
+		assert.ok(source.includes('normalizedPath.startsWith("/search")'));
 		assert.ok(source.includes("'wasm-unsafe-eval'"));
+	});
+
+	test("公共页面中间件会对首页/归档/友链启用边缘缓存", async () => {
+		const source = await readFile("src/middleware.ts", "utf8");
+		assert.ok(source.includes("getEdgeCache"));
+		assert.ok(source.includes("X-Edge-Cache"));
+		assert.ok(source.includes("s-maxage"));
+		assert.ok(source.includes('case "/blog"'));
+		assert.ok(source.includes('case "/friends"'));
+		assert.ok(source.includes("buildEdgeCacheKeyUrl"));
 	});
 
 	test("搜索组件将标签筛选放入折叠面板并外显已选标签", async () => {
