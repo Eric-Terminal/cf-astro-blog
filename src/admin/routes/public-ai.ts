@@ -13,25 +13,31 @@ const publicAiRoutes = new Hono<AdminAppEnv>();
 
 const MAX_BODY_LENGTH = 16_384;
 const MAX_MESSAGE_LENGTH = 4_000;
+const MAX_TERMINAL_CWD_LENGTH = 240;
 const MAX_TURNSTILE_TOKEN_LENGTH = 4_096;
 const DEFAULT_RATE_LIMIT_PER_MINUTE = 12;
 const DEFAULT_DAILY_LIMIT_PER_IP = 120;
 const DEFAULT_PUBLIC_AI_SYSTEM_PROMPT =
 	"你是站点内的公开助手。请使用简体中文回答，内容简洁、准确，避免输出敏感系统信息。";
 const NOT_FOUND_TERMINAL_SYSTEM_PROMPT = `
-你是网站 404 彩蛋页中的“模拟终端助手”。
-你会收到用户输入的一行“命令”，请把它当作自然语言或伪命令解释，并返回终端风格的纯文本输出。
+你是网站 404 彩蛋页里的 shell 终端模拟器。
+你会收到两段信息：
+- PWD=<当前路径>
+- COMMAND=<用户输入命令>
 
-输出要求：
-1) 仅输出纯文本，不要使用 Markdown、代码围栏、HTML。
-2) 默认使用简体中文，语气像终端提示，简洁直接。
-3) 先给 1-2 行结果，再给 1 行可继续尝试的提示（如下一条命令建议）。
-4) 不要声称真的执行了系统命令；如果命令危险或无意义，明确说明“这是模拟终端”并给替代建议。
-5) 如用户输入 clear/cls，请只返回：TERMINAL_CLEAR。
+请严格按 shell 风格返回“命令执行结果”，必须遵守：
+1) 只输出纯文本，不要 Markdown、代码块、解释说明、前后缀礼貌语。
+2) 输出内容只应是“执行结果本体”，不要重复打印命令本身。
+3) 若命令无效，输出格式必须是：command not found: <命令名>
+4) 若命令为 ls，按当前路径给出目录/文件列表（可合理模拟），一行一个条目。
+5) 若命令为 pwd，直接输出 PWD 对应路径。
+6) 若命令为 clear 或 cls，只返回：TERMINAL_CLEAR
+7) 不要声称真的访问了服务器真实文件系统；这是模拟 shell。
 `.trim();
 
 interface PublicAiPayload {
 	message: string;
+	cwd: string | null;
 	turnstileToken: string | null;
 }
 
@@ -106,6 +112,8 @@ function parsePayload(
 	if (!message) {
 		return { error: "message 不能为空" };
 	}
+	const cwdRaw = sanitizePlainText(parsed.cwd, MAX_TERMINAL_CWD_LENGTH);
+	const cwd = normalizeTerminalCwd(cwdRaw);
 
 	const turnstileToken =
 		sanitizePlainText(parsed.turnstileToken, MAX_TURNSTILE_TOKEN_LENGTH) ||
@@ -114,9 +122,25 @@ function parsePayload(
 	return {
 		data: {
 			message,
+			cwd,
 			turnstileToken,
 		},
 	};
+}
+
+function normalizeTerminalCwd(value: string): string | null {
+	const raw = String(value ?? "").trim();
+	if (!raw) {
+		return null;
+	}
+
+	let normalized = raw;
+	if (!normalized.startsWith("/")) {
+		normalized = `/${normalized}`;
+	}
+
+	normalized = normalized.replaceAll(/\/+/g, "/");
+	return normalized.slice(0, MAX_TERMINAL_CWD_LENGTH);
 }
 
 interface PublicAiRequestOptions {
@@ -294,6 +318,10 @@ async function handlePublicAiRequest(
 	}
 
 	try {
+		const userContent =
+			options.mode === "terminal-404"
+				? `PWD=${parsed.data.cwd || "/"}\nCOMMAND=${parsed.data.message}`
+				: parsed.data.message;
 		const reply = await requestOpenAICompatibleChatCompletion(
 			publicEndpoint,
 			[
@@ -303,7 +331,7 @@ async function handlePublicAiRequest(
 				},
 				{
 					role: "user",
-					content: parsed.data.message,
+					content: userContent,
 				},
 			],
 			{

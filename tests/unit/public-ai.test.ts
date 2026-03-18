@@ -17,6 +17,10 @@ describe("公开 AI 接口防护", () => {
 		assert.match(source, /\/terminal-404/u);
 		assert.match(source, /NOT_FOUND_TERMINAL_SYSTEM_PROMPT/u);
 		assert.match(source, /TERMINAL_CLEAR/u);
+		assert.match(source, /command not found/u);
+		assert.match(source, /PWD=/u);
+		assert.match(source, /COMMAND=/u);
+		assert.match(source, /normalizeTerminalCwd/u);
 	});
 
 	test("主应用会挂载公开 AI 路由", async () => {

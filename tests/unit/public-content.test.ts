@@ -115,6 +115,9 @@ describe("源码回归保护", () => {
 		assert.match(notFoundPageSource, /\/not-found-terminal\.js/u);
 		assert.match(terminalScriptSource, /\/api\/ai\/terminal-404/u);
 		assert.match(terminalScriptSource, /TERMINAL_CLEAR/u);
+		assert.match(terminalScriptSource, /guest@404:\$\{cwd\}\$/u);
+		assert.match(terminalScriptSource, /cwd,/u);
+		assert.match(terminalScriptSource, /normalizeTerminalPath/u);
 		assert.match(terminalScriptSource, /astro:page-load/u);
 	});
 

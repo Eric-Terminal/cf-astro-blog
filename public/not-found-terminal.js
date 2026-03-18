@@ -48,7 +48,8 @@ function initNotFoundTerminal() {
 	const inputNode = root.querySelector("[data-terminal-input='true']");
 	const aiEndpoint = root.dataset.aiEndpoint || "/api/ai/terminal-404";
 	const missingPath = root.dataset.missingPath || "/";
-	const promptPrefix = "guest@404:~$";
+	const cwd = normalizeTerminalPath(missingPath);
+	const promptPrefix = `guest@404:${cwd}$`;
 
 	if (
 		!(logNode instanceof HTMLElement) ||
@@ -113,6 +114,7 @@ function initNotFoundTerminal() {
 				credentials: "same-origin",
 				body: JSON.stringify({
 					message: command,
+					cwd,
 				}),
 			});
 
@@ -154,6 +156,20 @@ function initNotFoundTerminal() {
 			inputNode.focus();
 		}
 	});
+}
+
+function normalizeTerminalPath(pathname) {
+	const raw = String(pathname ?? "").trim();
+	if (!raw) {
+		return "/";
+	}
+
+	let normalized = raw.startsWith("/") ? raw : `/${raw}`;
+	normalized = normalized.replaceAll(/\/+/g, "/");
+	if (normalized.length > 180) {
+		return `${normalized.slice(0, 177)}...`;
+	}
+	return normalized;
 }
 
 if (document.readyState === "loading") {
