@@ -28,6 +28,8 @@ import {
 import { adminLayout } from "../views/layout";
 
 const media = new Hono<AdminAppEnv>();
+const DEFAULT_MEDIA_UPLOAD_PREFIX = "uploads";
+const POST_UPLOAD_SCOPE_PATTERN = /^[a-z0-9-]{1,80}$/u;
 
 function renderMediaErrorPage(csrfToken: string, message: string) {
 	return adminLayout(
@@ -68,11 +70,75 @@ function extractWildcardMediaKey(
 	return decodeRouteParam(normalized);
 }
 
-async function saveUploadFile(c: { env: AdminAppEnv["Bindings"] }, file: File) {
+function sanitizePostUploadScope(value: string): string | null {
+	const normalized = String(value ?? "")
+		.trim()
+		.toLowerCase();
+	if (!normalized) {
+		return null;
+	}
+
+	return POST_UPLOAD_SCOPE_PATTERN.test(normalized) ? normalized : null;
+}
+
+function resolveUploadPrefix(body: Record<string, unknown>): {
+	error: string | null;
+	prefix: string;
+} {
+	const uploadScopeRaw = getBodyText(body, "uploadScope");
+	if (!uploadScopeRaw) {
+		return { prefix: DEFAULT_MEDIA_UPLOAD_PREFIX, error: null };
+	}
+
+	const uploadScope = sanitizePostUploadScope(uploadScopeRaw);
+	if (!uploadScope) {
+		return {
+			prefix: DEFAULT_MEDIA_UPLOAD_PREFIX,
+			error: "上传目录参数不合法，仅允许小写字母、数字和短横线",
+		};
+	}
+
+	const uploadKindRaw = getBodyText(body, "uploadKind").toLowerCase();
+	const uploadKind = uploadKindRaw === "cover" ? "cover" : "content";
+	return {
+		prefix: `posts/${uploadScope}/${uploadKind}`,
+		error: null,
+	};
+}
+
+function getMediaDisplayName(key: string) {
+	const normalized = String(key ?? "").trim();
+	if (!normalized) {
+		return "-";
+	}
+
+	const segments = normalized.split("/").filter(Boolean);
+	return segments.at(-1) || normalized;
+}
+
+function getMediaDirectoryLabel(key: string) {
+	const normalized = String(key ?? "").trim();
+	if (!normalized || !normalized.includes("/")) {
+		return "根目录";
+	}
+
+	const segments = normalized.split("/").filter(Boolean);
+	if (segments.length <= 1) {
+		return "根目录";
+	}
+
+	return segments.slice(0, -1).join("/");
+}
+
+async function saveUploadFile(
+	c: { env: AdminAppEnv["Bindings"] },
+	file: File,
+	prefix = DEFAULT_MEDIA_UPLOAD_PREFIX,
+) {
 	return saveMediaObjectWithDedup({
 		bucket: c.env.MEDIA_BUCKET,
 		file,
-		prefix: "uploads",
+		prefix,
 	});
 }
 
@@ -154,8 +220,10 @@ media.get("/", async (c) => {
 			${
 				objects.length > 0
 					? objects
-							.map(
-								(obj) => `
+							.map((obj) => {
+								const displayName = getMediaDisplayName(obj.key);
+								const directory = getMediaDirectoryLabel(obj.key);
+								return `
 				<div class="media-item">
 					<div class="media-preview">
 						${
@@ -165,7 +233,8 @@ media.get("/", async (c) => {
 						}
 					</div>
 					<div class="media-info">
-						<span class="media-name" title="${escapeAttribute(obj.key)}">${escapeHtml(obj.key)}</span>
+						<span class="media-name" title="${escapeAttribute(obj.key)}">${escapeHtml(displayName)}</span>
+						<span class="media-directory" title="${escapeAttribute(directory)}">目录：${escapeHtml(directory)}</span>
 						<span class="media-size">${formatBytes(obj.size)}</span>
 					</div>
 					<form method="post" action="/api/admin/media/delete/${encodeRouteParam(obj.key)}" class="media-actions" data-confirm-message="${escapeAttribute("确认删除这个媒体文件吗？")}">
@@ -173,8 +242,8 @@ media.get("/", async (c) => {
 						<button type="button" class="btn btn-sm" data-copy-value="${escapeAttribute(obj.key)}">复制键名</button>
 						<button type="submit" class="btn btn-sm btn-danger">删除</button>
 					</form>
-				</div>`,
-							)
+				</div>`;
+							})
 							.join("")
 					: "<p class='empty-state'>当前还没有上传任何媒体文件。</p>"
 			}
@@ -208,7 +277,15 @@ media.post("/upload", async (c) => {
 		);
 	}
 
-	await saveUploadFile(c, file);
+	const uploadTarget = resolveUploadPrefix(body);
+	if (uploadTarget.error) {
+		return c.html(
+			renderMediaErrorPage(session.csrfToken, uploadTarget.error),
+			400,
+		);
+	}
+
+	await saveUploadFile(c, file, uploadTarget.prefix);
 
 	return c.redirect("/api/admin/media");
 });
@@ -230,8 +307,13 @@ media.post("/upload-async", async (c) => {
 		return c.json({ message: validationError }, 400);
 	}
 
+	const uploadTarget = resolveUploadPrefix(body);
+	if (uploadTarget.error) {
+		return c.json({ message: uploadTarget.error }, 400);
+	}
+
 	try {
-		const uploaded = await saveUploadFile(c, file);
+		const uploaded = await saveUploadFile(c, file, uploadTarget.prefix);
 		return c.json({
 			key: uploaded.key,
 			url: `/media/${uploaded.key}`,

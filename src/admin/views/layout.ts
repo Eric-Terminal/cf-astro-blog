@@ -1253,6 +1253,14 @@ export const adminSharedStyles = `
 			color: var(--text-muted);
 		}
 
+		.media-directory {
+			font-size: 0.76rem;
+			color: var(--text-muted);
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
 		.media-actions {
 			display: flex;
 			flex-wrap: wrap;

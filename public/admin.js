@@ -497,14 +497,29 @@ function scheduleMarkdownPreview() {
 	});
 }
 
-async function uploadImageToMedia(file, uploadUrl, csrfToken) {
+async function uploadImageToMedia(file, uploadUrl, csrfToken, options = {}) {
 	if (!file || !uploadUrl || !csrfToken) {
 		throw new Error("上传配置缺失，请刷新页面后重试");
 	}
 
+	const uploadScope =
+		typeof options.uploadScope === "string"
+			? options.uploadScope.trim().toLowerCase()
+			: "";
+	const uploadKind =
+		options.uploadKind === "cover" || options.uploadKind === "content"
+			? options.uploadKind
+			: "";
+
 	const formData = new FormData();
 	formData.append("_csrf", csrfToken);
 	formData.append("file", file);
+	if (uploadScope) {
+		formData.append("uploadScope", uploadScope);
+	}
+	if (uploadKind) {
+		formData.append("uploadKind", uploadKind);
+	}
 
 	const response = await fetch(uploadUrl, {
 		method: "POST",
@@ -598,6 +613,40 @@ function buildSlugValue(value) {
 		.replaceAll(/[\u0300-\u036f]/g, "")
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-|-$/g, "");
+}
+
+function normalizePostMediaScope(value) {
+	const normalized = buildSlugValue(String(value ?? "").trim());
+	if (!normalized) {
+		return "";
+	}
+
+	return normalized.slice(0, 80);
+}
+
+function resolveEditorPostMediaScope() {
+	if (slugInput instanceof HTMLInputElement) {
+		const slugScope = normalizePostMediaScope(slugInput.value);
+		if (slugScope) {
+			return slugScope;
+		}
+	}
+
+	if (titleInput instanceof HTMLInputElement) {
+		const titleScope = normalizePostMediaScope(titleInput.value);
+		if (titleScope) {
+			return titleScope;
+		}
+	}
+
+	const postIdMatch = String(editorDraftScope || "").match(
+		/\/api\/admin\/posts\/(\d+)$/u,
+	);
+	if (postIdMatch?.[1]) {
+		return `post-${postIdMatch[1]}`;
+	}
+
+	return "draft";
 }
 
 function updateSlugPreview() {
@@ -1361,7 +1410,10 @@ for (const uploader of document.querySelectorAll("[data-cover-uploader='true']")
 		setStatus("正在上传封面");
 
 		try {
-			const uploaded = await uploadImageToMedia(file, uploadUrl, csrfToken);
+			const uploaded = await uploadImageToMedia(file, uploadUrl, csrfToken, {
+				uploadScope: resolveEditorPostMediaScope(),
+				uploadKind: "cover",
+			});
 			setCoverValue(uploaded.key, uploaded.url);
 			setStatusMessage(status, "封面上传成功", "success");
 		} catch (error) {
@@ -1720,7 +1772,15 @@ const handleEditorImageUpload = async (file) => {
 
 	setStatusMessage(contentUploadStatus, "上传中");
 	try {
-		const uploaded = await uploadImageToMedia(file, editorUploadUrl, editorCsrfToken);
+		const uploaded = await uploadImageToMedia(
+			file,
+			editorUploadUrl,
+			editorCsrfToken,
+			{
+				uploadScope: resolveEditorPostMediaScope(),
+				uploadKind: "content",
+			},
+		);
 		insertMarkdownImage(contentTextarea, file, uploaded.url);
 		setStatusMessage(contentUploadStatus, "已插入", "success");
 	} catch (error) {

@@ -86,6 +86,9 @@ describe("后台界面风格保护", () => {
 		assert.match(editorSource, /data-cover-key-input="true"/u);
 		assert.match(adminScriptSource, /\[data-cover-key-input='true'\]/u);
 		assert.match(adminScriptSource, /uploader\.closest\("\.form-group"\)/u);
+		assert.match(adminScriptSource, /resolveEditorPostMediaScope/u);
+		assert.match(adminScriptSource, /uploadKind: "cover"/u);
+		assert.match(adminScriptSource, /uploadKind: "content"/u);
 	});
 
 	test("文章编辑页状态与分类联动使用隐藏显示逻辑", async () => {
@@ -247,14 +250,21 @@ describe("后台界面风格保护", () => {
 	});
 
 	test("媒体文件读取与删除使用通配参数提取键名，避免 /api 前缀重写误删", async () => {
-		const mediaRouteSource = await readFile(
-			"src/admin/routes/media.ts",
-			"utf8",
-		);
+		const [mediaRouteSource, layoutSource] = await Promise.all([
+			readFile("src/admin/routes/media.ts", "utf8"),
+			readFile("src/admin/views/layout.ts", "utf8"),
+		]);
 
 		assert.match(mediaRouteSource, /media\.get\("\/file\/\*"/u);
 		assert.match(mediaRouteSource, /media\.post\("\/delete\/\*"/u);
 		assert.match(mediaRouteSource, /extractWildcardMediaKey/u);
+		assert.match(mediaRouteSource, /uploadScope/u);
+		assert.match(mediaRouteSource, /uploadKind/u);
+		assert.ok(
+			mediaRouteSource.includes(`posts/\${uploadScope}/\${uploadKind}`),
+		);
+		assert.match(mediaRouteSource, /media-directory/u);
+		assert.match(layoutSource, /\.media-directory/u);
 		assert.ok(mediaRouteSource.includes('c.req.param("0")'));
 		assert.ok(mediaRouteSource.includes('"/admin/media/file/"'));
 		assert.ok(mediaRouteSource.includes('"/admin/media/delete/"'));
