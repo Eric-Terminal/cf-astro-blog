@@ -25,9 +25,6 @@ describe("公开 AI 接口防护", () => {
 		assert.match(source, /MAX_TERMINAL_BODY_LENGTH/u);
 		assert.match(source, /MAX_TERMINAL_HISTORY_MESSAGE_LENGTH/u);
 		assert.match(source, /history/u);
-		assert.match(source, /PUBLIC_AI_TERMINAL_REQUIRE_CF_CLEARANCE/u);
-		assert.match(source, /hasCfClearanceCookie/u);
-		assert.match(source, /cf_clearance/u);
 	});
 
 	test("主应用会挂载公开 AI 路由", async () => {

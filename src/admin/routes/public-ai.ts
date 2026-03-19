@@ -20,7 +20,6 @@ const MAX_TERMINAL_HISTORY_MESSAGE_LENGTH = 16_000;
 const MAX_TURNSTILE_TOKEN_LENGTH = 4_096;
 const DEFAULT_RATE_LIMIT_PER_MINUTE = 12;
 const DEFAULT_DAILY_LIMIT_PER_IP = 120;
-const DEFAULT_REQUIRE_CF_CLEARANCE_FOR_TERMINAL = false;
 type PublicAiMode = "chat" | "terminal-404";
 const DEFAULT_PUBLIC_AI_SYSTEM_PROMPT =
 	"你是站点内的公开助手。请使用简体中文回答，内容简洁、准确，避免输出敏感系统信息。";
@@ -72,23 +71,6 @@ function parseLimit(
 	return Math.min(max, Math.max(min, parsed));
 }
 
-function parseBoolean(value: unknown, fallback: boolean): boolean {
-	const normalized = String(value ?? "")
-		.trim()
-		.toLowerCase();
-	if (!normalized) {
-		return fallback;
-	}
-
-	if (["1", "true", "yes", "on", "enabled"].includes(normalized)) {
-		return true;
-	}
-	if (["0", "false", "no", "off", "disabled"].includes(normalized)) {
-		return false;
-	}
-	return fallback;
-}
-
 function getClientIp(c: Context<AdminAppEnv>): string {
 	const directIp = sanitizePlainText(c.req.header("CF-Connecting-IP"), 64);
 	if (directIp) {
@@ -119,20 +101,6 @@ function isSameOriginRequest(c: Context<AdminAppEnv>): boolean {
 	} catch {
 		return false;
 	}
-}
-
-function hasCfClearanceCookie(c: Context<AdminAppEnv>): boolean {
-	const cookieHeader = sanitizePlainText(c.req.header("cookie"), 8_192, {
-		trim: false,
-	});
-	if (!cookieHeader) {
-		return false;
-	}
-
-	return cookieHeader.split(";").some((item) => {
-		const [name] = item.trim().split("=", 1);
-		return name?.trim() === "cf_clearance";
-	});
 }
 
 function parsePayload(
@@ -379,22 +347,6 @@ async function handlePublicAiRequest(
 	const parsed = parsePayload(rawBody, options.mode);
 	if ("error" in parsed) {
 		return c.json({ error: parsed.error }, 400);
-	}
-
-	if (options.mode === "terminal-404") {
-		const requireCfClearance = parseBoolean(
-			c.env.PUBLIC_AI_TERMINAL_REQUIRE_CF_CLEARANCE,
-			DEFAULT_REQUIRE_CF_CLEARANCE_FOR_TERMINAL,
-		);
-		if (requireCfClearance && !hasCfClearanceCookie(c)) {
-			return c.json(
-				{
-					error:
-						"请先完成 Cloudflare 安全校验后再试（若未出现验证页，请联系站点管理员检查 WAF 挑战规则）。",
-				},
-				403,
-			);
-		}
 	}
 
 	if (options.requireTurnstile) {
