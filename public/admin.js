@@ -8,6 +8,10 @@ const newCategoryInput = document.getElementById("newCategoryName");
 const statusSelect = document.getElementById("status");
 const scheduleField = document.querySelector("[data-schedule-field='true']");
 const publishAtInput = document.querySelector("[data-publish-at-input='true']");
+const publishedDateField = document.querySelector(
+	"[data-published-date-field='true']",
+);
+const publishedAtInput = document.querySelector("[data-published-at-input='true']");
 const contentTextarea = document.getElementById("content");
 const contentUploadStatus = document.querySelector("[data-content-upload-status]");
 const markdownPreview = document.querySelector("[data-markdown-preview='true']");
@@ -606,6 +610,20 @@ function syncScheduleFieldVisibility() {
 	}
 }
 
+function syncPublishedDateFieldVisibility() {
+	const isPublished =
+		statusSelect instanceof HTMLSelectElement &&
+		statusSelect.value === "published";
+
+	if (publishedDateField instanceof HTMLElement) {
+		publishedDateField.classList.toggle("is-hidden", !isPublished);
+	}
+
+	if (publishedAtInput instanceof HTMLInputElement) {
+		publishedAtInput.disabled = !isPublished;
+	}
+}
+
 function buildSlugValue(value) {
 	return value
 		.toLowerCase()
@@ -739,6 +757,7 @@ function collectEditorDraftValues() {
 		content: getEditorFieldValue("content"),
 		status: getEditorFieldValue("status") || "draft",
 		publishAt: getEditorFieldValue("publishAt"),
+		publishedAt: getEditorFieldValue("publishedAt"),
 		categoryId: getEditorFieldValue("categoryId"),
 		newCategoryName: getEditorFieldValue("newCategoryName"),
 		featuredImageKey: getEditorFieldValue("featuredImageKey"),
@@ -768,6 +787,7 @@ function isEditorDraftPristine(values) {
 		!values.content.trim() &&
 		(values.status || "draft") === "draft" &&
 		!values.publishAt.trim() &&
+		!values.publishedAt.trim() &&
 		!values.categoryId.trim() &&
 		!values.newCategoryName.trim() &&
 		!values.featuredImageKey.trim() &&
@@ -789,6 +809,7 @@ function normalizeEditorDraftValues(raw) {
 		content: String(raw?.content ?? ""),
 		status: String(raw?.status ?? "draft"),
 		publishAt: String(raw?.publishAt ?? ""),
+		publishedAt: String(raw?.publishedAt ?? ""),
 		categoryId: String(raw?.categoryId ?? ""),
 		newCategoryName: String(raw?.newCategoryName ?? ""),
 		featuredImageKey: String(raw?.featuredImageKey ?? ""),
@@ -1235,7 +1256,9 @@ for (const checkbox of document.querySelectorAll("input[data-tag-checkbox='true'
 categorySelect?.addEventListener("change", syncNewCategoryInputVisibility);
 syncNewCategoryInputVisibility();
 statusSelect?.addEventListener("change", syncScheduleFieldVisibility);
+statusSelect?.addEventListener("change", syncPublishedDateFieldVisibility);
 syncScheduleFieldVisibility();
+syncPublishedDateFieldVisibility();
 
 draftRestoreButton?.addEventListener("click", () => {
 	if (!editorDraftState?.values) {

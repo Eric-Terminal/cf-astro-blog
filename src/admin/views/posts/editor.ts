@@ -60,7 +60,9 @@ export function postEditorPage(data: EditorData): string {
 			? String(post.pinnedOrder)
 			: "100";
 	const publishAtValue = toDateTimeLocalValue(post?.publishAt || null);
+	const publishedAtValue = toDateTimeLocalValue(post?.publishedAt || null);
 	const isScheduled = currentStatus === "scheduled";
+	const isPublished = currentStatus === "published";
 
 	const content = `
 		<h1>${isEdit ? "编辑文章" : "新建文章"}</h1>
@@ -154,6 +156,22 @@ export function postEditorPage(data: EditorData): string {
 							${isScheduled ? "" : "disabled"}
 							${isScheduled ? "required" : ""}
 						/>
+					</div>
+
+					<div class="form-group published-date-field ${isPublished ? "" : "is-hidden"}" data-published-date-field="true">
+						<label for="publishedAt">发布日期</label>
+						<input
+							type="datetime-local"
+							id="publishedAt"
+							name="publishedAt"
+							class="form-input"
+							value="${escapeAttribute(publishedAtValue)}"
+							data-published-at-input="true"
+							min="0001-01-01T00:00"
+							max="9999-12-31T23:59"
+							${isPublished ? "" : "disabled"}
+						/>
+						<p class="form-help">支持手动修改发布日期，最晚可设置到 9999 年。</p>
 					</div>
 
 					<div class="form-group">

@@ -98,10 +98,21 @@ describe("后台界面风格保护", () => {
 		]);
 
 		assert.ok(editorSource.includes("schedule-field"));
+		assert.ok(editorSource.includes("published-date-field"));
 		assert.ok(editorSource.includes("is-hidden"));
 		assert.match(editorSource, /new-category-wrap is-hidden/u);
+		assert.match(editorSource, /name="publishedAt"/u);
+		assert.match(editorSource, /data-published-at-input="true"/u);
 		assert.ok(
 			adminScriptSource.includes('classList.toggle("is-hidden", !isScheduled)'),
+		);
+		assert.ok(
+			adminScriptSource.includes('classList.toggle("is-hidden", !isPublished)'),
+		);
+		assert.match(adminScriptSource, /syncPublishedDateFieldVisibility/u);
+		assert.match(
+			adminScriptSource,
+			/publishedAt: getEditorFieldValue\("publishedAt"\)/u,
 		);
 		assert.ok(
 			adminScriptSource.includes(

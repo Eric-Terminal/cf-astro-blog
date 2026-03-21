@@ -424,4 +424,20 @@ describe("源码回归保护", () => {
 		assert.ok(workflowSource.includes("rebuild-search-index"));
 		assert.ok(workflowSource.includes("npm run deploy"));
 	});
+
+	test("后台文章创建与编辑支持手动设置发布日期", async () => {
+		const postRouteSource = await readFile("src/admin/routes/posts.ts", "utf8");
+
+		assert.match(postRouteSource, /sanitizePlainText\(body\.publishedAt/u);
+		assert.match(postRouteSource, /发布日期格式不合法/u);
+		assert.match(
+			postRouteSource,
+			/postInput\.status === "published" \? \(postInput\.publishedAt \?\? now\) : null/u,
+		);
+		assert.match(
+			postRouteSource,
+			/postInput\.publishedAt \?\?\s*\(existing\.status === "published"/u,
+		);
+		assert.match(postRouteSource, /publishedAt,/u);
+	});
 });

@@ -41,6 +41,7 @@ interface ParsedPostInput {
 	excerpt: string | null;
 	status: "draft" | "published" | "scheduled";
 	publishAt: string | null;
+	publishedAt: string | null;
 	featuredImageKey: string | null;
 	featuredImageAlt: string | null;
 	isPinned: boolean;
@@ -130,6 +131,18 @@ function parsePostInput(body: Record<string, unknown>): ParsedPostInputResult {
 		return { error: "定时发布需要填写发布时间" } as const;
 	}
 
+	const publishedAtRaw = sanitizePlainText(body.publishedAt, 32, {
+		trim: true,
+	});
+	let publishedAt: string | null = null;
+	if (publishedAtRaw) {
+		const parsed = new Date(publishedAtRaw);
+		if (Number.isNaN(parsed.getTime())) {
+			return { error: "发布日期格式不合法" } as const;
+		}
+		publishedAt = parsed.toISOString();
+	}
+
 	const categoryIdRaw = String(body.categoryId ?? "").trim();
 	const isNewCategorySelected = categoryIdRaw === "__new__";
 	const categoryId =
@@ -195,6 +208,7 @@ function parsePostInput(body: Record<string, unknown>): ParsedPostInputResult {
 				sanitizePlainText(body.excerpt, 200, { allowNewlines: true }) || null,
 			status,
 			publishAt,
+			publishedAt,
 			featuredImageKey,
 			featuredImageAlt: sanitizePlainText(body.featuredImageAlt, 200) || null,
 			isPinned,
@@ -529,13 +543,10 @@ posts.post("/", async (c) => {
 		postInput.newTagNames,
 	);
 	const slug = await resolveUniquePostSlug(db, postInput.slug);
+	const publishedAt =
+		postInput.status === "published" ? (postInput.publishedAt ?? now) : null;
 	const publishAt =
-		postInput.status === "scheduled"
-			? postInput.publishAt
-			: postInput.status === "published"
-				? now
-				: null;
-	const publishedAt = postInput.status === "published" ? now : null;
+		postInput.status === "scheduled" ? postInput.publishAt : publishedAt;
 
 	const [inserted] = await db
 		.insert(blogPosts)
@@ -747,14 +758,15 @@ posts.post("/:id", async (c) => {
 	}
 
 	const publishedAt =
-		postInput.status === "published" && existing.status !== "published"
-			? now
+		postInput.status === "published"
+			? (postInput.publishedAt ??
+				(existing.status === "published" ? (existing.publishedAt ?? now) : now))
 			: (existing.publishedAt ?? null);
 	const publishAt =
 		postInput.status === "scheduled"
 			? postInput.publishAt
 			: postInput.status === "published"
-				? now
+				? publishedAt
 				: null;
 	const categoryId = await resolveCategoryId(
 		db,
