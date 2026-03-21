@@ -1,19 +1,21 @@
-import { escapeHtml } from "@/lib/security";
+import { escapeAttribute, escapeHtml } from "@/lib/security";
 
 interface LoginPageOptions {
 	error?: string;
 	oauthEnabled?: boolean;
+	backgroundImageUrl?: string | null;
 }
 
 export function loginPage(options: LoginPageOptions = {}): string {
-	const { error, oauthEnabled = false } = options;
+	const { error, oauthEnabled = false, backgroundImageUrl } = options;
+	const hasBackgroundImage = Boolean(backgroundImageUrl);
 
 	return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>登录 · EricTerminal Blog</title>
+	<title>登录 · EricTerminal's Blog</title>
 	<meta name="robots" content="noindex, nofollow" />
 	<script>
 		(function () {
@@ -111,6 +113,14 @@ export function loginPage(options: LoginPageOptions = {}): string {
 				radial-gradient(circle at 48% 100%, rgba(88, 192, 255, 0.08), transparent 26%),
 				linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 30%),
 				var(--color-bg);
+			position: relative;
+			min-height: 100dvh;
+			overflow: hidden;
+		}
+
+		/* 有背景图时 body 背景透明，让背景图层显示 */
+		body.has-bg-image {
+			background: transparent;
 		}
 
 		/* 深色背景渐变（JS 设置 data-theme 时生效）*/
@@ -165,6 +175,28 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			width: min(520px, calc(100vw - 1rem));
 			display: grid;
 			gap: 1.5rem;
+		}
+
+		/* ---- 背景图层（与首页 .site-background 逻辑一致）---- */
+		.bg-image-layer {
+			position: fixed;
+			inset: 0;
+			z-index: -2;
+			overflow: hidden;
+			background-color: var(--color-bg);
+		}
+
+		.bg-image-layer img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			object-position: var(--bg-focus-x, 50%) var(--bg-focus-y, 50%);
+			filter: blur(var(--bg-blur, 24px));
+			transform: scale(var(--bg-scale, 1.12));
+			opacity: var(--bg-opacity, 0.72);
+			transform-origin: center;
 		}
 
 		/* ---- 顶部品牌栏 ---- */
@@ -411,18 +443,19 @@ export function loginPage(options: LoginPageOptions = {}): string {
 				width: 100%;
 			}
 		}
-	</style>
+</style>
 </head>
-<body>
+<body${hasBackgroundImage ? ' class="has-bg-image"' : ''}>
+	${hasBackgroundImage ? `<div class="bg-image-layer" aria-hidden="true"><img src="${escapeAttribute(backgroundImageUrl!)}" alt="" loading="eager" decoding="async" /></div>` : ''}
 	<main class="entry-shell">
 		<header class="entry-header">
-			<a href="/" class="entry-brand" aria-label="返回 EricTerminal Blog 首页">
+			<a href="/" class="entry-brand" aria-label="返回 EricTerminal's Blog 首页">
 				<img
 					src="https://assets.ericterminal.com/logo-transparent.png"
 					alt=""
 					class="entry-brand-logo"
 				/>
-				<span>EricTerminal Blog</span>
+				<span>EricTerminal's Blog</span>
 			</a>
 		</header>
 
@@ -460,7 +493,7 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			</div>
 		</section>
 
-		<p class="entry-footer">EricTerminal Blog &mdash; 私密后台入口</p>
+		<p class="entry-footer">EricTerminal's Blog &mdash; 后台入口</p>
 	</main>
 </body>
 </html>`;

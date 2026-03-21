@@ -20,6 +20,11 @@ import {
 	recordFailedAttempt,
 } from "../middleware/rate-limit";
 import { loginPage } from "../views/login";
+import { getDb } from "@/lib/db";
+import {
+	buildBackgroundImageUrl,
+	getSiteAppearance,
+} from "@/lib/site-appearance";
 
 const auth = new Hono<AdminAppEnv>();
 const OAUTH_STATE_COOKIE = "admin_oauth_state";
@@ -205,9 +210,18 @@ auth.get("/login", async (c) => {
 
 	const config = getGitHubOAuthConfig(c.env);
 
+	let backgroundImageUrl: string | null = null;
+	try {
+		const appearance = await getSiteAppearance(getDb(c.env.DB));
+		backgroundImageUrl = buildBackgroundImageUrl(appearance.backgroundImageKey);
+	} catch {
+		// DB 未绑定或查询失败时退化为无背景图
+	}
+
 	return c.html(
 		loginPage({
 			oauthEnabled: Boolean(config),
+			backgroundImageUrl,
 		}),
 	);
 });
