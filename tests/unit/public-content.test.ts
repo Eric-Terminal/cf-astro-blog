@@ -225,6 +225,22 @@ describe("源码回归保护", () => {
 		assert.ok(source.includes("调整标签（已选"));
 	});
 
+	test("搜索与表单占位文字使用主题自适应颜色变量，避免浅色背景下发灰难辨识", async () => {
+		const [searchSource, globalStyleSource] = await Promise.all([
+			readFile("src/components/Search.astro", "utf8"),
+			readFile("src/styles/global.css", "utf8"),
+		]);
+
+		assert.ok(searchSource.includes("search-input::placeholder"));
+		assert.ok(searchSource.includes("var(--color-text-placeholder)"));
+		assert.ok(globalStyleSource.includes("--color-text-placeholder: #4b556a;"));
+		assert.ok(globalStyleSource.includes("--color-text-placeholder: #b6c4dc;"));
+		assert.match(
+			globalStyleSource,
+			/input::placeholder,\s*textarea::placeholder\s*\{[\s\S]*opacity:\s*1;/u,
+		);
+	});
+
 	test("文章详情页支持左侧作者信息栏、目录导航并提供阅读去透明度开关", async () => {
 		const [
 			postLayoutSource,

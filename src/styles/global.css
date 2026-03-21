@@ -15,6 +15,7 @@
 	--color-text: #101828;
 	--color-text-secondary: #3a4357;
 	--color-text-muted: #6d7688;
+	--color-text-placeholder: #4b556a;
 	--color-border: rgba(15, 23, 42, 0.08);
 	--color-accent: #0a84ff;
 	--color-accent-hover: #0066cc;
@@ -96,6 +97,7 @@
 	--color-text: #eef4ff;
 	--color-text-secondary: #cad4e6;
 	--color-text-muted: #93a1bc;
+	--color-text-placeholder: #b6c4dc;
 	--color-border: rgba(147, 161, 188, 0.14);
 	--color-accent: #57a6ff;
 	--color-accent-hover: #88c0ff;
@@ -125,6 +127,7 @@
 		--color-text: #eef4ff;
 		--color-text-secondary: #cad4e6;
 		--color-text-muted: #93a1bc;
+		--color-text-placeholder: #b6c4dc;
 		--color-border: rgba(147, 161, 188, 0.14);
 		--color-accent: #57a6ff;
 		--color-accent-hover: #88c0ff;
@@ -282,6 +285,12 @@ input,
 textarea,
 select {
 	font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--color-text-placeholder);
+	opacity: 1;
 }
 
 code {
