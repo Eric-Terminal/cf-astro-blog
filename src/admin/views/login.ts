@@ -17,14 +17,7 @@ export function loginPage(options: LoginPageOptions = {}): string {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>登录 · EricTerminal's Blog</title>
 	<meta name="robots" content="noindex, nofollow" />
-	<script>
-		(function () {
-			var theme = localStorage.getItem("theme");
-			if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-				document.documentElement.setAttribute("data-theme", "dark");
-			}
-		})();
-	</script>
+	<script src="/theme.js"></script>
 	<style>
 		:root {
 			--color-bg: #edf3f8;
