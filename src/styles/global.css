@@ -527,6 +527,15 @@ html[data-theme-switching]::view-transition-new(root) {
 	mix-blend-mode: normal;
 }
 
+/* 主题切换涟漪动画期间，禁用所有具名 view-transition 组。
+ * 原因：带 transition:name 的元素（卡片标题、摘要、日期标签等）会被浏览器提升为
+ * 独立的 ::view-transition-new(name) 伪元素，其层级高于普通 DOM 层级，
+ * 导致文字在动画瞬间盖住 z-index: 30 的导航栏。
+ * 重置为 none 后，这些元素回归到 root 截图中，涟漪裁剪路径动画正常运作。 */
+html[data-theme-switching] * {
+	view-transition-name: none !important;
+}
+
 ::view-transition-group(search-entry) {
 	animation-duration: 300ms;
 	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
