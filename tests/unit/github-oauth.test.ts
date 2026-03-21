@@ -6,10 +6,12 @@ describe("GitHub OAuth 后台认证保护", () => {
 	test("登录页只渲染 GitHub OAuth 登录入口", async () => {
 		const loginViewSource = await readFile("src/admin/views/login.ts", "utf8");
 
-		assert.match(loginViewSource, /GitHub OAuth 登录/u);
+		assert.match(loginViewSource, /GitHub OAuth/u);
+		assert.match(loginViewSource, /站点管理入口/u);
 		assert.match(loginViewSource, /\/api\/auth\/github/u);
 		assert.ok(!loginViewSource.includes('name="password"'));
 		assert.ok(!loginViewSource.includes('name="username"'));
+		assert.ok(!loginViewSource.includes("允许访问账号"));
 	});
 
 	test("认证路由会处理 GitHub 授权跳转和回调", async () => {

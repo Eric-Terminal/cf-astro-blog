@@ -16,11 +16,6 @@ function getAttemptKey(ip: string): string {
 	return `login-rate:${ip}`;
 }
 
-function getAdminGitHubLogin(env: Env): string | undefined {
-	const login = env.ADMIN_GITHUB_LOGIN?.trim() || env.ADMIN_USERNAME?.trim();
-	return login ? login : undefined;
-}
-
 async function readAttemptState(
 	env: Env,
 	ip: string,
@@ -47,7 +42,6 @@ export async function rateLimit(c: Context<AdminAppEnv>, next: Next) {
 				return c.html(
 					loginPage({
 						error: `登录尝试过多，请 ${remainingSeconds} 秒后再试`,
-						githubLogin: getAdminGitHubLogin(c.env),
 						oauthEnabled: false,
 					}),
 					429,
@@ -60,7 +54,6 @@ export async function rateLimit(c: Context<AdminAppEnv>, next: Next) {
 		return c.html(
 			loginPage({
 				error: "登录保护暂时不可用，请稍后再试",
-				githubLogin: getAdminGitHubLogin(c.env),
 				oauthEnabled: false,
 			}),
 			503,

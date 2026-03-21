@@ -261,13 +261,13 @@ describe("后台接口", () => {
 		assert.ok(body.timestamp);
 	});
 
-	test("GET /auth/login 会返回 GitHub OAuth 登录页面", async () => {
+	test("GET /auth/login 会返回前台风格的管理员入口页", async () => {
 		const res = await app.request("/auth/login", undefined, mockEnv);
 		assert.equal(res.status, 200);
 
 		const html = await res.text();
-		assert.match(html, /GitHub OAuth 登录/u);
-		assert.match(html, /Eric-Terminal/u);
+		assert.match(html, /站点管理入口/u);
+		assert.match(html, /返回首页/u);
 		assert.match(html, /\/api\/auth\/github/u);
 		assert.ok(!html.includes('name="username"'));
 		assert.ok(!html.includes('name="password"'));

@@ -11,6 +11,7 @@ import {
 	getAuthenticatedSession,
 	getBodyText,
 	getSessionCookieOptions,
+	getSessionFromToken,
 	requireAuth,
 } from "../middleware/auth";
 import {
@@ -189,12 +190,23 @@ async function fetchGitHubUserProfile(accessToken: string) {
 	return profile.login ? profile : null;
 }
 
-auth.get("/login", (c) => {
+auth.get("/login", async (c) => {
+	const token = getCookie(c, "admin_session");
+	if (token) {
+		try {
+			const session = await getSessionFromToken(c.env, token);
+			if (session) {
+				return c.redirect("/api/admin");
+			}
+		} catch {
+			// 会话存储偶发失败时保持登录页可用，避免把访客困在 500
+		}
+	}
+
 	const config = getGitHubOAuthConfig(c.env);
 
 	return c.html(
 		loginPage({
-			githubLogin: getAdminGitHubLogin(c.env),
 			oauthEnabled: Boolean(config),
 		}),
 	);
@@ -211,7 +223,6 @@ auth.get("/github", async (c) => {
 		return c.html(
 			loginPage({
 				error: "后台尚未完成 GitHub OAuth 配置",
-				githubLogin: getAdminGitHubLogin(c.env),
 				oauthEnabled: false,
 			}),
 			503,
@@ -255,7 +266,6 @@ auth.get("/github/callback", async (c) => {
 		return c.html(
 			loginPage({
 				error: "后台尚未完成 GitHub OAuth 配置",
-				githubLogin: getAdminGitHubLogin(c.env),
 				oauthEnabled: false,
 			}),
 			503,
@@ -267,7 +277,6 @@ auth.get("/github/callback", async (c) => {
 		return c.html(
 			loginPage({
 				error: "GitHub 授权被取消或未完成",
-				githubLogin: config.adminLogin,
 				oauthEnabled: true,
 			}),
 			400,
@@ -285,7 +294,6 @@ auth.get("/github/callback", async (c) => {
 		return c.html(
 			loginPage({
 				error: "GitHub OAuth 状态校验失败",
-				githubLogin: config.adminLogin,
 				oauthEnabled: true,
 			}),
 			400,
@@ -304,7 +312,6 @@ auth.get("/github/callback", async (c) => {
 		return c.html(
 			loginPage({
 				error: "GitHub 访问令牌交换失败",
-				githubLogin: config.adminLogin,
 				oauthEnabled: true,
 			}),
 			502,
@@ -318,7 +325,6 @@ auth.get("/github/callback", async (c) => {
 		return c.html(
 			loginPage({
 				error: "无法获取 GitHub 账号信息",
-				githubLogin: config.adminLogin,
 				oauthEnabled: true,
 			}),
 			502,
@@ -329,8 +335,7 @@ auth.get("/github/callback", async (c) => {
 		await recordOAuthFailure(c);
 		return c.html(
 			loginPage({
-				error: `当前 GitHub 账号 ${profile.login} 没有后台权限，这个是我的 CMS，请回吧～ 项目实现在 https://github.com/Eric-Terminal/cf-astro-blog-starter ，用 Cloudflare CI 构建，拿回去改改自己也能用。`,
-				githubLogin: config.adminLogin,
+				error: `当前 GitHub 账号 ${profile.login} 没有后台权限`,
 				oauthEnabled: true,
 			}),
 			403,

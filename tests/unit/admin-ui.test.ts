@@ -20,16 +20,15 @@ describe("后台界面风格保护", () => {
 		assert.match(html, /退出登录/u);
 	});
 
-	test("登录页会复用后台视觉语言并保留 GitHub OAuth 入口", () => {
-		const html = loginPage({
-			githubLogin: "Eric-Terminal",
-			oauthEnabled: true,
-		});
+	test("登录页会使用前台风格并保留 GitHub OAuth 入口", () => {
+		const html = loginPage({ oauthEnabled: true });
 
-		assert.match(html, /class="login-shell"/u);
-		assert.ok(!html.includes('class="login-hero"'));
+		assert.match(html, /class="entry-shell"/u);
+		assert.match(html, /返回首页/u);
+		assert.match(html, /站点管理入口/u);
 		assert.match(html, /GitHub OAuth/u);
 		assert.match(html, /\/api\/auth\/github/u);
+		assert.ok(!html.includes("允许访问账号"));
 	});
 
 	test("外观页提供顶部状态栏与首页文案编辑入口", async () => {
