@@ -523,6 +523,52 @@ describe("后台接口", () => {
 		assert.match(await res.text(), /非法来源请求/u);
 	});
 
+	test("POST /ai/chat 在启用 Turnstile 且缺少令牌时返回 403", async () => {
+		const res = await app.request(
+			"/ai/chat",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: "http://localhost",
+				},
+				body: JSON.stringify({
+					message: "你好",
+				}),
+			},
+			{
+				...mockEnv,
+				TURNSTILE_SECRET_KEY: "turnstile-secret",
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 403);
+		assert.match(await res.text(), /人机校验失败/u);
+	});
+
+	test("POST /ai/terminal-404 即使配置 Turnstile 也不要求令牌", async () => {
+		const res = await app.request(
+			"/ai/terminal-404",
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: "http://localhost",
+				},
+				body: JSON.stringify({
+					message: "pwd",
+				}),
+			},
+			{
+				...mockEnv,
+				TURNSTILE_SECRET_KEY: "turnstile-secret",
+			} as unknown as Env,
+		);
+
+		assert.equal(res.status, 503);
+		assert.match(await res.text(), /公开 AI 接口/u);
+	});
+
 	test("POST /ai/chat 在公开接口未配置时返回 503", async () => {
 		const res = await app.request(
 			"/ai/chat",

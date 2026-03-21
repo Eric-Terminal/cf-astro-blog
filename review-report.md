@@ -13,7 +13,8 @@
 
 ## 整改状态（2026-03-22）
 
-- 已完成修复：F-01（头像代理 SSRF/SVG）、F-02（依赖漏洞）、F-03（公开 AI 同源与人机校验）、F-04（JWT 密钥强度校验）。
+- 已完成修复：F-01（头像代理 SSRF/SVG）、F-02（依赖漏洞）、F-03（公开 AI 同源校验与 `/chat` 人机校验）、F-04（JWT 密钥强度校验）。
+- 风险接受：`/ai/terminal-404` 当前不启用 Turnstile，依赖同源校验 + IP 限流控制成本与滥用面。
 - 已验证：`npm audit --omit=dev --registry=https://registry.npmjs.org` 输出 `found 0 vulnerabilities`。
 - 待选优化：F-05（健康检查最小化）可按运维需求决定是否收敛。
 

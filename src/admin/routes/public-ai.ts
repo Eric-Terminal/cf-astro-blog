@@ -551,7 +551,7 @@ publicAiRoutes.post("/chat", async (c) =>
 
 publicAiRoutes.post("/terminal-404", async (c) =>
 	handlePublicAiRequest(c, {
-		requireTurnstile: true,
+		requireTurnstile: false,
 		systemPrompt: NOT_FOUND_TERMINAL_SYSTEM_PROMPT,
 		temperature: 0.35,
 		maxTokens: 500,

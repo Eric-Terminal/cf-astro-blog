@@ -30,7 +30,7 @@ describe("公开 AI 接口防护", () => {
 		assert.match(source, /history/u);
 		assert.match(
 			source,
-			/publicAiRoutes\.post\("\/terminal-404"[\s\S]*requireTurnstile:\s*true/u,
+			/publicAiRoutes\.post\("\/terminal-404"[\s\S]*requireTurnstile:\s*false/u,
 		);
 		assert.match(
 			source,
