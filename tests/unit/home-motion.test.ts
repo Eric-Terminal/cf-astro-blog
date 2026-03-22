@@ -69,4 +69,14 @@ describe("首页灵动交互保护", () => {
 		assert.match(homePageSource, /\.home-hero-copy \.page-intro/u);
 		assert.match(homePageSource, /white-space:\s*pre-line/u);
 	});
+
+	test("首页右侧信息卡描述支持保留后台录入的换行", async () => {
+		const homePageSource = await readFile("src/pages/index.astro", "utf8");
+
+		assert.match(homePageSource, /\.hero-signal-copy/u);
+		assert.match(
+			homePageSource,
+			/\.hero-signal-copy\s*\{[\s\S]*white-space:\s*pre-line/u,
+		);
+	});
 });
