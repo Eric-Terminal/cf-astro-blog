@@ -31,11 +31,12 @@ interface Env {
 	MCP_AUTH_BLOCK_SECONDS?: string;
 }
 
+declare namespace Cloudflare {
+	interface Env extends globalThis.Env {}
+}
+
 declare namespace App {
 	interface Locals {
-		runtime: {
-			env: Env;
-		};
 		cfContext: ExecutionContext;
 	}
 }

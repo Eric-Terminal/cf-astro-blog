@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 import {
 	buildPublicImageHeaders,
@@ -5,7 +6,7 @@ import {
 } from "@/lib/media";
 import { sanitizeMediaKey } from "@/lib/security";
 
-export const GET: APIRoute = async ({ params, locals }) => {
+export const GET: APIRoute = async ({ params }) => {
 	const key = sanitizeMediaKey(params.key ?? "");
 	if (!key) {
 		return new Response(null, { status: 404 });
@@ -17,7 +18,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
 	}
 
 	try {
-		const object = await locals.runtime.env.MEDIA_BUCKET.get(key);
+		const object = await env.MEDIA_BUCKET.get(key);
 		if (!object) {
 			return new Response(null, { status: 404 });
 		}

@@ -1,4 +1,5 @@
 ---
+import { env } from "cloudflare:workers";
 import { eq, sql } from "drizzle-orm";
 import { blogCategories, blogPosts } from "@/db/schema";
 import Post from "@/layouts/Post.astro";
@@ -92,7 +93,6 @@ let post: {
 let siteAppearance = DEFAULT_SITE_APPEARANCE;
 
 try {
-	const { env } = Astro.locals.runtime;
 	const db = getDb(env.DB);
 	siteAppearance = await getSiteAppearance(db);
 

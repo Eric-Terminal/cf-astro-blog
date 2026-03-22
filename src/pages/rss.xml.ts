@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 import { desc } from "drizzle-orm";
 import { blogPosts } from "@/db/schema";
@@ -51,12 +52,11 @@ function buildDescription(post: FeedPost): string {
 	return escapeXml(preview || post.title);
 }
 
-export const GET: APIRoute = async (context) => {
+export const GET: APIRoute = async () => {
 	let posts: FeedPost[] = [];
 	let feedDescription = siteConfig.description;
 
 	try {
-		const { env } = context.locals.runtime;
 		const db = getDb(env.DB);
 
 		const [postRows, appearance] = await Promise.all([

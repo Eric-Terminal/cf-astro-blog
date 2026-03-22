@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 import { desc } from "drizzle-orm";
 import { blogPosts } from "@/db/schema";
@@ -5,14 +6,13 @@ import { getDb } from "@/lib/db";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
 import { siteConfig } from "@/lib/types";
 
-export const GET: APIRoute = async (context) => {
+export const GET: APIRoute = async () => {
 	let posts: Array<{
 		slug: string;
 		updatedAt: string;
 	}> = [];
 
 	try {
-		const { env } = context.locals.runtime;
 		const db = getDb(env.DB);
 
 		posts = await db

@@ -1,4 +1,5 @@
 ---
+import { env } from "cloudflare:workers";
 import { asc, eq } from "drizzle-orm";
 import { friendLinks } from "@/db/schema";
 import Base from "@/layouts/Base.astro";
@@ -23,7 +24,6 @@ function buildFriendAvatarProxyUrl(url: string | null): string | null {
 }
 
 try {
-	const { env } = Astro.locals.runtime;
 	const db = getDb(env.DB);
 
 	approvedLinks = await db

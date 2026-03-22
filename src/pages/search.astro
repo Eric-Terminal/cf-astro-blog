@@ -1,4 +1,5 @@
 ---
+import { env } from "cloudflare:workers";
 import "@/styles/post-card.css";
 import SearchBox from "@/components/Search.astro";
 import { blogCategories, blogTags } from "@/db/schema";
@@ -62,7 +63,6 @@ let categories: Array<{ slug: string; name: string }> = [];
 let tags: Array<{ slug: string; name: string }> = [];
 
 try {
-	const { env } = Astro.locals.runtime;
 	const db = getDb(env.DB);
 	const [allCategories, allTags] = await Promise.all([
 		db

@@ -1,10 +1,9 @@
 ---
+import { env } from "cloudflare:workers";
 import Base from "@/layouts/Base.astro";
 
 const applyStatus = Astro.url.searchParams.get("apply") || "";
-const turnstileSiteKey = String(
-	Astro.locals.runtime.env.TURNSTILE_SITE_KEY || "",
-).trim();
+const turnstileSiteKey = String(env.TURNSTILE_SITE_KEY || "").trim();
 const turnstileEnabled = turnstileSiteKey.length > 0;
 
 function getApplyMessage(status: string) {

@@ -1,4 +1,5 @@
 ---
+import { env } from "cloudflare:workers";
 import { desc, eq, sql } from "drizzle-orm";
 import PostCard from "@/components/PostCard.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
@@ -23,7 +24,6 @@ let posts: Array<{
 let totalPosts = 0;
 
 try {
-	const { env } = Astro.locals.runtime;
 	const db = getDb(env.DB);
 
 	const [countResult] = await db

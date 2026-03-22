@@ -1,9 +1,8 @@
+import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 import { app } from "@/admin/app";
 
 export const ALL: APIRoute = async (context) => {
-	const { env } = context.locals.runtime;
-
 	// Strip /api prefix since Hono routes are mounted relative
 	const url = new URL(context.request.url);
 	const path = url.pathname.replace(/^\/api/, "") || "/";
