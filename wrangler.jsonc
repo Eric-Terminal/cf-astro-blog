@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": "dist/_worker.js/index.js",
+	"main": "@astrojs/cloudflare/entrypoints/server",
 	"name": "cf-astro-blog",
 	"compatibility_date": "2026-02-10",
 	"compatibility_flags": ["nodejs_compat"],
