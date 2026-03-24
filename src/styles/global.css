@@ -522,18 +522,21 @@ html[data-admin-preview="true"] .site-main {
 }
 
 html[data-theme-switching]::view-transition-old(root),
-html[data-theme-switching]::view-transition-new(root) {
+html[data-theme-switching]::view-transition-new(root),
+html[data-article-transparency-switching]::view-transition-old(root),
+html[data-article-transparency-switching]::view-transition-new(root) {
 	animation: none;
 	mix-blend-mode: normal;
 }
 
-/* 主题切换涟漪动画期间，禁用所有具名 view-transition 组。
+/* 波纹切换动画期间，禁用所有具名 view-transition 组。
  * 原因：带 transition:name 的元素（卡片标题、摘要、日期标签等）会被浏览器提升为
  * 独立的 ::view-transition-new(name) 伪元素，其层级高于普通 DOM 层级，
  * 导致文字在动画瞬间盖住 z-index: 30 的导航栏。
  * 重置为 none 后，这些元素回归到 root 截图中，涟漪裁剪路径动画正常运作。 */
-html[data-theme-switching] * {
-	/* biome-ignore lint/complexity/noImportantStyles: 主题切换时必须强制覆盖浏览器为具名过渡注入的样式，避免导航栏被更高层级的快照文字盖住。 */
+html[data-theme-switching] *,
+html[data-article-transparency-switching] * {
+	/* biome-ignore lint/complexity/noImportantStyles: 波纹切换期间必须强制覆盖浏览器为具名过渡注入的样式，避免快照文字越层显示。 */
 	view-transition-name: none !important;
 }
 

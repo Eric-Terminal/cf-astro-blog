@@ -56,6 +56,25 @@ describe("页面过渡与跨页状态保护", () => {
 		assert.match(globalStylesSource, /mix-blend-mode:\s*normal/u);
 	});
 
+	test("文章透明度切换也会复用 root 波纹过渡并禁用具名快照穿透", async () => {
+		const [globalStylesSource, articleToggleScript] = await Promise.all([
+			readFile("src/styles/global.css", "utf8"),
+			readFile("public/article-transparency-toggle.js", "utf8"),
+		]);
+
+		assert.match(
+			globalStylesSource,
+			/html\[data-article-transparency-switching\]::view-transition-new\(root\)/u,
+		);
+		assert.match(
+			globalStylesSource,
+			/html\[data-article-transparency-switching\]\s*\*/u,
+		);
+		assert.match(articleToggleScript, /startViewTransition/u);
+		assert.match(articleToggleScript, /data-article-transparency-switching/u);
+		assert.match(articleToggleScript, /clipPath/u);
+	});
+
 	test("首页与搜索页会共享搜索入口过渡，而归档页不会介入这条链路", async () => {
 		const [homePageSource, archivePageSource, searchPageSource] =
 			await Promise.all([

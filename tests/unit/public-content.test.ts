@@ -309,6 +309,11 @@ describe("源码回归保护", () => {
 		assert.ok(articleToggleScript.includes("articleOpaqueMode"));
 		assert.ok(articleToggleScript.includes("querySelectorAll"));
 		assert.ok(articleToggleScript.includes("astro:page-load"));
+		assert.ok(articleToggleScript.includes("startViewTransition"));
+		assert.ok(
+			articleToggleScript.includes("data-article-transparency-switching"),
+		);
+		assert.ok(articleToggleScript.includes("clipPath"));
 		assert.ok(sidebarStickyScript.includes("article-sidebar-with-toc"));
 		assert.ok(sidebarStickyScript.includes("article-toc"));
 		assert.ok(sidebarStickyScript.includes("--article-profile-height"));
