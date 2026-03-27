@@ -62,10 +62,12 @@ export const adminSharedStyles = `
 			--transition-slow: 420ms cubic-bezier(0.22, 1, 0.36, 1);
 			--shell-width: min(1440px, calc(100vw - 2rem));
 			--sidebar-width: minmax(250px, 280px);
+			--card-surface-rgb: 255, 255, 255;
+			--card-sheen-rgb: 255, 255, 255;
 		}
 
 		@media (prefers-color-scheme: dark) {
-			:root {
+			:root:not([data-theme="light"]) {
 				color-scheme: dark;
 				--bg: #07111f;
 				--bg-secondary: rgba(13, 24, 40, 0.76);
@@ -88,7 +90,58 @@ export const adminSharedStyles = `
 				--shadow-strong:
 					0 28px 68px -34px rgba(0, 0, 0, 0.5),
 					0 16px 28px -20px rgba(0, 0, 0, 0.36);
+				--card-surface-rgb: 24, 36, 54;
+				--card-sheen-rgb: 142, 178, 224;
 			}
+			:root:not([data-theme="light"]) body {
+				background:
+					radial-gradient(circle at 12% 10%, rgba(30, 80, 200, 0.22), transparent 28%),
+					radial-gradient(circle at 88% 16%, rgba(10, 40, 100, 0.18), transparent 24%),
+					radial-gradient(circle at 48% 104%, rgba(20, 60, 160, 0.16), transparent 30%),
+					var(--bg);
+			}
+			:root:not([data-theme="light"]) body::after {
+				background: rgba(48, 100, 220, 0.22);
+			}
+		}
+
+		[data-theme="dark"] {
+			color-scheme: dark;
+			--bg: #07111f;
+			--bg-secondary: rgba(13, 24, 40, 0.76);
+			--bg-tertiary: rgba(15, 27, 44, 0.6);
+			--surface-elevated: rgba(17, 29, 48, 0.9);
+			--text: #eef4ff;
+			--text-secondary: #cad4e6;
+			--text-muted: #93a1bc;
+			--border: rgba(147, 161, 188, 0.16);
+			--border-strong: rgba(147, 161, 188, 0.24);
+			--accent: #57a6ff;
+			--accent-hover: #88c0ff;
+			--accent-soft: rgba(87, 166, 255, 0.16);
+			--success: #4ade80;
+			--warning: #fbbf24;
+			--danger: #f87171;
+			--shadow-soft:
+				0 24px 60px -32px rgba(0, 0, 0, 0.44),
+				0 12px 24px -18px rgba(0, 0, 0, 0.32);
+			--shadow-strong:
+				0 28px 68px -34px rgba(0, 0, 0, 0.5),
+				0 16px 28px -20px rgba(0, 0, 0, 0.36);
+			--card-surface-rgb: 24, 36, 54;
+			--card-sheen-rgb: 142, 178, 224;
+		}
+
+		[data-theme="dark"] body {
+			background:
+				radial-gradient(circle at 12% 10%, rgba(30, 80, 200, 0.22), transparent 28%),
+				radial-gradient(circle at 88% 16%, rgba(10, 40, 100, 0.18), transparent 24%),
+				radial-gradient(circle at 48% 104%, rgba(20, 60, 160, 0.16), transparent 30%),
+				var(--bg);
+		}
+
+		[data-theme="dark"] body::after {
+			background: rgba(48, 100, 220, 0.22);
 		}
 
 		html {
@@ -169,6 +222,7 @@ export const adminSharedStyles = `
 			display: grid;
 			grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 			gap: 1.5rem;
+			animation: admin-page-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 		}
 
 		.sidebar {
@@ -185,11 +239,14 @@ export const adminSharedStyles = `
 		.appearance-panel,
 		.appearance-stage {
 			position: relative;
-			background: var(--bg-secondary);
+			background: rgba(var(--card-surface-rgb), 0.11);
 			border: 1px solid var(--border);
 			border-radius: var(--radius-lg);
-			backdrop-filter: blur(22px) saturate(138%);
-			box-shadow: var(--shadow-soft);
+			backdrop-filter: blur(24px) saturate(140%);
+			-webkit-backdrop-filter: blur(24px) saturate(140%);
+			box-shadow:
+				var(--shadow-soft),
+				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.16);
 			overflow: hidden;
 		}
 
@@ -203,9 +260,10 @@ export const adminSharedStyles = `
 			position: absolute;
 			inset: 0;
 			background:
-				linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 22%),
-				radial-gradient(circle at top left, rgba(10, 132, 255, 0.1), transparent 26%);
+				linear-gradient(160deg, rgba(var(--card-sheen-rgb), 0.1), transparent 40%),
+				radial-gradient(circle at top left, rgba(10, 132, 255, 0.08), transparent 30%);
 			pointer-events: none;
+			z-index: 0;
 		}
 
 		.sidebar-panel {
@@ -214,6 +272,58 @@ export const adminSharedStyles = `
 			display: flex;
 			flex-direction: column;
 			gap: 1rem;
+		}
+
+		.sidebar-brand {
+			display: flex;
+			align-items: center;
+			gap: 0.65rem;
+			padding: 0.2rem 0.4rem 0.9rem;
+			border-bottom: 1px solid var(--border);
+			margin-bottom: 0.2rem;
+		}
+
+		.sidebar-brand-mark {
+			width: 2.1rem;
+			height: 2.1rem;
+			border-radius: 10px;
+			background:
+				linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 72%),
+				var(--accent);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 0.82rem;
+			font-weight: 700;
+			color: #fff;
+			box-shadow:
+				0 4px 14px -6px rgba(10, 132, 255, 0.55),
+				inset 0 1px 0 rgba(255, 255, 255, 0.24);
+			flex-shrink: 0;
+			letter-spacing: -0.02em;
+		}
+
+		.sidebar-brand-info {
+			display: grid;
+			gap: 0.06rem;
+			min-width: 0;
+		}
+
+		.sidebar-brand-title {
+			font-size: 0.9rem;
+			font-weight: 700;
+			letter-spacing: -0.02em;
+			color: var(--text);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.sidebar-brand-subtitle {
+			font-size: 0.68rem;
+			color: var(--text-muted);
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
 		}
 
 		.sidebar-nav {
@@ -248,7 +358,7 @@ export const adminSharedStyles = `
 			color: var(--text);
 			background: var(--surface-elevated);
 			border-color: var(--border-strong);
-			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+			box-shadow: inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.18);
 			transform: translate3d(4px, 0, 0);
 		}
 
@@ -422,7 +532,7 @@ export const adminSharedStyles = `
 		}
 
 		.data-table tbody tr:hover {
-			background: rgba(255, 255, 255, 0.1);
+			background: rgba(var(--card-sheen-rgb), 0.06);
 		}
 
 		.data-table tbody tr:last-child td {
@@ -460,7 +570,7 @@ export const adminSharedStyles = `
 			background: var(--bg-tertiary);
 			color: var(--text);
 			cursor: pointer;
-			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+			box-shadow: inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.16);
 			transition:
 				transform var(--transition-fast),
 				border-color var(--transition-fast),
@@ -553,9 +663,9 @@ export const adminSharedStyles = `
 			padding: 0.78rem 0.95rem;
 			border-radius: var(--radius);
 			border: 1px solid var(--border);
-			background: rgba(255, 255, 255, 0.34);
+			background: var(--bg-tertiary);
 			color: var(--text);
-			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+			box-shadow: inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.14);
 			transition:
 				border-color var(--transition-fast),
 				box-shadow var(--transition-fast),
@@ -567,8 +677,8 @@ export const adminSharedStyles = `
 			border-color: rgba(10, 132, 255, 0.42);
 			box-shadow:
 				0 0 0 4px rgba(10, 132, 255, 0.14),
-				inset 0 1px 0 rgba(255, 255, 255, 0.24);
-			background: rgba(255, 255, 255, 0.46);
+				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.2);
+			background: var(--bg-secondary);
 		}
 
 		.form-textarea {
@@ -583,7 +693,7 @@ export const adminSharedStyles = `
 			background: rgba(10, 132, 255, 0.08);
 			box-shadow:
 				0 0 0 4px rgba(10, 132, 255, 0.16),
-				inset 0 1px 0 rgba(255, 255, 255, 0.28);
+				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.22);
 		}
 
 		.form-help {
@@ -796,8 +906,8 @@ export const adminSharedStyles = `
 			grid-template-rows: auto minmax(0, 1fr);
 			border-radius: var(--radius);
 			border: 1px solid var(--border);
-			background: rgba(255, 255, 255, 0.24);
-			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+			background: var(--bg-tertiary);
+			box-shadow: inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.14);
 			overflow: hidden;
 		}
 
@@ -808,7 +918,7 @@ export const adminSharedStyles = `
 			letter-spacing: 0.05em;
 			text-transform: uppercase;
 			border-bottom: 1px solid var(--border);
-			background: rgba(255, 255, 255, 0.22);
+			background: var(--bg-secondary);
 		}
 
 		.markdown-preview-body {
@@ -959,7 +1069,7 @@ export const adminSharedStyles = `
 			padding: 0.72rem 0.95rem;
 			border-radius: var(--radius);
 			border: 1px solid var(--border);
-			background: rgba(255, 255, 255, 0.2);
+			background: var(--bg-tertiary);
 			color: var(--text);
 			font-weight: 600;
 		}
@@ -1073,11 +1183,14 @@ export const adminSharedStyles = `
 
 		.editor-panel {
 			padding: 1.25rem;
-			background: var(--bg-secondary);
+			background: rgba(var(--card-surface-rgb), 0.11);
 			border: 1px solid var(--border);
 			border-radius: var(--radius-lg);
-			backdrop-filter: blur(22px) saturate(138%);
-			box-shadow: var(--shadow-soft);
+			backdrop-filter: blur(24px) saturate(140%);
+			-webkit-backdrop-filter: blur(24px) saturate(140%);
+			box-shadow:
+				var(--shadow-soft),
+				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.16);
 		}
 
 		.editor-panel details {
@@ -1316,6 +1429,11 @@ export const adminSharedStyles = `
 			border: 1px solid rgba(22, 163, 74, 0.18);
 		}
 
+		@keyframes admin-page-in {
+			from { opacity: 0; transform: translateY(8px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+
 		@keyframes admin-float {
 			0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
 			50% { transform: translate3d(0, 20px, 0) scale(1.08); }
@@ -1464,6 +1582,7 @@ export function adminLayout(
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>${escapeHtml(title)} | 后台</title>
 	<meta name="robots" content="noindex, nofollow" />
+	<script src="/theme.js"></script>
 	<script src="/admin.js" defer></script>
 	<style>
 ${adminSharedStyles}
@@ -1473,6 +1592,13 @@ ${adminSharedStyles}
 	<div class="admin-shell">
 		<aside class="sidebar">
 			<div class="sidebar-panel">
+				<div class="sidebar-brand">
+					<div class="sidebar-brand-mark">管</div>
+					<div class="sidebar-brand-info">
+						<span class="sidebar-brand-title">管理后台</span>
+						<span class="sidebar-brand-subtitle">Admin Panel</span>
+					</div>
+				</div>
 				<nav class="sidebar-nav">
 					${renderNav(title)}
 				</nav>
