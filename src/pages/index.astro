@@ -5,7 +5,7 @@ import PostCard from "@/components/PostCard.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
 import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
-import { formatDate } from "@/lib/format";
+import { estimateArticleReadStats, formatDate } from "@/lib/format";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
 import {
 	buildHeroActionLinks,
@@ -24,20 +24,52 @@ interface HomePostCardRow {
 	categoryName: string | null;
 	featuredImageKey: string | null;
 	featuredImageAlt: string | null;
+	cjkCharCount: number;
+	latinWordCount: number;
+	estimatedReadingMinutes: number;
 }
 
 let pinnedPosts: HomePostCardRow[] = [];
 let recentPosts: HomePostCardRow[] = [];
 let homepageAppearance = DEFAULT_SITE_APPEARANCE;
 
+function toHomePostCardRow(row: {
+	title: string;
+	slug: string;
+	content: string;
+	excerpt: string | null;
+	publishedAt: string | null;
+	authorName: string | null;
+	categoryName: string | null;
+	featuredImageKey: string | null;
+	featuredImageAlt: string | null;
+}): HomePostCardRow {
+	const readingStats = estimateArticleReadStats(row.content);
+
+	return {
+		title: row.title,
+		slug: row.slug,
+		excerpt: row.excerpt,
+		publishedAt: row.publishedAt,
+		authorName: row.authorName,
+		categoryName: row.categoryName,
+		featuredImageKey: row.featuredImageKey,
+		featuredImageAlt: row.featuredImageAlt,
+		cjkCharCount: readingStats.cjkCharCount,
+		latinWordCount: readingStats.latinWordCount,
+		estimatedReadingMinutes: readingStats.estimatedReadingMinutes,
+	};
+}
+
 try {
 	const db = getDb(env.DB);
 	homepageAppearance = await getSiteAppearance(db);
 
-	pinnedPosts = await db
+	const pinnedRows = await db
 		.select({
 			title: blogPosts.title,
 			slug: blogPosts.slug,
+			content: blogPosts.content,
 			excerpt: blogPosts.excerpt,
 			publishedAt: blogPosts.publishedAt,
 			authorName: blogPosts.authorName,
@@ -56,11 +88,13 @@ try {
 			desc(blogPosts.createdAt),
 		)
 		.limit(6);
+	pinnedPosts = pinnedRows.map(toHomePostCardRow);
 
-	recentPosts = await db
+	const recentRows = await db
 		.select({
 			title: blogPosts.title,
 			slug: blogPosts.slug,
+			content: blogPosts.content,
 			excerpt: blogPosts.excerpt,
 			publishedAt: blogPosts.publishedAt,
 			authorName: blogPosts.authorName,
@@ -75,6 +109,7 @@ try {
 		)
 		.orderBy(desc(blogPosts.publishedAt), desc(blogPosts.createdAt))
 		.limit(3);
+	recentPosts = recentRows.map(toHomePostCardRow);
 } catch {
 	// D1 未绑定时首页退化为空列表
 }
@@ -242,6 +277,9 @@ function isInternalHref(href: string) {
 							categoryName={post.categoryName}
 							featuredImageKey={post.featuredImageKey}
 							featuredImageAlt={post.featuredImageAlt}
+							cjkCharCount={post.cjkCharCount}
+							latinWordCount={post.latinWordCount}
+							estimatedReadingMinutes={post.estimatedReadingMinutes}
 							coverSide={index % 2 === 0 ? "left" : "right"}
 						/>
 					))}
@@ -272,6 +310,9 @@ function isInternalHref(href: string) {
 					categoryName={post.categoryName}
 					featuredImageKey={post.featuredImageKey}
 					featuredImageAlt={post.featuredImageAlt}
+					cjkCharCount={post.cjkCharCount}
+					latinWordCount={post.latinWordCount}
+					estimatedReadingMinutes={post.estimatedReadingMinutes}
 					coverSide={index % 2 === 0 ? "left" : "right"}
 				/>
 			))}

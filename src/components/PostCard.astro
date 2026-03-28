@@ -12,6 +12,9 @@ interface Props {
 	authorName?: string | null;
 	featuredImageKey?: string | null;
 	featuredImageAlt?: string | null;
+	cjkCharCount?: number;
+	latinWordCount?: number;
+	estimatedReadingMinutes?: number;
 	coverSide?: "left" | "right";
 }
 
@@ -24,6 +27,9 @@ const {
 	authorName,
 	featuredImageKey,
 	featuredImageAlt,
+	cjkCharCount,
+	latinWordCount,
+	estimatedReadingMinutes,
 	coverSide = "left",
 } = Astro.props;
 
@@ -40,6 +46,32 @@ const cardClassName = [
 			: "post-card-cover-left"
 		: "post-card-no-cover",
 ].join(" ");
+const safeCjkCharCount =
+	Number.isFinite(cjkCharCount) && Number(cjkCharCount) > 0
+		? Math.trunc(Number(cjkCharCount))
+		: 0;
+const safeLatinWordCount =
+	Number.isFinite(latinWordCount) && Number(latinWordCount) > 0
+		? Math.trunc(Number(latinWordCount))
+		: 0;
+const safeEstimatedReadingMinutes =
+	Number.isFinite(estimatedReadingMinutes) &&
+	Number(estimatedReadingMinutes) > 0
+		? Math.trunc(Number(estimatedReadingMinutes))
+		: 1;
+const countLabelParts: string[] = [];
+
+if (safeCjkCharCount > 0) {
+	countLabelParts.push(`${safeCjkCharCount.toLocaleString("zh-CN")} 字`);
+}
+
+if (safeLatinWordCount > 0) {
+	countLabelParts.push(`${safeLatinWordCount.toLocaleString("en-US")} 词`);
+}
+
+const articleLengthLabel =
+	countLabelParts.length > 0 ? countLabelParts.join(" / ") : "0 字";
+const articleReadingTimeLabel = `约 ${safeEstimatedReadingMinutes.toLocaleString("zh-CN")} 分钟`;
 ---
 
 <article class={cardClassName}>
@@ -72,7 +104,11 @@ const cardClassName = [
 			</p>
 		)}
 		<div class="post-card-meta">
-			<span>{authorName || siteConfig.author}</span>
+			<div class="post-card-meta-main">
+				<span>{authorName || siteConfig.author}</span>
+				<span class="post-card-reading-metric">{articleLengthLabel}</span>
+				<span class="post-card-reading-metric">{articleReadingTimeLabel}</span>
+			</div>
 			<a href={`/blog/${slug}`} class="post-card-readmore">继续阅读</a>
 		</div>
 	</div>

@@ -193,6 +193,25 @@
 	color: var(--color-text-secondary);
 }
 
+.post-card-meta-main {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.post-card-reading-metric {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.22rem 0.56rem;
+	border-radius: var(--radius-pill);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, 0.06);
+	font-size: 0.78rem;
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
 .post-card-readmore {
 	color: var(--color-accent);
 	font-weight: 600;
@@ -291,6 +310,10 @@
 @media (max-width: 640px) {
 	.post-card-meta {
 		flex-wrap: wrap;
+	}
+
+	.post-card-readmore {
+		margin-left: auto;
 	}
 }
 

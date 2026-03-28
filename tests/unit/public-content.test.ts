@@ -159,7 +159,29 @@ describe("源码回归保护", () => {
 		assert.ok(!postCardSource.includes("post-card-cover-fallback"));
 		assert.match(postCardSource, /post-card-no-cover/u);
 		assert.match(postCardSource, /\{hasCover && \(/u);
+		assert.match(postCardSource, /articleLengthLabel/u);
+		assert.match(postCardSource, /articleReadingTimeLabel/u);
+		assert.match(postCardSource, /post-card-reading-metric/u);
 		assert.match(postCardStyleSource, /object-position: center;/u);
+		assert.match(postCardStyleSource, /\.post-card-reading-metric/u);
+	});
+
+	test("首页与归档会为文章卡片计算并传递阅读统计", async () => {
+		const [homeSource, archiveSource] = await Promise.all([
+			readFile("src/pages/index.astro", "utf8"),
+			readFile("src/pages/blog/index.astro", "utf8"),
+		]);
+
+		assert.match(homeSource, /estimateArticleReadStats/u);
+		assert.match(archiveSource, /estimateArticleReadStats/u);
+		assert.match(
+			homeSource,
+			/estimatedReadingMinutes=\{post\.estimatedReadingMinutes\}/u,
+		);
+		assert.match(
+			archiveSource,
+			/estimatedReadingMinutes=\{post\.estimatedReadingMinutes\}/u,
+		);
 	});
 
 	test("友链页只保留申请入口卡片，申请表移到独立页面", async () => {

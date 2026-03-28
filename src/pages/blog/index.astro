@@ -5,13 +5,26 @@ import PostCard from "@/components/PostCard.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
 import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
+import { estimateArticleReadStats } from "@/lib/format";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
 
 const page = Number(Astro.url.searchParams.get("page") || "1");
 const limit = 10;
 const offset = (page - 1) * limit;
 
-let posts: Array<{
+interface ArchivePostSourceRow {
+	title: string;
+	slug: string;
+	content: string;
+	excerpt: string | null;
+	publishedAt: string | null;
+	authorName: string | null;
+	categoryName: string | null;
+	featuredImageKey: string | null;
+	featuredImageAlt: string | null;
+}
+
+interface ArchivePostCardRow {
 	title: string;
 	slug: string;
 	excerpt: string | null;
@@ -20,7 +33,12 @@ let posts: Array<{
 	categoryName: string | null;
 	featuredImageKey: string | null;
 	featuredImageAlt: string | null;
-}> = [];
+	cjkCharCount: number;
+	latinWordCount: number;
+	estimatedReadingMinutes: number;
+}
+
+let posts: ArchivePostCardRow[] = [];
 let totalPosts = 0;
 
 try {
@@ -32,10 +50,11 @@ try {
 		.where(getPublicPostVisibilityCondition());
 	totalPosts = countResult?.count ?? 0;
 
-	posts = await db
+	const rows: ArchivePostSourceRow[] = await db
 		.select({
 			title: blogPosts.title,
 			slug: blogPosts.slug,
+			content: blogPosts.content,
 			excerpt: blogPosts.excerpt,
 			publishedAt: blogPosts.publishedAt,
 			authorName: blogPosts.authorName,
@@ -49,6 +68,24 @@ try {
 		.orderBy(desc(blogPosts.publishedAt))
 		.limit(limit)
 		.offset(offset);
+
+	posts = rows.map((row) => {
+		const readingStats = estimateArticleReadStats(row.content);
+
+		return {
+			title: row.title,
+			slug: row.slug,
+			excerpt: row.excerpt,
+			publishedAt: row.publishedAt,
+			authorName: row.authorName,
+			categoryName: row.categoryName,
+			featuredImageKey: row.featuredImageKey,
+			featuredImageAlt: row.featuredImageAlt,
+			cjkCharCount: readingStats.cjkCharCount,
+			latinWordCount: readingStats.latinWordCount,
+			estimatedReadingMinutes: readingStats.estimatedReadingMinutes,
+		};
+	});
 } catch {
 	// D1 未绑定时回退为空列表
 }
@@ -94,6 +131,9 @@ const totalPages = Math.ceil(totalPosts / limit);
 					categoryName={post.categoryName}
 					featuredImageKey={post.featuredImageKey}
 					featuredImageAlt={post.featuredImageAlt}
+					cjkCharCount={post.cjkCharCount}
+					latinWordCount={post.latinWordCount}
+					estimatedReadingMinutes={post.estimatedReadingMinutes}
 					coverSide={index % 2 === 0 ? "left" : "right"}
 				/>
 			))}
