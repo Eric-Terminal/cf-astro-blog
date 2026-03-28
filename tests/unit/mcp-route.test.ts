@@ -13,6 +13,9 @@ describe("MCP 发帖路由", () => {
 		assert.match(source, /registerTool\(\s*"create_post"/u);
 		assert.match(source, /registerTool\(\s*"list_posts"/u);
 		assert.match(source, /registerTool\(\s*"get_post"/u);
+		assert.match(source, /MCP_POST_SLUG_KEYS/u);
+		assert.match(source, /pathName/u);
+		assert.match(source, /postPath/u);
 		assert.match(source, /authorName/u);
 		assert.match(source, /isMcpFeatureEnabled/u);
 		assert.match(source, /mcpEnabled/u);

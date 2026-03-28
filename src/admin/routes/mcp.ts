@@ -45,6 +45,16 @@ const MAX_FEATURED_IMAGE_KEY_LENGTH = 255;
 const MAX_FEATURED_IMAGE_ALT_LENGTH = 200;
 const MAX_LIST_LIMIT = 50;
 const MAX_KEYWORD_LENGTH = 120;
+const MCP_POST_SLUG_KEYS = [
+	"slug",
+	"path",
+	"pathName",
+	"pathname",
+	"postSlug",
+	"post_slug",
+	"postPath",
+	"post_path",
+] as const;
 
 const DEFAULT_MCP_RATE_LIMIT_PER_MINUTE = 30;
 const DEFAULT_MCP_AUTH_FAIL_LIMIT_PER_MINUTE = 20;
@@ -670,7 +680,7 @@ function parseCreatePostInput(args: unknown): ParseCreatePostInputResult {
 	}
 
 	const rawSlugInput = sanitizePlainText(
-		input.slug,
+		pickFirstDefined([input], [...MCP_POST_SLUG_KEYS]),
 		MAX_SLUG_LENGTH,
 	).toLowerCase();
 	const manualSlug = rawSlugInput ? sanitizeSlug(rawSlugInput) : null;
@@ -821,17 +831,17 @@ function parseGetPostInput(args: unknown): ParseGetPostInputResult {
 	const input = args as Record<string, unknown>;
 	const idRaw = pickFirstDefined([input], ["id", "postId", "post_id"]);
 	const slugRaw = sanitizePlainText(
-		pickFirstDefined([input], ["slug", "postSlug", "post_slug"]),
+		pickFirstDefined([input], [...MCP_POST_SLUG_KEYS]),
 		MAX_SLUG_LENGTH,
 	).toLowerCase();
 	const id = parsePositiveInt(idRaw);
 	const slug = slugRaw ? sanitizeSlug(slugRaw) : null;
 
 	if (slugRaw && !slug) {
-		return { error: "slug 参数不合法" };
+		return { error: "slug/path 参数不合法" };
 	}
 	if (!id && !slug) {
-		return { error: "请至少提供 id 或 slug 其中一个参数" };
+		return { error: "请至少提供 id 或 slug/path 其中一个参数" };
 	}
 
 	return {
@@ -1132,6 +1142,11 @@ function createMcpServer(env: Env): McpServer {
 				content: z.string().describe("Markdown 正文"),
 				authorName: z.string().describe("作者名，必填"),
 				slug: z.string().optional().describe("访问路径别名，可选"),
+				path: z.string().optional().describe("slug 别名，可选"),
+				pathName: z.string().optional().describe("slug 别名，可选"),
+				pathname: z.string().optional().describe("slug 别名，可选"),
+				postSlug: z.string().optional().describe("slug 别名，可选"),
+				postPath: z.string().optional().describe("slug 别名，可选"),
 				excerpt: z.string().optional().describe("文章摘要，可选"),
 				summary: z.string().optional().describe("文章摘要别名，可选"),
 				status: z
@@ -1330,7 +1345,11 @@ function createMcpServer(env: Env): McpServer {
 					.optional()
 					.describe("id 的别名，可选"),
 				slug: z.string().optional().describe("文章 slug，可选"),
+				path: z.string().optional().describe("slug 的别名，可选"),
+				pathName: z.string().optional().describe("slug 的别名，可选"),
+				pathname: z.string().optional().describe("slug 的别名，可选"),
 				postSlug: z.string().optional().describe("slug 的别名，可选"),
+				postPath: z.string().optional().describe("slug 的别名，可选"),
 				includeContent: z
 					.boolean()
 					.optional()

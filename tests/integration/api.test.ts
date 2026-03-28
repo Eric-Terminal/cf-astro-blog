@@ -1052,6 +1052,14 @@ describe("后台接口", () => {
 			String(payload?.result?.content?.[0]?.text || ""),
 			/"status":\s*"published"/u,
 		);
+		assert.match(
+			String(payload?.result?.content?.[0]?.text || ""),
+			/"slug":\s*"mcp-发布测试"/u,
+		);
+		assert.match(
+			String(payload?.result?.content?.[0]?.text || ""),
+			/"url":\s*"\/blog\/mcp-%E5%8F%91%E5%B8%83%E6%B5%8B%E8%AF%95"/u,
+		);
 
 		const insertCall = calls.find((entry) =>
 			/insert into\s+"?blog_posts"?/iu.test(entry.sql),
@@ -1120,6 +1128,7 @@ describe("后台接口", () => {
 					title: "MCP 字段兼容测试",
 					content: "测试正文",
 					authorName: "AI-Agent",
+					pathName: "在-ucg-fiber-上优雅地使用-softbank-10g",
 					summary: "这是一段摘要",
 					category: { name: "工程实践" },
 					tags: [{ name: "MCP" }, { label: "SEO" }],
@@ -1161,6 +1170,9 @@ describe("后台接口", () => {
 			/insert into\s+"?blog_posts"?/iu.test(entry.sql),
 		);
 		assert.ok(postInsertCall);
+		assert.ok(
+			postInsertCall?.params.includes("在-ucg-fiber-上优雅地使用-softbank-10g"),
+		);
 		assert.ok(postInsertCall?.params.includes("这是一段摘要"));
 		assert.ok(postInsertCall?.params.includes("SEO 主标题"));
 		assert.ok(postInsertCall?.params.includes("SEO 描述文本"));
