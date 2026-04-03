@@ -17,6 +17,10 @@ function resolveEdgeCacheTtl(pathname: string): number {
 		case "/friends":
 			return EDGE_CACHE_TTL_SECONDS;
 		default:
+			// 文章详情页同样缓存 300 秒，大幅降低 D1 查询压力和导航延迟
+			if (pathname.startsWith("/blog/")) {
+				return EDGE_CACHE_TTL_SECONDS;
+			}
 			return 0;
 	}
 }
@@ -40,6 +44,11 @@ function buildEdgeCacheKeyUrl(url: URL): URL {
 		}
 	}
 
+	// 文章详情页不含任何影响内容的查询参数，清空 search 确保缓存命中稳定
+	if (pathname.startsWith("/blog/")) {
+		cacheUrl.search = "";
+	}
+
 	return cacheUrl;
 }
 
@@ -48,12 +57,11 @@ function canUseEdgeCache(options: {
 	isAdminPreview: boolean;
 	pathname: string;
 	hasAuthorization: boolean;
-	hasCookie: boolean;
 }): boolean {
 	if (options.method !== "GET") {
 		return false;
 	}
-	if (options.isAdminPreview || options.hasAuthorization || options.hasCookie) {
+	if (options.isAdminPreview || options.hasAuthorization) {
 		return false;
 	}
 	return resolveEdgeCacheTtl(options.pathname) > 0;
@@ -129,7 +137,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		isAdminPreview,
 		pathname,
 		hasAuthorization: context.request.headers.has("authorization"),
-		hasCookie: context.request.headers.has("cookie"),
 	});
 	const edgeCache = getEdgeCache();
 	const edgeCacheTtl = resolveEdgeCacheTtl(pathname);
@@ -162,7 +169,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	) {
 		const existingCacheControl = response.headers.get("cache-control") || "";
 		if (!/no-store|private/iu.test(existingCacheControl)) {
-			const cacheControl = `public, s-maxage=${edgeCacheTtl}, max-age=0, stale-while-revalidate=86400`;
+			// max-age 与 s-maxage 保持一致：
+			// 浏览器缓存使 Astro prefetch 预取的内容可以被 ClientRouter 的 fetch() 直接命中，
+			// 避免每次导航都需要服务器往返，彻底消除点击延迟。
+			const cacheControl = `public, s-maxage=${edgeCacheTtl}, max-age=${edgeCacheTtl}, stale-while-revalidate=86400`;
 			response.headers.set("Cache-Control", cacheControl);
 			response.headers.set("X-Edge-Cache", "MISS");
 

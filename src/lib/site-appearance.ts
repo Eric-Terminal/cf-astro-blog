@@ -694,7 +694,21 @@ export function resolveSiteDescriptionFromAppearance(
 	return fallbackDescription;
 }
 
-export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
+// 进程内缓存：在同一 Worker isolate 的多次调用中复用查询结果，
+// 消除同一请求内（如 [slug].astro + Base.astro 各自调用一次）的重复 D1 往返，
+// 并在低流量时跨请求复用热数据，降低 D1 冷查询频率。
+const SITE_APPEARANCE_CACHE_TTL_MS = 30 * 1000; // 30 秒
+
+interface SiteAppearanceCacheEntry {
+	value: SiteAppearance;
+	expiresAt: number;
+}
+
+let _siteAppearanceCache: SiteAppearanceCacheEntry | null = null;
+// 飞行中请求去重：当有并发调用时共享同一个 Promise
+let _siteAppearancePending: Promise<SiteAppearance> | null = null;
+
+async function fetchSiteAppearance(db: Database): Promise<SiteAppearance> {
 	const [row] = await db
 		.select({
 			backgroundImageKey: siteAppearanceSettings.backgroundImageKey,
@@ -748,6 +762,35 @@ export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
 	}
 
 	return normalizeSiteAppearanceInput(row);
+}
+
+export async function getSiteAppearance(db: Database): Promise<SiteAppearance> {
+	const now = Date.now();
+
+	// 缓存命中：直接返回，跳过 D1 查询
+	if (_siteAppearanceCache && _siteAppearanceCache.expiresAt > now) {
+		return _siteAppearanceCache.value;
+	}
+
+	// 飞行中请求去重：有进行中的查询时，等待其结果而非重复发起
+	if (_siteAppearancePending) {
+		return _siteAppearancePending;
+	}
+
+	_siteAppearancePending = fetchSiteAppearance(db).then((value) => {
+		_siteAppearanceCache = { value, expiresAt: Date.now() + SITE_APPEARANCE_CACHE_TTL_MS };
+		return value;
+	}).finally(() => {
+		_siteAppearancePending = null;
+	});
+
+	return _siteAppearancePending;
+}
+
+// 管理员更新网站外观后调用，立即使进程内缓存失效
+export function invalidateSiteAppearanceCache(): void {
+	_siteAppearanceCache = null;
+	_siteAppearancePending = null;
 }
 
 export async function getAiSettings(db: Database): Promise<AiSettings> {

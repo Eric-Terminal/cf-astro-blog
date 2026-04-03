@@ -78,7 +78,7 @@ const encodedSlug = encodeRouteParam(slug);
 
 <article class={cardClassName}>
 	{hasCover && (
-		<a href={`/blog/${encodedSlug}`} class="post-card-cover">
+		<a href={`/blog/${encodedSlug}`} class="post-card-cover" data-astro-prefetch="hover">
 			<img src={coverImageUrl} alt={coverImageAlt} loading="lazy" decoding="async" />
 		</a>
 	)}
@@ -98,7 +98,7 @@ const encodedSlug = encodeRouteParam(slug);
 				<span class="pill">{articleLengthLabel}</span>
 				<span class="pill">{articleReadingTimeLabel}</span>
 			</div>
-			<a href={`/blog/${encodedSlug}`} class="post-card-link">
+			<a href={`/blog/${encodedSlug}`} class="post-card-link" data-astro-prefetch="hover">
 				<h2 class="post-card-title" transition:name={`title-${slug}`}>{title}</h2>
 			</a>
 		</div>
@@ -109,7 +109,7 @@ const encodedSlug = encodeRouteParam(slug);
 		)}
 		<div class="post-card-meta">
 			<span>{authorName || siteConfig.author}</span>
-			<a href={`/blog/${encodedSlug}`} class="post-card-readmore">继续阅读</a>
+			<a href={`/blog/${encodedSlug}`} class="post-card-readmore" data-astro-prefetch="hover">继续阅读</a>
 		</div>
 	</div>
 </article>

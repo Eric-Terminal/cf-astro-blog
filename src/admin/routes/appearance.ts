@@ -14,6 +14,7 @@ import {
 	DEFAULT_SITE_APPEARANCE,
 	getAiSettings,
 	getSiteAppearance,
+	invalidateSiteAppearanceCache,
 	resolveAiSettingsWithSecrets,
 	type SiteNavLink,
 	saveAiSettings,
@@ -1199,6 +1200,8 @@ appearance.post("/", async (c) => {
 		aiPublicApiKey: nextPublicApiKey,
 		aiPublicModel: getBodyText(body, "aiPublicModel"),
 	});
+	// 外观更新后立即失效进程内缓存，使下一次请求读取最新配置
+	invalidateSiteAppearanceCache();
 
 	return c.redirect("/api/admin/appearance?status=saved");
 });
@@ -1251,6 +1254,7 @@ appearance.post("/background/upload", async (c) => {
 		...currentSettings,
 		backgroundImageKey: uploaded.key,
 	});
+	invalidateSiteAppearanceCache();
 
 	return c.redirect("/api/admin/appearance?status=uploaded");
 });
@@ -1269,6 +1273,7 @@ appearance.post("/background/clear", async (c) => {
 		...currentSettings,
 		backgroundImageKey: null,
 	});
+	invalidateSiteAppearanceCache();
 
 	return c.redirect("/api/admin/appearance?status=cleared");
 });
