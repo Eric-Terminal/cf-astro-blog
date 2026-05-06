@@ -11,8 +11,8 @@ describe("页脚精简保护", () => {
 		assert.ok(!footerSource.includes('href="/search"'));
 		assert.ok(!footerSource.includes('href="/sitemap.xml"'));
 		assert.match(footerSource, /footer-meta/u);
-		assert.match(footerSource, /icp\.gov\.moe\/\?keyword=20260136/u);
-		assert.match(footerSource, /萌ICP备20260136号/u);
+		assert.match(footerSource, /icp\.gov\.moe\/\?keyword=20260163/u);
+		assert.match(footerSource, /萌ICP备20260163号/u);
 		assert.match(footerSource, /target="_blank"/u);
 	});
 
