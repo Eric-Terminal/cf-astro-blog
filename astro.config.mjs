@@ -13,7 +13,7 @@ export default defineConfig({
 			enabled: true,
 		},
 	}),
-	site: "https://blog.ericterminal.com",
+	site: "https://ffaff.fun",
 	vite: {
 		resolve: {
 			alias: {
