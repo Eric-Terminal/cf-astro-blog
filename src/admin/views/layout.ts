@@ -900,7 +900,7 @@ export const adminSharedStyles = `
 		}
 
 		.markdown-editor-shell .form-textarea {
-			min-height: 900px;
+			min-height: 700px;
 		}
 
 		.markdown-preview-panel {
@@ -924,7 +924,7 @@ export const adminSharedStyles = `
 		}
 
 		.markdown-preview-body {
-			min-height: 900px;
+			min-height: 700px;
 			max-height: none;
 			overflow: auto;
 			padding: 0.95rem 1rem 1.05rem;
@@ -1179,7 +1179,7 @@ export const adminSharedStyles = `
 
 		.editor-grid {
 			display: grid;
-			grid-template-columns: minmax(0, 3.8fr) minmax(200px, 0.4fr);
+			grid-template-columns: minmax(0, 3.8fr) minmax(240px, 0.4fr);
 			gap: 1.5rem;
 		}
 
