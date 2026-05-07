@@ -63,7 +63,7 @@ export const adminSharedStyles = `
 			--transition-fast: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 			--transition-slow: 420ms cubic-bezier(0.22, 1, 0.36, 1);
 			--shell-width: min(1440px, calc(100vw - 2rem));
-			--sidebar-width: minmax(150px, 200px);
+			--sidebar-width: minmax(120px, 200px);
 			--card-surface-rgb: 255, 255, 255;
 			--card-sheen-rgb: 255, 255, 255;
 		}
