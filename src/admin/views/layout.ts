@@ -63,7 +63,7 @@ export const adminSharedStyles = `
 			--transition-fast: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 			--transition-slow: 420ms cubic-bezier(0.22, 1, 0.36, 1);
 			--shell-width: min(1440px, calc(100vw - 2rem));
-			--sidebar-width: minmax(250px, 280px);
+			--sidebar-width: minmax(150px, 200px);
 			--card-surface-rgb: 255, 255, 255;
 			--card-sheen-rgb: 255, 255, 255;
 		}
@@ -900,7 +900,7 @@ export const adminSharedStyles = `
 		}
 
 		.markdown-editor-shell .form-textarea {
-			min-height: 420px;
+			min-height: 900px;
 		}
 
 		.markdown-preview-panel {
@@ -924,8 +924,8 @@ export const adminSharedStyles = `
 		}
 
 		.markdown-preview-body {
-			min-height: 420px;
-			max-height: 620px;
+			min-height: 900px;
+			max-height: none;
 			overflow: auto;
 			padding: 0.95rem 1rem 1.05rem;
 			color: var(--text);
@@ -1179,7 +1179,7 @@ export const adminSharedStyles = `
 
 		.editor-grid {
 			display: grid;
-			grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+			grid-template-columns: minmax(0, 3.8fr) minmax(200px, 0.4fr);
 			gap: 1.5rem;
 		}
 
@@ -1526,7 +1526,7 @@ export const adminSharedStyles = `
 
 			.markdown-editor-shell .form-textarea,
 			.markdown-preview-body {
-				min-height: 300px;
+				min-height: 600px;
 			}
 
 			.appearance-inline-grid {
