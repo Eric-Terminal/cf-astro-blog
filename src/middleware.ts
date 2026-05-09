@@ -119,7 +119,7 @@ function applySecurityHeaders(
 				"form-action 'self'",
 				`script-src ${scriptSources.join(" ")}`,
 				"style-src 'self' 'unsafe-inline'",
-				"img-src 'self' data:  https://assets.ericterminal.com https://pic.ffaff.fun https://junge-lou.github.io",
+				"img-src 'self' data:  https://assets.ericterminal.com https://pic.ffaff.fun https://junge-lou.github.io https://typora-piclists.oss-cn-shenzhen.aliyuncs.com",
 				"font-src 'self' data: https:",
 				"connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://comments.ffaff.fun",
 				"frame-src 'self' https://challenges.cloudflare.com",
