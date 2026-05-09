@@ -48,7 +48,7 @@ export function shuoshuoListPage(options: ShuoshuoListPageOptions): string {
 							<td>
 								<a href="/api/admin/shuoshuo/${encodeRouteParam(String(entry.id))}/edit" class="btn btn-sm">编辑</a>
 								<form method="post" action="/api/admin/shuoshuo/${encodeRouteParam(String(entry.id))}/delete" class="inline-form" data-confirm-message="确认删除这条说说吗？">
-									<input type="hidden" name="csrfToken" value="${escapeAttribute(options.csrfToken)}" />
+									<input type="hidden" name="_csrf" value="${escapeAttribute(options.csrfToken)}" />
 									<button type="submit" class="btn btn-sm btn-danger">删除</button>
 								</form>
 							</td>
@@ -75,7 +75,7 @@ export function shuoshuoEditorPage(options: ShuoshuoEditorPageOptions): string {
 		<h1>${heading}</h1>
 		${errorBanner}
 		<form method="post" action="${action}" class="shuoshuo-editor-form">
-			<input type="hidden" name="csrfToken" value="${escapeAttribute(options.csrfToken)}" />
+			<input type="hidden" name="_csrf" value="${escapeAttribute(options.csrfToken)}" />
 			<div class="form-field">
 				<label for="content">内容</label>
 				<textarea id="content" name="content" rows="8" required>${escapeTextarea(entry.content)}</textarea>

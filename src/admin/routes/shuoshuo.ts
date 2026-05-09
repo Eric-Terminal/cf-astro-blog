@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { shuoshuoPosts } from "@/db/schema";
 import { getDb } from "@/lib/db";
@@ -17,7 +17,7 @@ const shuoshuo = new Hono<AdminAppEnv>();
 shuoshuo.use("*", requireAuth);
 
 function parseShuoshuoInput(body: Record<string, unknown>) {
-	const content = sanitizePlainText(body.content, 3000, {
+	const content = sanitizePlainText(getBodyText(body, "content"), 3000, {
 		allowNewlines: true,
 	});
 	const rawStatus = getBodyText(body, "status");
@@ -28,7 +28,7 @@ function parseShuoshuoInput(body: Record<string, unknown>) {
 
 function validateCsrf(c: Parameters<typeof getAuthenticatedSession>[0], body: Record<string, unknown>): boolean {
 	const session = getAuthenticatedSession(c);
-	return assertCsrfToken(getBodyText(body, "csrfToken"), session);
+	return assertCsrfToken(getBodyText(body, "_csrf"), session);
 }
 
 shuoshuo.get("/", async (c) => {
@@ -75,13 +75,10 @@ shuoshuo.post("/", async (c) => {
 		);
 	}
 
-	const now = new Date().toISOString();
 	const db = getDb(c.env.DB);
 	await db.insert(shuoshuoPosts).values({
 		content: parsed.content,
 		status: parsed.status,
-		createdAt: now,
-		updatedAt: now,
 	});
 
 	return c.redirect("/api/admin/shuoshuo");
@@ -139,14 +136,13 @@ shuoshuo.post("/:id/update", async (c) => {
 		);
 	}
 
-	const now = new Date().toISOString();
 	const db = getDb(c.env.DB);
 	await db
 		.update(shuoshuoPosts)
 		.set({
 			content: parsed.content,
 			status: parsed.status,
-			updatedAt: now,
+			updatedAt: sql`(datetime('now'))`,
 		})
 		.where(eq(shuoshuoPosts.id, id));
 

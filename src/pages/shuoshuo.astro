@@ -42,58 +42,9 @@ try {
 				<p>还没有说说内容。你可以先登录后台发布第一条日常更新。</p>
 			</div>
 		)}
-	</div>
 </Base>
 
 <style>
-	.qq-theme-container {
-		width: 100%;
-		max-width: 780px;
-		margin: 0 auto;
-		padding: 0.65rem;
-		background: rgba(235, 245, 255, 0.48);
-		border-radius: 2rem;
-		backdrop-filter: blur(12px);
-		box-shadow: 0 25px 45px -18px rgba(15, 23, 42, 0.22);
-	}
-
-	.theme-header {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		padding: 1.2rem 1.4rem 0.9rem 1.4rem;
-	}
-
-	.theme-title {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-	}
-
-	.theme-title h2 {
-		font-size: clamp(1.35rem, 1.2rem + 1vw, 1.85rem);
-		font-weight: 650;
-		letter-spacing: -0.35px;
-		color: #1d3654;
-		text-shadow: 0 1px 1px rgba(255, 255, 255, 0.55);
-	}
-
-	.qq-icon {
-		font-size: 1.75rem;
-	}
-
-	.sub-line {
-		color: #2c577c;
-		font-size: 0.82rem;
-		font-weight: 500;
-		background: rgba(255, 255, 240, 0.8);
-		padding: 0.28rem 0.85rem;
-		border-radius: 30px;
-		backdrop-filter: blur(6px);
-	}
-
 	.shuoshuo-grid {
 		display: flex;
 		flex-direction: column;
@@ -181,28 +132,7 @@ try {
 		opacity: 0.75;
 	}
 
-	.theme-footer {
-		text-align: center;
-		padding: 0.45rem 1rem 1.1rem;
-		font-size: 0.78rem;
-		color: #476c8c;
-		display: flex;
-		justify-content: center;
-		gap: 1rem;
-		flex-wrap: wrap;
-		border-top: 1px solid rgba(255, 255, 240, 0.65);
-		margin-top: 0.35rem;
-	}
-
 	@media (max-width: 720px) {
-		.qq-theme-container {
-			padding: 0.45rem;
-		}
-
-		.theme-header {
-			padding: 1rem 1rem 0.55rem;
-		}
-
 		.shuoshuo-grid {
 			padding: 0.7rem 1rem 1.1rem;
 		}
