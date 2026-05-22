@@ -815,7 +815,6 @@ async function renderSafeMarkdownInternal(
 					depth + 1,
 					state,
 				);
-				const fnNum = extractedFootnotes.defs.indexOf(def) + 1;
 				footnoteHtmlParts.push(
 					`<li id="fn-${escapeAttribute(def.id)}">${renderedDef} <a class="prose-footnote-backref" href="#fnref-${escapeAttribute(def.id)}" aria-label="返回">↩</a></li>`,
 				);

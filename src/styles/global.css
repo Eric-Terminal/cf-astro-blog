@@ -965,8 +965,6 @@ html[data-theme-switching]:not([data-nav-condensed]) .site-nav::before {
 	line-height: 1.4;
 }
 
-.prose pre {
-
 .prose .prose-code-block {
 	margin-bottom: 1.35rem;
 	border-radius: calc(var(--radius-card) - 2px);
