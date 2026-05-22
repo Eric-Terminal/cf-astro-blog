@@ -535,6 +535,209 @@ function removeTocMarkers(markdown: string): string {
 	return markdown.replaceAll(/^\[TOC\]\s*$/gim, "");
 }
 
+// ── 允许的安全 HTML 标签白名单 ─────────────────────────────────────────────
+// 仅允许不影响页面安全且 Typora 常用的标签通过
+const SAFE_HTML_TAGS = new Set([
+	"video",
+	"audio",
+	"source",
+	"track",
+	"iframe",
+	"embed",
+	"object",
+	"param",
+	"div",
+	"span",
+	"figure",
+	"figcaption",
+	"details",
+	"summary",
+	"kbd",
+	"samp",
+	"var",
+	"abbr",
+	"dfn",
+	"cite",
+	"bdi",
+	"bdo",
+	"data",
+	"time",
+	"wbr",
+]);
+
+const SAFE_HTML_ATTRS = new Set([
+	"src",
+	"href",
+	"alt",
+	"title",
+	"width",
+	"height",
+	"controls",
+	"autoplay",
+	"loop",
+	"muted",
+	"poster",
+	"preload",
+	"class",
+	"id",
+	"style",
+	"align",
+	"frameborder",
+	"allowfullscreen",
+	"allow",
+	"loading",
+	"decoding",
+	"crossorigin",
+	"data-",
+	"srcdoc",
+	"scrolling",
+	"marginwidth",
+	"marginheight",
+	"target",
+	"rel",
+	"type",
+	"media",
+	"sizes",
+	"srcset",
+	"dir",
+	"lang",
+	"hidden",
+	"tabindex",
+	"role",
+	"aria-",
+]);
+
+function isSafeHtmlAttribute(name: string): boolean {
+	const lower = name.toLowerCase();
+	if (lower.startsWith("on")) {
+		return false;
+	}
+	for (const allowed of SAFE_HTML_ATTRS) {
+		if (allowed.endsWith("-")) {
+			if (lower.startsWith(allowed)) {
+				return true;
+			}
+		} else if (lower === allowed) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function sanitizeHtmlTag(html: string): string {
+	// 只处理 <tag ...> 和 </tag> 形式的标签
+	return html.replaceAll(
+		/<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g,
+		(full: string, tagName: string, attrs: string) => {
+			const lowerTag = tagName.toLowerCase();
+			if (!SAFE_HTML_TAGS.has(lowerTag)) {
+				// 不安全的标签 → 转义全部
+				return escapeHtml(full);
+			}
+			// 安全标签 → 过滤属性
+			const safeAttrs = attrs.replaceAll(
+				/([a-zA-Z][a-zA-Z0-9-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g,
+				(
+					_attrFull: string,
+					attrName: string,
+					dq: string,
+					sq: string,
+					uq: string,
+				) => {
+					const value = escapeAttribute(dq ?? sq ?? uq ?? "");
+					if (isSafeHtmlAttribute(attrName)) {
+						return ` ${attrName}="${value}"`;
+					}
+					return "";
+				},
+			);
+			// 移除剩余的不安全布尔属性
+			const cleanAttrs = safeAttrs.replaceAll(
+				/\s+[a-zA-Z][a-zA-Z0-9-]*(?:\s*=\s*"?\s*)?(?=\s|\/?>)/g,
+				(m: string) => {
+					const name = m.trim().split("=")[0]?.toLowerCase() ?? "";
+					if (isSafeHtmlAttribute(name)) {
+						return m;
+					}
+					return "";
+				},
+			);
+			if (full.startsWith("</")) {
+				return `</${lowerTag}>`;
+			}
+			return `<${lowerTag}${cleanAttrs}>`.replace(/\s+>/g, ">");
+		},
+	);
+}
+
+// ── Callouts（GitHub 风格的提示块）────────────────────────────────────────
+
+interface CalloutBlock {
+	placeholder: string;
+	type: string;
+	content: string;
+}
+
+const CALLOUT_TYPES = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"] as const;
+
+function extractCallouts(markdown: string): {
+	markdown: string;
+	blocks: CalloutBlock[];
+} {
+	let index = 0;
+	const blocks: CalloutBlock[] = [];
+
+	// 匹配:
+	// > [!NOTE]
+	// > content line 1
+	// > content line 2
+	//
+	// 或紧接的块引用行
+	const pattern = new RegExp(
+		`^> \\[!(${CALLOUT_TYPES.join("|")})\\]\\s*\\n((?:^> .*\\n?)*)`,
+		"gm",
+	);
+
+	const markdownWithPlaceholders = markdown.replace(pattern, (_match, type, content) => {
+		const cleanedType = String(type ?? "").toUpperCase();
+		const cleanedContent = String(content ?? "")
+			.replaceAll(/^> /gm, "")
+			.trim();
+		const placeholder = `@@CALLOUT_${index}@@`;
+		blocks.push({
+			placeholder,
+			type: cleanedType,
+			content: cleanedContent,
+		});
+		index += 1;
+		return `\n\n${placeholder}\n\n`;
+	});
+
+	return { markdown: markdownWithPlaceholders, blocks };
+}
+
+// ── 图表/扩展代码块 ────────────────────────────────────────────────────────
+
+interface DiagramBlock {
+	placeholder: string;
+	language: string;
+	code: string;
+}
+
+const DIAGRAM_LANGUAGES = new Set([
+	"mermaid",
+	"plantuml",
+	"puml",
+	"echarts",
+	"chart",
+	"chartjs",
+	"kanban",
+	"chat",
+	"timeline",
+	"calendar",
+	"drawio",
+]);
+
 function escapeRegExp(value: string): string {
 	return value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -601,9 +804,37 @@ async function renderSafeMarkdownInternal(
 	}
 
 	const renderer = new marked.Renderer();
+	let diagramBlocks: DiagramBlock[] = [];
+	let diagramIndex = 0;
 
 	renderer.html = (token: Tokens.HTML | Tokens.Tag) => {
-		return escapeHtml(token?.text ?? token?.raw ?? "");
+		const raw = token?.text ?? token?.raw ?? "";
+		// 允许安全 HTML 标签通过
+		if (raw.trim()) {
+			return sanitizeHtmlTag(raw);
+		}
+		return "";
+	};
+
+	renderer.code = function (token: Tokens.Code) {
+		const lang = String(token.lang ?? "").trim().toLowerCase();
+		const code = String(token.text ?? "");
+
+		if (DIAGRAM_LANGUAGES.has(lang)) {
+			const placeholder = `@@DIAGRAM_${diagramIndex}@@`;
+			diagramBlocks.push({
+				placeholder,
+				language: lang,
+				code,
+			});
+			diagramIndex += 1;
+			return `\n\n${placeholder}\n\n`;
+		}
+
+		// 普通代码块：使用默认渲染（带语言标签）
+		const escapedCode = escapeHtml(code);
+		const langAttr = lang ? ` class="language-${escapeAttribute(lang)}"` : "";
+		return `<pre><code${langAttr}>${escapedCode}</code></pre>`;
 	};
 
 	renderer.link = function (token: Tokens.Link) {
@@ -681,8 +912,11 @@ async function renderSafeMarkdownInternal(
 	// 5. 脚注
 	const extractedFootnotes = extractFootnotes(extractedEmoji.markdown);
 
-	// 6. 现有的短代码语法
-	const extractedDetails = extractDetailsShortcodes(extractedFootnotes.markdown);
+	// 6. Callouts（> [!NOTE] 等）
+	const extractedCallouts = extractCallouts(extractedFootnotes.markdown);
+
+	// 7. 现有的短代码语法
+	const extractedDetails = extractDetailsShortcodes(extractedCallouts.markdown);
 	const extractedSpoilers = extractSpoilerShortcodes(extractedDetails.markdown);
 
 	// ── marked 渲染 ──────────────────────────────────────────────────────
@@ -825,5 +1059,218 @@ async function renderSafeMarkdownInternal(
 		html += footnoteHtmlParts.join("");
 	}
 
+	// 替换 Callouts
+	for (const block of extractedCallouts.blocks) {
+		const innerHtml = await renderSafeMarkdownInternal(
+			block.content,
+			depth + 1,
+			state,
+		);
+		const typeLower = block.type.toLowerCase();
+		const calloutHtml = [
+			`<div class="prose-callout prose-callout-${escapeAttribute(typeLower)}">`,
+			`<div class="prose-callout-header">`,
+			`<span class="prose-callout-icon">`,
+			renderCalloutIcon(block.type),
+			`</span>`,
+			`<span class="prose-callout-label">${escapeHtml(block.type)}</span>`,
+			`</div>`,
+			`<div class="prose-callout-body">`,
+			innerHtml,
+			`</div>`,
+			`</div>`,
+		].join("");
+		html = html.replaceAll(escapeRegExp(block.placeholder), calloutHtml);
+	}
+
+	// 替换图表代码块
+	for (const block of diagramBlocks) {
+		const diagramHtml = renderDiagramBlock(block);
+		html = html.replaceAll(escapeRegExp(block.placeholder), diagramHtml);
+	}
+
+	return html;
+}
+
+function renderCalloutIcon(type: string): string {
+	switch (type) {
+		case "NOTE":
+			return `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75h.75A.75.75 0 0 1 8 8.5v3a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5H7v-2H6.5a.75.75 0 0 1 0-1.5ZM8 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg>`;
+		case "TIP":
+			return `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 6a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm3.063 4.252a3.999 3.999 0 0 0-5.126 0 .5.5 0 0 0 .626.78 2.999 2.999 0 0 1 3.874 0 .5.5 0 1 0 .626-.78Z"/></svg>`;
+		case "IMPORTANT":
+			return `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 7.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>`;
+		case "WARNING":
+			return `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M6.457 1.547c.562-1.162 2.524-1.162 3.086 0l5.106 10.77c.566 1.194-.34 2.558-1.543 2.558H2.894C1.69 14.875.785 13.51 1.351 12.317L6.457 1.547ZM8 4.5a.75.75 0 0 0-.75.75v3a.75.75 0 0 0 1.5 0v-3A.75.75 0 0 0 8 4.5Zm0 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>`;
+		case "CAUTION":
+			return `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353L4.54.146ZM8 4.5a.75.75 0 0 0-.75.75v3a.75.75 0 0 0 1.5 0v-3A.75.75 0 0 0 8 4.5Zm0 6.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>`;
+		default:
+			return "";
+	}
+}
+
+function renderDiagramBlock(block: DiagramBlock): string {
+	const lang = block.language;
+	const code = block.code;
+	const escapedCode = escapeHtml(code);
+
+	switch (lang) {
+		case "mermaid":
+			return `<div class="prose-mermaid">${escapedCode}</div>`;
+		case "plantuml":
+		case "puml":
+			return `<div class="prose-plantuml"><pre><code class="language-plantuml">${escapedCode}</code></pre></div>`;
+		case "echarts":
+			return `<div class="prose-echarts" data-echarts="${escapeAttribute(code)}"><div class="prose-chart-loading">ECharts 加载中...</div></div>`;
+		case "chart":
+		case "chartjs":
+			return `<div class="prose-chartjs" data-chart="${escapeAttribute(code)}"><div class="prose-chart-loading">Chart.js 加载中...</div></div>`;
+		case "kanban":
+			return renderKanban(code);
+		case "chat":
+			return renderChat(code);
+		case "timeline":
+			return renderTimeline(code);
+		case "calendar":
+			return renderCalendar(code);
+		case "drawio":
+			return `<div class="prose-drawio"><pre><code class="language-drawio">${escapedCode}</code></pre></div>`;
+		default:
+			return `<pre><code>${escapedCode}</code></pre>`;
+	}
+}
+
+function renderKanban(code: string): string {
+	const lines = code.trim().split("\n");
+	let html = '<div class="prose-kanban">';
+	let currentColumn: string | null = null;
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+		// 列标题: ## 列名
+		const colMatch = trimmed.match(/^##\s+(.+)/);
+		if (colMatch) {
+			if (currentColumn) {
+				html += "</div></div>";
+			}
+			currentColumn = colMatch[1]!.trim();
+			html += `<div class="prose-kanban-column"><div class="prose-kanban-col-header">${escapeHtml(currentColumn)}</div><div class="prose-kanban-cards">`;
+			continue;
+		}
+		// 卡片: - 卡片内容 或 * 卡片内容
+		const cardMatch = trimmed.match(/^[-*]\s+(.+)/);
+		if (cardMatch) {
+			html += `<div class="prose-kanban-card">${escapeHtml(cardMatch[1]!.trim())}</div>`;
+			continue;
+		}
+	}
+
+	if (currentColumn) {
+		html += "</div></div>";
+	}
+	html += "</div>";
+	return html;
+}
+
+function renderChat(code: string): string {
+	const lines = code.trim().split("\n");
+	let html = '<div class="prose-chat">';
+	let side: "left" | "right" = "left";
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+
+		// 方向切换: %% left 或 %% right
+		const dirMatch = trimmed.match(/^%%\s*(left|right)/i);
+		if (dirMatch) {
+			side = dirMatch[1]!.toLowerCase() as "left" | "right";
+			continue;
+		}
+
+		// 消息: **名字** 消息内容
+		const msgMatch = trimmed.match(/^\*\*(.+?)\*\*\s+(.+)/);
+		if (msgMatch) {
+			html += `<div class="prose-chat-bubble prose-chat-${side}"><div class="prose-chat-author">${escapeHtml(msgMatch[1]!.trim())}</div><div class="prose-chat-text">${escapeHtml(msgMatch[2]!.trim())}</div></div>`;
+			continue;
+		}
+
+		// 纯消息（无作者）
+		html += `<div class="prose-chat-bubble prose-chat-${side}"><div class="prose-chat-text">${escapeHtml(trimmed)}</div></div>`;
+	}
+
+	html += "</div>";
+	return html;
+}
+
+function renderTimeline(code: string): string {
+	const lines = code.trim().split("\n");
+	let html = '<div class="prose-timeline">';
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+
+		// 时间节点: ## 时间标题
+		const timeMatch = trimmed.match(/^##\s+(.+)/);
+		if (timeMatch) {
+			html += `<div class="prose-timeline-item"><div class="prose-timeline-marker"></div><div class="prose-timeline-content"><div class="prose-timeline-title">${escapeHtml(timeMatch[1]!.trim())}</div>`;
+			continue;
+		}
+
+		// 内容: - 描述内容
+		const contentMatch = trimmed.match(/^[-*]\s+(.+)/);
+		if (contentMatch) {
+			html += `<div class="prose-timeline-desc">${escapeHtml(contentMatch[1]!.trim())}</div>`;
+			continue;
+		}
+	}
+
+	html += "</div></div></div>";
+	return html;
+}
+
+function renderCalendar(code: string): string {
+	const lines = code.trim().split("\n");
+	let html = '<div class="prose-calendar">';
+	let currentDate: string | null = null;
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+
+		// 日期: ## 2024-01-01
+		const dateMatch = trimmed.match(/^##\s+(.+)/);
+		if (dateMatch) {
+			if (currentDate) {
+				html += "</div>";
+			}
+			currentDate = dateMatch[1]!.trim();
+			html += `<div class="prose-calendar-date"><div class="prose-calendar-date-header">${escapeHtml(currentDate)}</div>`;
+			continue;
+		}
+
+		// 事件: - 事件内容 [优先级] @标签
+		const eventMatch = trimmed.match(/^[-*]\s+(.+?)(?:\s+\[(.+?)\])?(?:\s+@(.+))?$/);
+		if (eventMatch) {
+			const eventText = escapeHtml(eventMatch[1]!.trim());
+			const priority = eventMatch[2] ? escapeHtml(eventMatch[2]!.trim()) : "";
+			const tag = eventMatch[3] ? escapeHtml(eventMatch[3]!.trim()) : "";
+			const priorityClass = priority ? ` prose-calendar-priority-${priority.toLowerCase()}` : "";
+			html += `<div class="prose-calendar-event${priorityClass}">`;
+			html += `<span class="prose-calendar-event-text">${eventText}</span>`;
+			if (tag) {
+				html += `<span class="prose-calendar-event-tag">${tag}</span>`;
+			}
+			html += "</div>";
+			continue;
+		}
+	}
+
+	if (currentDate) {
+		html += "</div>";
+	}
+	html += "</div>";
 	return html;
 }

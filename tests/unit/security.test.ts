@@ -299,4 +299,152 @@ describe("安全工具", () => {
 		assert.ok(html.includes("katex"));
 		assert.match(html, /<details class="prose-details">/u);
 	});
+
+	// ── Callouts ──────────────────────────────────────────────────────────
+
+	test("renderSafeMarkdown 支持 Callout > [!NOTE]", async () => {
+		const html = await renderSafeMarkdown(
+			"> [!NOTE]\n> 这是一个提示信息。\n> 第二行内容。",
+		);
+
+		assert.match(html, /<div class="prose-callout prose-callout-note">/u);
+		assert.match(html, /<span class="prose-callout-label">NOTE<\/span>/u);
+		assert.match(html, /这是一个提示信息/u);
+		assert.match(html, /第二行内容/u);
+	});
+
+	test("renderSafeMarkdown 支持所有 Callout 类型", async () => {
+		const html = await renderSafeMarkdown(
+			[
+				"> [!NOTE]\n> 注意",
+				"",
+				"> [!TIP]\n> 提示",
+				"",
+				"> [!IMPORTANT]\n> 重要",
+				"",
+				"> [!WARNING]\n> 警告",
+				"",
+				"> [!CAUTION]\n> 小心",
+			].join("\n\n"),
+		);
+
+		assert.match(html, /prose-callout-note/u);
+		assert.match(html, /prose-callout-tip/u);
+		assert.match(html, /prose-callout-important/u);
+		assert.match(html, /prose-callout-warning/u);
+		assert.match(html, /prose-callout-caution/u);
+	});
+
+	// ── 安全 HTML ─────────────────────────────────────────────────────────
+
+	test("renderSafeMarkdown 允许安全 HTML 标签通过", async () => {
+		const html = await renderSafeMarkdown(
+			'<video src="test.mp4" controls width="100%"></video>',
+		);
+
+		// 安全标签被保留，但属性重新序列化后可能含额外空格
+		assert.ok(html.includes("<video"), "video 标签应被保留");
+		assert.ok(html.includes('src="test.mp4"'), "src 属性应被保留");
+		assert.ok(html.includes("<video"), "不应被转义");
+	});
+
+	test("renderSafeMarkdown 转义危险 HTML 标签（如图 img）", async () => {
+		const html = await renderSafeMarkdown(
+			'<img src=x onerror="alert(1)">',
+		);
+
+		// img 不在安全标签白名单中，整个标签会被转义
+		assert.ok(!html.includes("<img"), "img 标签应被转义而非原样输出");
+		assert.ok(html.includes("&lt;img"), "img 标签应以 HTML 实体形式输出");
+	});
+
+	// ── 图表代码块 ────────────────────────────────────────────────────────
+
+	test("renderSafeMarkdown 支持 Mermaid 图表", async () => {
+		const html = await renderSafeMarkdown(
+			"```mermaid\ngraph TD\n    A-->B\n```",
+		);
+
+		assert.match(html, /<div class="prose-mermaid">/u);
+		assert.match(html, /graph TD/u);
+	});
+
+	test("renderSafeMarkdown 支持 Kanban 看板", async () => {
+		const html = await renderSafeMarkdown(
+			"```kanban\n## 待办\n- 任务1\n- 任务2\n\n## 进行中\n- 任务3\n```",
+		);
+
+		assert.match(html, /<div class="prose-kanban">/u);
+		assert.match(html, /prose-kanban-column/u);
+		assert.match(html, /待办/u);
+		assert.match(html, /任务1/u);
+	});
+
+	test("renderSafeMarkdown 支持 Chat 聊天", async () => {
+		const html = await renderSafeMarkdown(
+			"```chat\n%% left\n**Alice** 你好！\n%% right\n**Bob** 嗨！\n```",
+		);
+
+		assert.match(html, /<div class="prose-chat">/u);
+		assert.match(html, /prose-chat-left/u);
+		assert.match(html, /prose-chat-right/u);
+		assert.match(html, /Alice/u);
+		assert.match(html, /Bob/u);
+	});
+
+	test("renderSafeMarkdown 支持 Timeline 时间线", async () => {
+		const html = await renderSafeMarkdown(
+			"```timeline\n## 2024年\n- 项目启动\n## 2025年\n- 项目上线\n```",
+		);
+
+		assert.match(html, /<div class="prose-timeline">/u);
+		assert.match(html, /prose-timeline-title/u);
+		assert.match(html, /2024年/u);
+		assert.match(html, /项目启动/u);
+	});
+
+	test("renderSafeMarkdown 支持 Calendar 日历事件", async () => {
+		const html = await renderSafeMarkdown(
+			"```calendar\n## 2024-01-01\n- 新年 [high]\n- 休息 @假期\n```",
+		);
+
+		assert.match(html, /<div class="prose-calendar">/u);
+		assert.match(html, /新年/u);
+		assert.match(html, /假期/u);
+	});
+
+	test("renderSafeMarkdown 支持 PlantUML 和 Drawio", async () => {
+		const html = await renderSafeMarkdown(
+			["```plantuml\n@startuml\nAlice->Bob: Hello\n@enduml\n```"].join("\n"),
+		);
+
+		assert.match(html, /<div class="prose-plantuml">/u);
+	});
+
+	test("renderSafeMarkdown 支持 ECharts 配置", async () => {
+		const html = await renderSafeMarkdown(
+			'```echarts\n{"xAxis":{},"yAxis":{},"series":[{"data":[1,2,3]}]}\n```',
+		);
+
+		assert.match(html, /<div class="prose-echarts"/u);
+		assert.match(html, /data-echarts/u);
+	});
+
+	test("renderSafeMarkdown 支持 Chart.js 配置", async () => {
+		const html = await renderSafeMarkdown(
+			'```chartjs\n{"type":"bar","data":{"labels":["A"],"datasets":[{"data":[1]}]}}\n```',
+		);
+
+		assert.match(html, /<div class="prose-chartjs"/u);
+		assert.match(html, /data-chart/u);
+	});
+
+	test("renderSafeMarkdown Callout 内部支持 Markdown 格式", async () => {
+		const html = await renderSafeMarkdown(
+			"> [!TIP]\n> 这是 **加粗** 和 `代码`。",
+		);
+
+		assert.match(html, /<strong>/u);
+		assert.match(html, /<code>/u);
+	});
 });
