@@ -93,8 +93,14 @@ export function postsListPage(
 ): string {
 	const content = `
 		<div class="page-header">
-			<h1>文章</h1>
-			<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
+			<div class="page-header-copy">
+				<span class="page-kicker">Content</span>
+				<h1 style="margin-bottom: 0;">文章</h1>
+				<p class="form-help" style="margin: 0;">管理发布状态、置顶与分类标签。</p>
+			</div>
+			<div class="page-actions">
+				<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
+			</div>
 		</div>
 
 		${alert ? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>` : ""}
@@ -150,9 +156,13 @@ export function postsListPage(
 				: '<p class="empty-state">当前还没有文章，<a href="/api/admin/posts/new">立即创建第一篇</a>。</p>'
 		}
 
-		<section style="margin-top: 1.25rem;">
-			<h2 style="margin-bottom: 0.7rem;">历史分类管理</h2>
-			<p class="form-help" style="margin-bottom: 0.7rem;">仅可删除未被文章使用的分类。</p>
+		<section class="section-block">
+			<div class="section-heading">
+				<div class="page-header-copy">
+					<h2>历史分类管理</h2>
+					<p class="form-help" style="margin: 0;">仅可删除未被文章使用的分类。</p>
+				</div>
+			</div>
 			${renderTaxonomyRows({
 				items: categories,
 				emptyText: "还没有历史分类。",
@@ -162,9 +172,13 @@ export function postsListPage(
 			})}
 		</section>
 
-		<section style="margin-top: 1.25rem;">
-			<h2 style="margin-bottom: 0.7rem;">历史标签管理</h2>
-			<p class="form-help" style="margin-bottom: 0.7rem;">仅可删除未被文章使用的标签。</p>
+		<section class="section-block">
+			<div class="section-heading">
+				<div class="page-header-copy">
+					<h2>历史标签管理</h2>
+					<p class="form-help" style="margin: 0;">仅可删除未被文章使用的标签。</p>
+				</div>
+			</div>
 			${renderTaxonomyRows({
 				items: tags,
 				emptyText: "还没有历史标签。",

@@ -183,7 +183,13 @@ media.get("/", async (c) => {
 	}
 
 	const content = `
-		<h1>媒体库</h1>
+		<div class="page-header">
+			<div class="page-header-copy">
+				<span class="page-kicker">Assets</span>
+				<h1 style="margin-bottom: 0;">媒体库</h1>
+				<p class="form-help" style="margin: 0;">上传图片并复制键名，供文章封面与内容引用。</p>
+			</div>
+		</div>
 		<form
 			method="post"
 			action="/api/admin/media/upload"

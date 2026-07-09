@@ -643,8 +643,9 @@ function renderFriendsPage(options: {
 		"友链管理",
 		`
 			<div class="page-header">
-				<div>
-					<h1 style="margin-bottom: 0.35rem;">友链管理</h1>
+				<div class="page-header-copy">
+					<span class="page-kicker">Friends</span>
+					<h1 style="margin-bottom: 0;">友链管理</h1>
 					<p class="form-help" style="margin: 0;">${escapeHtml(defaultFilterHint)}</p>
 				</div>
 				<div class="page-actions">

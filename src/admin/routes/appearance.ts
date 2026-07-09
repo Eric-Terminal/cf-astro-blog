@@ -495,8 +495,13 @@ function renderAppearancePage(options: {
 
 		</style>
 		${alertHtml}
-		<h1>站点外观</h1>
-		<p class="appearance-copy">这里统一控制前台背景、顶部状态栏、导航索引链接、首页首屏和文章页侧栏信息。</p>
+		<div class="page-header">
+			<div class="page-header-copy">
+				<span class="page-kicker">Appearance</span>
+				<h1 style="margin-bottom: 0;">站点外观</h1>
+				<p class="appearance-copy" style="margin: 0;">控制前台背景、导航、首页首屏与文章侧栏等信息。</p>
+			</div>
+		</div>
 		<form method="post" action="/api/admin/appearance" class="appearance-grid appearance-form-grid" data-appearance-form="true">
 			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
 			<div class="appearance-stack">

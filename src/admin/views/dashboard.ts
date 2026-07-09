@@ -22,7 +22,18 @@ interface DashboardData {
 
 export function dashboardPage(data: DashboardData, csrfToken: string): string {
 	const content = `
-		<h1>控制台</h1>
+		<div class="page-header">
+			<div class="page-header-copy">
+				<span class="page-kicker">Overview</span>
+				<h1 style="margin-bottom: 0;">控制台</h1>
+				<p class="form-help" style="margin: 0;">站点内容与访问概况，从这里快速进入常用操作。</p>
+			</div>
+			<div class="page-actions">
+				<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
+				<a href="/api/admin/appearance" class="btn btn-sm">外观设置</a>
+			</div>
+		</div>
+
 		<div class="stats-grid">
 			<div class="stat-card">
 				<span class="stat-value">${data.posts.total}</span>
@@ -46,7 +57,10 @@ export function dashboardPage(data: DashboardData, csrfToken: string): string {
 			</div>
 		</div>
 
-		<h2>最近文章</h2>
+		<div class="section-heading">
+			<h2>最近文章</h2>
+			<a href="/api/admin/posts" class="btn btn-sm">全部文章</a>
+		</div>
 		${
 			data.recentPosts.length > 0
 				? `<div class="table-card"><table class="data-table">
@@ -68,7 +82,7 @@ export function dashboardPage(data: DashboardData, csrfToken: string): string {
 							<td><span class="badge badge-${normalizeDisplayStatus(post.status)}">${escapeHtml(getPostStatusLabel(post.status))}</span></td>
 							<td>${post.viewCount ?? 0}</td>
 							<td>${new Date(post.createdAt).toLocaleDateString()}</td>
-							<td>
+							<td class="table-actions">
 								<a href="/api/admin/posts/${post.id}/edit" class="btn btn-sm">编辑</a>
 								<a href="/blog/${encodeRouteParam(post.slug)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看</a>
 							</td>
@@ -79,10 +93,6 @@ export function dashboardPage(data: DashboardData, csrfToken: string): string {
 			</table></div>`
 				: '<p class="empty-state">当前还没有文章，<a href="/api/admin/posts/new">立即创建第一篇</a>。</p>'
 		}
-
-		<div class="page-actions">
-			<a href="/api/admin/posts/new" class="btn btn-primary">新建文章</a>
-		</div>
 	`;
 
 	return adminLayout("控制台", content, { csrfToken });

@@ -150,7 +150,16 @@ export function postEditorPage(data: EditorData): string {
 	const showCustomBackgroundUploader = backgroundMode === "custom";
 
 	const content = `
-		<h1>${isEdit ? "编辑文章" : "新建文章"}</h1>
+		<div class="page-header">
+			<div class="page-header-copy">
+				<span class="page-kicker">Editor</span>
+				<h1 style="margin-bottom: 0;">${isEdit ? "编辑文章" : "新建文章"}</h1>
+				<p class="form-help" style="margin: 0;">${isEdit ? "修改正文、发布状态与 SEO 信息。" : "写好标题与正文后，可保存草稿或直接发布。"}</p>
+			</div>
+			<div class="page-actions">
+				<a href="/api/admin/posts" class="btn btn-sm">返回列表</a>
+			</div>
+		</div>
 		${error ? `<div class="alert alert-error">${escapeHtml(error)}</div>` : ""}
 
 		<form

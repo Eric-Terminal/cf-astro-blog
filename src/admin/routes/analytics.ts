@@ -301,14 +301,17 @@ analytics.get("/", async (c) => {
 
 	const content = `
 		<div class="page-header">
-			<h1>访问统计</h1>
+			<div class="page-header-copy">
+				<span class="page-kicker">Analytics</span>
+				<h1 style="margin-bottom: 0;">访问统计</h1>
+				<p class="form-help" style="margin: 0;">页面访问、来源分布、最近事件与 MCP 审计；默认保留最近 ${ANALYTICS_RETENTION_DAYS} 天。</p>
+			</div>
 			<div class="table-actions analytics-actions">
-				<a href="/api/admin/analytics/export?format=jsonl" class="btn">下载全部明细（JSONL）</a>
-				<a href="/api/admin/analytics/export?format=json" class="btn">下载全部明细（JSON）</a>
-				<a href="/api/admin/analytics?cleanup=1" class="btn">清理 ${ANALYTICS_RETENTION_DAYS} 天前数据</a>
+				<a href="/api/admin/analytics/export?format=jsonl" class="btn btn-sm">下载全部明细（JSONL）</a>
+				<a href="/api/admin/analytics/export?format=json" class="btn btn-sm">下载全部明细（JSON）</a>
+				<a href="/api/admin/analytics?cleanup=1" class="btn btn-sm">清理 ${ANALYTICS_RETENTION_DAYS} 天前数据</a>
 			</div>
 		</div>
-			<p class="page-intro">这里集中查看页面访问、来源分布、最近事件与 MCP 审计。默认自动保留最近 ${ANALYTICS_RETENTION_DAYS} 天数据，避免日志无限增长。</p>
 		${
 			stats.cleanupNotice
 				? `<div class="alert alert-success">${escapeHtml(stats.cleanupNotice)}</div>`

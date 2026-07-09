@@ -393,8 +393,9 @@ function renderMentionsPage(options: {
 		"提及管理",
 		`
 			<div class="page-header">
-				<div>
-					<h1 style="margin-bottom: 0.35rem;">提及管理</h1>
+				<div class="page-header-copy">
+					<span class="page-kicker">Mentions</span>
+					<h1 style="margin-bottom: 0;">提及管理</h1>
 					<p class="form-help" style="margin: 0;">${escapeHtml(hint)}</p>
 				</div>
 			</div>

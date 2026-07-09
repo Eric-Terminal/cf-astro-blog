@@ -12,10 +12,12 @@ describe("后台界面风格保护", () => {
 
 		assert.match(html, /class="admin-shell"/u);
 		assert.match(html, /class="sidebar-panel"/u);
+		assert.match(html, /class="admin-workspace"/u);
 		assert.doesNotMatch(html, /主页同款视觉/u);
 		assert.match(html, /class="admin-toolbar"/u);
 		assert.match(html, /href="\/api\/admin\/posts" class="active"/u);
 		assert.match(html, /href="\/api\/admin\/mentions"/u);
+		assert.match(html, /sidebar-nav-icon/u);
 		assert.match(html, />提及</u);
 		assert.match(html, /退出登录/u);
 	});
