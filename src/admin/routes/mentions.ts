@@ -27,6 +27,7 @@ const WEBMENTION_STATUS_VALUES = [
 ] as const;
 
 type WebMentionStatus = (typeof WEBMENTION_STATUS_VALUES)[number];
+type WebMentionFilter = "all" | WebMentionStatus;
 
 interface WebMentionRow {
 	id: number;
@@ -48,6 +49,15 @@ function normalizeWebMentionStatus(value: unknown): WebMentionStatus | null {
 	return WEBMENTION_STATUS_VALUES.includes(normalized as WebMentionStatus)
 		? (normalized as WebMentionStatus)
 		: null;
+}
+
+function normalizeWebMentionFilter(value: unknown): WebMentionFilter {
+	const normalized = String(value ?? "").trim();
+	if (normalized === "all" || !normalized) {
+		return "all";
+	}
+
+	return normalizeWebMentionStatus(normalized) ?? "all";
 }
 
 function getStatusLabel(status: string) {
@@ -72,6 +82,18 @@ function getStatusBadgeClass(status: string) {
 		default:
 			return "draft";
 	}
+}
+
+function buildMentionsRedirect(options: {
+	status: string;
+	filter?: WebMentionFilter;
+}) {
+	const params = new URLSearchParams();
+	params.set("status", options.status);
+	if (options.filter && options.filter !== "all") {
+		params.set("filter", options.filter);
+	}
+	return `/api/admin/mentions?${params.toString()}`;
 }
 
 function resolveAlert(
@@ -106,32 +128,126 @@ function formatDateTime(value: string | null | undefined): string {
 	return date.toLocaleString("zh-CN", { hour12: false });
 }
 
-function renderRows(rows: WebMentionRow[], csrfToken: string) {
-	if (rows.length === 0) {
-		return '<p class="form-help">当前没有记录。</p>';
+function renderStatusActionButton(options: {
+	id: number;
+	csrfToken: string;
+	status: WebMentionStatus;
+	label: string;
+	className: string;
+	filter: WebMentionFilter;
+}) {
+	const { id, csrfToken, status, label, className, filter } = options;
+	return `
+		<form method="post" action="/api/admin/mentions/${id}/review">
+			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+			<input type="hidden" name="status" value="${escapeAttribute(status)}" />
+			<input type="hidden" name="filter" value="${escapeAttribute(filter)}" />
+			<button type="submit" class="btn btn-xs ${className}">${escapeHtml(label)}</button>
+		</form>
+	`;
+}
+
+function renderQuickActions(
+	item: WebMentionRow,
+	csrfToken: string,
+	filter: WebMentionFilter,
+) {
+	const status = normalizeWebMentionStatus(item.status) ?? "pending";
+	const buttons: string[] = [];
+
+	if (status !== "approved") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "approved",
+				label: "通过",
+				className: "btn-success-solid",
+				filter,
+			}),
+		);
 	}
 
-	return rows
+	if (status !== "rejected") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "rejected",
+				label: "拒绝",
+				className: "btn-danger",
+				filter,
+			}),
+		);
+	}
+
+	if (status !== "spam") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "spam",
+				label: "垃圾",
+				className: "btn-danger",
+				filter,
+			}),
+		);
+	}
+
+	if (status !== "pending") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "pending",
+				label: "待审",
+				className: "",
+				filter,
+			}),
+		);
+	}
+
+	buttons.push(`
+		<form method="post" action="/api/admin/mentions/${item.id}/delete" data-confirm-message="${escapeAttribute("确认删除这条提及记录吗？")}">
+			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+			<input type="hidden" name="filter" value="${escapeAttribute(filter)}" />
+			<button type="submit" class="btn btn-xs btn-danger">删除</button>
+		</form>
+	`);
+
+	return `<div class="quick-actions">${buttons.join("")}</div>`;
+}
+
+function renderRows(
+	rows: WebMentionRow[],
+	csrfToken: string,
+	filter: WebMentionFilter,
+) {
+	if (rows.length === 0) {
+		return '<p class="empty-state">当前筛选下没有记录。</p>';
+	}
+
+	return `<div class="review-queue">${rows
 		.map(
 			(item) => `
-				<article class="appearance-panel review-card">
-					<div class="review-card-header">
+				<article class="appearance-panel review-card mention-queue-item">
+					<div class="review-card-header" style="margin-bottom: 0.55rem;">
 						<div>
-							<h3 class="review-card-title">${escapeHtml(item.sourceTitle || "未解析标题")}</h3>
-							<p class="form-help review-card-meta">
-								提交时间：${escapeHtml(formatDateTime(item.createdAt))}${item.lastCheckedAt ? ` · 最近校验：${escapeHtml(formatDateTime(item.lastCheckedAt))}` : ""}
+							<h3 class="review-card-title" style="font-size: 1.05rem;">${escapeHtml(item.sourceTitle || "未解析标题")}</h3>
+							<p class="form-help review-card-meta" style="margin-top: 0.2rem;">
+								提交 ${escapeHtml(formatDateTime(item.createdAt))}${item.lastCheckedAt ? ` · 校验 ${escapeHtml(formatDateTime(item.lastCheckedAt))}` : ""}
 							</p>
 						</div>
 						<span class="badge badge-${escapeAttribute(getStatusBadgeClass(item.status))}">${escapeHtml(getStatusLabel(item.status))}</span>
 					</div>
 
-					<div class="review-card-body">
+					<div class="review-card-body" style="margin-bottom: 0;">
 						<div class="review-item">
-							<span class="review-item-label">来源链接</span>
+							<span class="review-item-label">来源</span>
 							<span class="review-item-value"><a href="${escapeAttribute(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.sourceUrl)}</a></span>
 						</div>
 						<div class="review-item">
-							<span class="review-item-label">目标链接</span>
+							<span class="review-item-label">目标</span>
 							<span class="review-item-value"><a href="${escapeAttribute(item.targetUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.targetUrl)}</a></span>
 						</div>
 						${
@@ -145,7 +261,7 @@ function renderRows(rows: WebMentionRow[], csrfToken: string) {
 						${
 							item.sourcePublishedAt
 								? `<div class="review-item">
-							<span class="review-item-label">来源发布时间</span>
+							<span class="review-item-label">来源时间</span>
 							<span class="review-item-value">${escapeHtml(formatDateTime(item.sourcePublishedAt))}</span>
 						</div>`
 								: ""
@@ -158,82 +274,134 @@ function renderRows(rows: WebMentionRow[], csrfToken: string) {
 						</div>`
 								: ""
 						}
-						<div class="review-item">
-							<span class="review-item-label">最后审核</span>
-							<span class="review-item-value">${escapeHtml(formatDateTime(item.reviewedAt))}</span>
-						</div>
 					</div>
 
-					<div class="review-card-actions">
-						<form method="post" action="/api/admin/mentions/${item.id}/review" class="review-review-form">
-							<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-							<div class="appearance-inline-grid">
-								<div class="form-group form-group-tight">
-									<label for="status-${item.id}">审核状态</label>
-									<select id="status-${item.id}" name="status" class="form-select">
-										${WEBMENTION_STATUS_VALUES.map(
-											(value) =>
-												`<option value="${value}" ${item.status === value ? "selected" : ""}>${escapeHtml(getStatusLabel(value))}</option>`,
-										).join("")}
-									</select>
-								</div>
-								<div class="form-group form-group-tight">
-									<label for="reviewNote-${item.id}">审核备注</label>
-									<input id="reviewNote-${item.id}" name="reviewNote" class="form-input" maxlength="320" value="${escapeAttribute(item.reviewNote || "")}" placeholder="可选" />
-								</div>
+					<div class="mention-queue-actions">
+						${renderQuickActions(item, csrfToken, filter)}
+						<details class="friend-queue-edit" style="border-top: 0; margin-left: auto;">
+							<summary style="padding: 0.38rem 0.7rem; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-tertiary);">备注 / 高级</summary>
+							<div class="friend-queue-edit-body" style="margin-top: 0.55rem; border: 1px solid var(--border); border-radius: var(--radius);">
+								<form method="post" action="/api/admin/mentions/${item.id}/review" class="review-review-form">
+									<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+									<input type="hidden" name="filter" value="${escapeAttribute(filter)}" />
+									<div class="appearance-inline-grid">
+										<div class="form-group form-group-tight">
+											<label for="status-${item.id}">审核状态</label>
+											<select id="status-${item.id}" name="status" class="form-select">
+												${WEBMENTION_STATUS_VALUES.map(
+													(value) =>
+														`<option value="${value}" ${item.status === value ? "selected" : ""}>${escapeHtml(getStatusLabel(value))}</option>`,
+												).join("")}
+											</select>
+										</div>
+										<div class="form-group form-group-tight">
+											<label for="reviewNote-${item.id}">审核备注</label>
+											<input id="reviewNote-${item.id}" name="reviewNote" class="form-input" maxlength="320" value="${escapeAttribute(item.reviewNote || "")}" placeholder="可选" />
+										</div>
+									</div>
+									<div class="form-actions" style="margin-top: 0.85rem;">
+										<button type="submit" class="btn btn-primary btn-sm">保存审核</button>
+									</div>
+								</form>
 							</div>
-							<div class="form-actions">
-								<button type="submit" class="btn btn-primary btn-sm">保存审核</button>
-							</div>
-						</form>
-
-						<form method="post" action="/api/admin/mentions/${item.id}/delete" data-confirm-message="${escapeAttribute("确认删除这条提及记录吗？")}" class="review-delete-form">
-							<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-							<button type="submit" class="btn btn-sm btn-danger">删除记录</button>
-						</form>
+						</details>
 					</div>
 				</article>
 			`,
 		)
-		.join("");
+		.join("")}</div>`;
+}
+
+function renderFilterTabs(
+	counts: Record<WebMentionFilter, number>,
+	activeFilter: WebMentionFilter,
+) {
+	const tabs: Array<{ key: WebMentionFilter; label: string }> = [
+		{ key: "all", label: "全部" },
+		{ key: "pending", label: "待审核" },
+		{ key: "approved", label: "已通过" },
+		{ key: "rejected", label: "已拒绝" },
+		{ key: "spam", label: "垃圾" },
+	];
+
+	return `
+		<nav class="filter-tabs" aria-label="提及状态筛选">
+			${tabs
+				.map((tab) => {
+					const href =
+						tab.key === "all"
+							? "/api/admin/mentions"
+							: `/api/admin/mentions?filter=${tab.key}`;
+					const activeClass = activeFilter === tab.key ? " is-active" : "";
+					return `<a href="${href}" class="filter-tab${activeClass}">${escapeHtml(tab.label)}<span class="filter-tab-count">${counts[tab.key]}</span></a>`;
+				})
+				.join("")}
+		</nav>
+	`;
+}
+
+function sortMentionRows(rows: WebMentionRow[]): WebMentionRow[] {
+	const rank = (status: string) => {
+		switch (status) {
+			case "pending":
+				return 0;
+			case "approved":
+				return 1;
+			case "rejected":
+				return 2;
+			default:
+				return 3;
+		}
+	};
+
+	return [...rows].sort((a, b) => {
+		const rankDiff = rank(a.status) - rank(b.status);
+		if (rankDiff !== 0) {
+			return rankDiff;
+		}
+
+		return b.createdAt.localeCompare(a.createdAt);
+	});
 }
 
 function renderMentionsPage(options: {
 	rows: WebMentionRow[];
 	csrfToken: string;
+	filter: WebMentionFilter;
 	alert?: { type: "success" | "error"; message: string };
 }) {
-	const { rows, csrfToken, alert } = options;
-	const pendingRows = rows.filter((item) => item.status === "pending");
-	const approvedRows = rows.filter((item) => item.status === "approved");
-	const rejectedRows = rows.filter((item) => item.status === "rejected");
-	const spamRows = rows.filter((item) => item.status === "spam");
+	const { rows, csrfToken, filter, alert } = options;
+	const counts: Record<WebMentionFilter, number> = {
+		all: rows.length,
+		pending: rows.filter((item) => item.status === "pending").length,
+		approved: rows.filter((item) => item.status === "approved").length,
+		rejected: rows.filter((item) => item.status === "rejected").length,
+		spam: rows.filter((item) => item.status === "spam").length,
+	};
+
+	const filteredRows =
+		filter === "all"
+			? sortMentionRows(rows)
+			: sortMentionRows(rows.filter((item) => item.status === filter));
+
+	const hint =
+		counts.pending > 0 && filter === "all"
+			? "待审核条目已置顶，可直接点「通过 / 拒绝 / 垃圾」。"
+			: "可直接点「通过 / 拒绝 / 垃圾」，无需改下拉再保存。";
 
 	return adminLayout(
 		"提及管理",
 		`
-			<h1>提及管理</h1>
-			<p class="form-help" style="margin-bottom: 1rem;">审核 Webmention 提及，按需通过、拒绝或标记为垃圾。</p>
+			<div class="page-header">
+				<div>
+					<h1 style="margin-bottom: 0.35rem;">提及管理</h1>
+					<p class="form-help" style="margin: 0;">${escapeHtml(hint)}</p>
+				</div>
+			</div>
 			${alert ? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>` : ""}
-
-			<section style="margin-bottom: 1.2rem;">
-				<h2 style="margin-bottom: 0.8rem;">待审核（${pendingRows.length}）</h2>
-				${renderRows(pendingRows, csrfToken)}
-			</section>
-
-			<section style="margin-bottom: 1.2rem;">
-				<h2 style="margin-bottom: 0.8rem;">已通过（${approvedRows.length}）</h2>
-				${renderRows(approvedRows, csrfToken)}
-			</section>
-
-			<section style="margin-bottom: 1.2rem;">
-				<h2 style="margin-bottom: 0.8rem;">已拒绝（${rejectedRows.length}）</h2>
-				${renderRows(rejectedRows, csrfToken)}
-			</section>
-
+			${renderFilterTabs(counts, filter)}
 			<section>
-				<h2 style="margin-bottom: 0.8rem;">垃圾（${spamRows.length}）</h2>
-				${renderRows(spamRows, csrfToken)}
+				${renderRows(filteredRows, csrfToken, filter)}
 			</section>
 		`,
 		{ csrfToken },
@@ -246,6 +414,7 @@ mentionsRoutes.get("/", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const db = getDb(c.env.DB);
 	const status = c.req.query("status") || null;
+	const filter = normalizeWebMentionFilter(c.req.query("filter"));
 
 	const rows = await db
 		.select()
@@ -256,6 +425,7 @@ mentionsRoutes.get("/", async (c) => {
 		renderMentionsPage({
 			rows,
 			csrfToken: session.csrfToken,
+			filter,
 			alert: resolveAlert(status),
 		}),
 	);
@@ -264,18 +434,22 @@ mentionsRoutes.get("/", async (c) => {
 mentionsRoutes.post("/:id/review", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const body = await c.req.parseBody();
+	const filter = normalizeWebMentionFilter(getBodyText(body, "filter"));
+
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.redirect("/api/admin/mentions?status=csrf-failed");
+		return c.redirect(buildMentionsRedirect({ status: "csrf-failed", filter }));
 	}
 
 	const id = parseOptionalPositiveInt(c.req.param("id"));
 	if (!id) {
-		return c.redirect("/api/admin/mentions?status=invalid-id");
+		return c.redirect(buildMentionsRedirect({ status: "invalid-id", filter }));
 	}
 
 	const nextStatus = normalizeWebMentionStatus(getBodyText(body, "status"));
 	if (!nextStatus) {
-		return c.redirect("/api/admin/mentions?status=invalid-status");
+		return c.redirect(
+			buildMentionsRedirect({ status: "invalid-status", filter }),
+		);
 	}
 
 	const reviewNote =
@@ -285,34 +459,48 @@ mentionsRoutes.post("/:id/review", async (c) => {
 	const now = new Date().toISOString();
 	const db = getDb(c.env.DB);
 
+	// 快捷按钮只传 status 时，保留已有备注
+	const [existing] = await db
+		.select({ reviewNote: webMentions.reviewNote })
+		.from(webMentions)
+		.where(eq(webMentions.id, id))
+		.limit(1);
+
+	const hasReviewNoteField = Object.hasOwn(body, "reviewNote");
+	const nextReviewNote = hasReviewNoteField
+		? reviewNote
+		: (existing?.reviewNote ?? null);
+
 	await db
 		.update(webMentions)
 		.set({
 			status: nextStatus,
-			reviewNote,
+			reviewNote: nextReviewNote,
 			reviewedAt: nextStatus === "pending" ? null : now,
 			updatedAt: now,
 		})
 		.where(eq(webMentions.id, id));
 
-	return c.redirect("/api/admin/mentions?status=updated");
+	return c.redirect(buildMentionsRedirect({ status: "updated", filter }));
 });
 
 mentionsRoutes.post("/:id/delete", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const body = await c.req.parseBody();
+	const filter = normalizeWebMentionFilter(getBodyText(body, "filter"));
+
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.redirect("/api/admin/mentions?status=csrf-failed");
+		return c.redirect(buildMentionsRedirect({ status: "csrf-failed", filter }));
 	}
 
 	const id = parseOptionalPositiveInt(c.req.param("id"));
 	if (!id) {
-		return c.redirect("/api/admin/mentions?status=invalid-id");
+		return c.redirect(buildMentionsRedirect({ status: "invalid-id", filter }));
 	}
 
 	const db = getDb(c.env.DB);
 	await db.delete(webMentions).where(eq(webMentions.id, id));
-	return c.redirect("/api/admin/mentions?status=deleted");
+	return c.redirect(buildMentionsRedirect({ status: "deleted", filter }));
 });
 
 export { mentionsRoutes };

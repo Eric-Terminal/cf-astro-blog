@@ -28,6 +28,7 @@ const FRIEND_LINK_STATUS_VALUES = [
 ] as const;
 
 type FriendLinkStatus = (typeof FRIEND_LINK_STATUS_VALUES)[number];
+type FriendLinkFilter = "all" | FriendLinkStatus;
 
 interface FriendLinkRow {
 	id: number;
@@ -72,6 +73,15 @@ function normalizeFriendLinkStatus(value: unknown): FriendLinkStatus | null {
 		: null;
 }
 
+function normalizeFriendLinkFilter(value: unknown): FriendLinkFilter {
+	const normalized = String(value ?? "").trim();
+	if (normalized === "all" || !normalized) {
+		return "all";
+	}
+
+	return normalizeFriendLinkStatus(normalized) ?? "all";
+}
+
 function getFriendStatusLabel(status: string) {
 	switch (normalizeFriendLinkStatus(status)) {
 		case "approved":
@@ -96,12 +106,26 @@ function getFriendBadgeClass(status: string) {
 	}
 }
 
+function buildFriendsRedirect(options: {
+	status: string;
+	filter?: FriendLinkFilter;
+}) {
+	const params = new URLSearchParams();
+	params.set("status", options.status);
+	if (options.filter && options.filter !== "all") {
+		params.set("filter", options.filter);
+	}
+	return `/api/admin/friends?${params.toString()}`;
+}
+
 function resolveAlert(
 	status: string | null,
 ): { type: "success" | "error"; message: string } | undefined {
 	switch (status) {
 		case "updated":
 			return { type: "success", message: "友链信息已更新" };
+		case "status-updated":
+			return { type: "success", message: "审核状态已更新" };
 		case "deleted":
 			return { type: "success", message: "友链记录已删除" };
 		case "created":
@@ -224,68 +248,179 @@ function formatDateTime(value: string | null | undefined): string {
 	return date.toLocaleString("zh-CN", { hour12: false });
 }
 
-function renderFriendRows(rows: FriendLinkRow[], csrfToken: string) {
-	if (rows.length === 0) {
-		return '<p class="form-help">当前没有记录。</p>';
+function getAvatarProxyUrl(avatarUrl: string | null): string | null {
+	if (!avatarUrl) {
+		return null;
 	}
 
-	return rows
-		.map(
-			(item) => `
-			<details class="appearance-panel review-card friend-review-item">
-				<summary class="friend-review-summary">
-					<div class="friend-review-summary-main">
-						<h3 class="review-card-title">${escapeHtml(item.name)}</h3>
-						<p class="form-help review-card-meta">提交时间：${escapeHtml(formatDateTime(item.createdAt))}</p>
+	return `/api/friend-links/avatar?url=${encodeURIComponent(avatarUrl)}`;
+}
+
+function getInitials(name: string): string {
+	const trimmed = name.trim();
+	if (!trimmed) {
+		return "?";
+	}
+
+	return Array.from(trimmed).slice(0, 2).join("");
+}
+
+function renderStatusActionButton(options: {
+	id: number;
+	csrfToken: string;
+	status: FriendLinkStatus;
+	label: string;
+	className: string;
+	filter: FriendLinkFilter;
+}) {
+	const { id, csrfToken, status, label, className, filter } = options;
+	return `
+		<form method="post" action="/api/admin/friends/${id}/status">
+			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+			<input type="hidden" name="status" value="${escapeAttribute(status)}" />
+			<input type="hidden" name="filter" value="${escapeAttribute(filter)}" />
+			<button type="submit" class="btn btn-xs ${className}">${escapeHtml(label)}</button>
+		</form>
+	`;
+}
+
+function renderQuickActions(
+	item: FriendLinkRow,
+	csrfToken: string,
+	filter: FriendLinkFilter,
+) {
+	const status = normalizeFriendLinkStatus(item.status) ?? "pending";
+	const buttons: string[] = [];
+
+	if (status !== "approved") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "approved",
+				label: "通过",
+				className: "btn-success-solid",
+				filter,
+			}),
+		);
+	}
+
+	if (status !== "rejected") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "rejected",
+				label: "拒绝",
+				className: "btn-danger",
+				filter,
+			}),
+		);
+	}
+
+	if (status !== "offline") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "offline",
+				label: "下架",
+				className: "",
+				filter,
+			}),
+		);
+	}
+
+	if (status !== "pending") {
+		buttons.push(
+			renderStatusActionButton({
+				id: item.id,
+				csrfToken,
+				status: "pending",
+				label: "待审",
+				className: "",
+				filter,
+			}),
+		);
+	}
+
+	buttons.push(`
+		<form method="post" action="/api/admin/friends/${item.id}/delete" data-confirm-message="${escapeAttribute("确认删除这条友链记录吗？")}">
+			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+			<input type="hidden" name="filter" value="${escapeAttribute(filter)}" />
+			<button type="submit" class="btn btn-xs btn-danger">删除</button>
+		</form>
+	`);
+
+	return `<div class="quick-actions">${buttons.join("")}</div>`;
+}
+
+function renderFriendRows(
+	rows: FriendLinkRow[],
+	csrfToken: string,
+	filter: FriendLinkFilter,
+) {
+	if (rows.length === 0) {
+		return '<p class="empty-state">当前筛选下没有记录。</p>';
+	}
+
+	return `<div class="review-queue">${rows
+		.map((item) => {
+			const avatarProxy = getAvatarProxyUrl(item.avatarUrl);
+
+			return `
+			<article class="appearance-panel review-card friend-queue-item">
+				<div class="friend-queue-head">
+					<div class="friend-queue-avatar" aria-hidden="true">
+						${
+							avatarProxy
+								? `<img src="${escapeAttribute(avatarProxy)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`
+								: escapeHtml(getInitials(item.name))
+						}
 					</div>
-					<div class="friend-review-summary-extra">
-						<p class="friend-review-summary-site">${escapeHtml(item.siteUrl)}</p>
-						<div class="friend-review-summary-state">
+					<div class="friend-queue-main">
+						<div class="friend-queue-title-row">
+							<h3 class="friend-queue-name">${escapeHtml(item.name)}</h3>
 							<span class="badge badge-${escapeAttribute(getFriendBadgeClass(item.status))}">${escapeHtml(getFriendStatusLabel(item.status))}</span>
-							<span class="friend-review-summary-caret" aria-hidden="true"></span>
 						</div>
+						<p class="friend-queue-url"><a href="${escapeAttribute(item.siteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.siteUrl)}</a></p>
+						${item.description ? `<p class="friend-queue-desc">${escapeHtml(item.description)}</p>` : ""}
+						<p class="friend-queue-meta">联系：${escapeHtml(item.contact)} · 提交 ${escapeHtml(formatDateTime(item.createdAt))}${item.note ? ` · 备注 ${escapeHtml(item.note)}` : ""}</p>
 					</div>
-				</summary>
-
-				<div class="friend-review-content">
-					<div class="review-card-body">
-						<div class="review-item">
-							<span class="review-item-label">站点</span>
-							<span class="review-item-value"><a href="${escapeAttribute(item.siteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.siteUrl)}</a></span>
-						</div>
-						${
-							item.avatarUrl
-								? `<div class="review-item">
-							<span class="review-item-label">头像</span>
-							<span class="review-item-value"><a href="${escapeAttribute(item.avatarUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.avatarUrl)}</a></span>
-						</div>`
-								: ""
-						}
-						<div class="review-item review-item-span-2">
-							<span class="review-item-label">简介</span>
-							<span class="review-item-value">${item.description ? escapeHtml(item.description) : "（未填写）"}</span>
-						</div>
-						<div class="review-item">
-							<span class="review-item-label">联系方式</span>
-							<span class="review-item-value">${escapeHtml(item.contact)}</span>
-						</div>
-						<div class="review-item">
-							<span class="review-item-label">最后审核</span>
-							<span class="review-item-value">${escapeHtml(formatDateTime(item.reviewedAt))}</span>
-						</div>
-						${
-							item.note
-								? `<div class="review-item review-item-span-2">
-							<span class="review-item-label">站长备注</span>
-							<span class="review-item-value">${escapeHtml(item.note)}</span>
-						</div>`
-								: ""
-						}
+					<div class="friend-queue-side">
+						${renderQuickActions(item, csrfToken, filter)}
 					</div>
+				</div>
 
-					<div class="review-card-actions">
+				<details class="friend-queue-edit">
+					<summary>展开编辑详情</summary>
+					<div class="friend-queue-edit-body">
+						<div class="review-card-body" style="margin-bottom: 0.85rem;">
+							${
+								item.avatarUrl
+									? `<div class="review-item">
+								<span class="review-item-label">头像原址</span>
+								<span class="review-item-value"><a href="${escapeAttribute(item.avatarUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.avatarUrl)}</a></span>
+							</div>`
+									: ""
+							}
+							<div class="review-item">
+								<span class="review-item-label">最后审核</span>
+								<span class="review-item-value">${escapeHtml(formatDateTime(item.reviewedAt))}</span>
+							</div>
+							${
+								item.reviewNote
+									? `<div class="review-item">
+								<span class="review-item-label">审核备注</span>
+								<span class="review-item-value">${escapeHtml(item.reviewNote)}</span>
+							</div>`
+									: ""
+							}
+						</div>
+
 						<form method="post" action="/api/admin/friends/${item.id}/review" class="review-review-form">
 							<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+							<input type="hidden" name="filter" value="${escapeAttribute(filter)}" />
 							<div class="appearance-inline-grid">
 								<div class="form-group form-group-tight">
 									<label for="name-${item.id}">站点名称</label>
@@ -318,27 +453,23 @@ function renderFriendRows(rows: FriendLinkRow[], csrfToken: string) {
 								</div>
 								<div class="form-group" style="grid-column: 1 / -1;">
 									<label for="description-${item.id}">站点简介（可选）</label>
-									<textarea id="description-${item.id}" name="description" class="form-textarea" maxlength="320" rows="3">${escapeHtml(item.description)}</textarea>
+									<textarea id="description-${item.id}" name="description" class="form-textarea form-textarea-sm" maxlength="320" rows="3">${escapeHtml(item.description)}</textarea>
 								</div>
 								<div class="form-group" style="grid-column: 1 / -1;">
 									<label for="note-${item.id}">站长备注（可选）</label>
-									<textarea id="note-${item.id}" name="note" class="form-textarea" maxlength="320" rows="3">${escapeHtml(item.note || "")}</textarea>
+									<textarea id="note-${item.id}" name="note" class="form-textarea form-textarea-sm" maxlength="320" rows="3">${escapeHtml(item.note || "")}</textarea>
 								</div>
 							</div>
 							<div class="form-actions">
 								<button type="submit" class="btn btn-primary btn-sm">保存更改</button>
 							</div>
 						</form>
-						<form method="post" action="/api/admin/friends/${item.id}/delete" data-confirm-message="${escapeAttribute("确认删除这条友链记录吗？")}" class="review-delete-form">
-							<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-							<button type="submit" class="btn btn-sm btn-danger">删除记录</button>
-						</form>
 					</div>
-				</div>
-			</details>
-		`,
-		)
-		.join("");
+				</details>
+			</article>
+		`;
+		})
+		.join("")}</div>`;
 }
 
 function renderCreateForm(csrfToken: string): string {
@@ -350,57 +481,59 @@ function renderCreateForm(csrfToken: string): string {
 	];
 
 	return `
-		<section id="friend-create-form" class="appearance-panel review-card">
-			<h2 style="margin-bottom: 0.35rem;">新增友链</h2>
-			<p class="form-help" style="margin-bottom: 0.9rem;">直接在后台录入并设置状态，不需要前台申请。</p>
-			<form method="post" action="/api/admin/friends/create">
-				<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-				<div class="appearance-inline-grid">
-					<div class="form-group">
-						<label for="createName">站点名称</label>
-						<input id="createName" name="createName" class="form-input" maxlength="80" required />
+		<details class="appearance-panel admin-secondary-panel" id="friend-create-form">
+			<summary>新增友链</summary>
+			<div class="admin-secondary-panel-body">
+				<p class="form-help" style="margin: 0.75rem 0 0.9rem;">直接在后台录入并设置状态，不需要前台申请。</p>
+				<form method="post" action="/api/admin/friends/create">
+					<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+					<div class="appearance-inline-grid">
+						<div class="form-group">
+							<label for="createName">站点名称</label>
+							<input id="createName" name="createName" class="form-input" maxlength="80" required />
+						</div>
+						<div class="form-group">
+							<label for="createSiteUrl">站点地址</label>
+							<input id="createSiteUrl" name="createSiteUrl" class="form-input" type="url" maxlength="320" placeholder="https://example.com" required />
+						</div>
+						<div class="form-group">
+							<label for="createAvatarUrl">头像地址（可选）</label>
+							<input id="createAvatarUrl" name="createAvatarUrl" class="form-input" type="url" maxlength="320" placeholder="https://example.com/avatar.png" />
+						</div>
+						<div class="form-group">
+							<label for="createContact">联系方式</label>
+							<input id="createContact" name="createContact" class="form-input" maxlength="120" placeholder="邮箱 / X / Telegram" required />
+						</div>
+						<div class="form-group">
+							<label for="createStatus">初始状态</label>
+							<select id="createStatus" name="createStatus" class="form-select">
+								${createStatusOptions
+									.map(
+										(value) =>
+											`<option value="${value}" ${value === "approved" ? "selected" : ""}>${escapeHtml(getFriendStatusLabel(value))}</option>`,
+									)
+									.join("")}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="createReviewNote">审核备注（可选）</label>
+							<input id="createReviewNote" name="createReviewNote" class="form-input" maxlength="320" placeholder="例如：后台手动添加" />
+						</div>
+						<div class="form-group" style="grid-column: 1 / -1;">
+							<label for="createDescription">站点简介（可选）</label>
+							<textarea id="createDescription" name="createDescription" class="form-textarea form-textarea-sm" maxlength="320" rows="3"></textarea>
+						</div>
+						<div class="form-group" style="grid-column: 1 / -1;">
+							<label for="createNote">站长备注（可选）</label>
+							<textarea id="createNote" name="createNote" class="form-textarea form-textarea-sm" maxlength="320" rows="3"></textarea>
+						</div>
 					</div>
-					<div class="form-group">
-						<label for="createSiteUrl">站点地址</label>
-						<input id="createSiteUrl" name="createSiteUrl" class="form-input" type="url" maxlength="320" placeholder="https://example.com" required />
+					<div class="form-actions">
+						<button type="submit" class="btn btn-primary">添加友链</button>
 					</div>
-					<div class="form-group">
-						<label for="createAvatarUrl">头像地址（可选）</label>
-						<input id="createAvatarUrl" name="createAvatarUrl" class="form-input" type="url" maxlength="320" placeholder="https://example.com/avatar.png" />
-					</div>
-					<div class="form-group">
-						<label for="createContact">联系方式</label>
-						<input id="createContact" name="createContact" class="form-input" maxlength="120" placeholder="邮箱 / X / Telegram" required />
-					</div>
-					<div class="form-group">
-						<label for="createStatus">初始状态</label>
-						<select id="createStatus" name="createStatus" class="form-select">
-							${createStatusOptions
-								.map(
-									(value) =>
-										`<option value="${value}" ${value === "approved" ? "selected" : ""}>${escapeHtml(getFriendStatusLabel(value))}</option>`,
-								)
-								.join("")}
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="createReviewNote">审核备注（可选）</label>
-						<input id="createReviewNote" name="createReviewNote" class="form-input" maxlength="320" placeholder="例如：后台手动添加" />
-					</div>
-					<div class="form-group" style="grid-column: 1 / -1;">
-						<label for="createDescription">站点简介（可选）</label>
-						<textarea id="createDescription" name="createDescription" class="form-textarea" maxlength="320" rows="3"></textarea>
-					</div>
-					<div class="form-group" style="grid-column: 1 / -1;">
-						<label for="createNote">站长备注（可选）</label>
-						<textarea id="createNote" name="createNote" class="form-textarea" maxlength="320" rows="3"></textarea>
-					</div>
-				</div>
-				<div class="form-actions">
-					<button type="submit" class="btn btn-primary">添加友链</button>
-				</div>
-			</form>
-		</section>
+				</form>
+			</div>
+		</details>
 	`;
 }
 
@@ -409,49 +542,122 @@ function renderFriendApplyNoticeForm(
 	friendApplyNotice: string,
 ): string {
 	return `
-		<section class="appearance-panel review-card">
-			<h2 style="margin-bottom: 0.35rem;">申请页公示</h2>
-			<p class="form-help" style="margin-bottom: 0.9rem;">仅在「/friends/apply」申请页面展示，不会出现在友链列表页。</p>
-			<form method="post" action="/api/admin/friends/settings">
-				<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-				<div class="form-group" style="margin-bottom: 0.85rem;">
-					<label for="friendApplyNotice">申请须知（可选）</label>
-					<textarea id="friendApplyNotice" name="friendApplyNotice" class="form-textarea" maxlength="1200" rows="6" placeholder="例如：\n1. 请先在你的网站添加本站友链。\n2. 申请时请附上可联系到你的方式。">${escapeHtml(friendApplyNotice)}</textarea>
-				</div>
-				<div class="form-actions">
-					<button type="submit" class="btn btn-primary">保存公示</button>
-				</div>
-			</form>
-		</section>
+		<details class="appearance-panel admin-secondary-panel">
+			<summary>申请页公示</summary>
+			<div class="admin-secondary-panel-body">
+				<p class="form-help" style="margin: 0.75rem 0 0.9rem;">仅在「/friends/apply」申请页面展示，不会出现在友链列表页。</p>
+				<form method="post" action="/api/admin/friends/settings">
+					<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
+					<div class="form-group" style="margin-bottom: 0.85rem;">
+						<label for="friendApplyNotice">申请须知（可选）</label>
+						<textarea id="friendApplyNotice" name="friendApplyNotice" class="form-textarea form-textarea-md" maxlength="1200" rows="5" placeholder="例如：&#10;1. 请先在你的网站添加本站友链。&#10;2. 申请时请附上可联系到你的方式。">${escapeHtml(friendApplyNotice)}</textarea>
+					</div>
+					<div class="form-actions">
+						<button type="submit" class="btn btn-primary">保存公示</button>
+					</div>
+				</form>
+			</div>
+		</details>
 	`;
+}
+
+function renderFilterTabs(
+	counts: Record<FriendLinkFilter, number>,
+	activeFilter: FriendLinkFilter,
+) {
+	const tabs: Array<{ key: FriendLinkFilter; label: string }> = [
+		{ key: "all", label: "全部" },
+		{ key: "pending", label: "待审核" },
+		{ key: "approved", label: "已通过" },
+		{ key: "rejected", label: "已拒绝" },
+		{ key: "offline", label: "已下架" },
+	];
+
+	return `
+		<nav class="filter-tabs" aria-label="友链状态筛选">
+			${tabs
+				.map((tab) => {
+					const href =
+						tab.key === "all"
+							? "/api/admin/friends"
+							: `/api/admin/friends?filter=${tab.key}`;
+					const activeClass = activeFilter === tab.key ? " is-active" : "";
+					return `<a href="${href}" class="filter-tab${activeClass}">${escapeHtml(tab.label)}<span class="filter-tab-count">${counts[tab.key]}</span></a>`;
+				})
+				.join("")}
+		</nav>
+	`;
+}
+
+function sortFriendRows(rows: FriendLinkRow[]): FriendLinkRow[] {
+	const rank = (status: string) => {
+		switch (status) {
+			case "pending":
+				return 0;
+			case "approved":
+				return 1;
+			case "offline":
+				return 2;
+			default:
+				return 3;
+		}
+	};
+
+	return [...rows].sort((a, b) => {
+		const rankDiff = rank(a.status) - rank(b.status);
+		if (rankDiff !== 0) {
+			return rankDiff;
+		}
+
+		return b.createdAt.localeCompare(a.createdAt);
+	});
 }
 
 function renderFriendsPage(options: {
 	rows: FriendLinkRow[];
 	csrfToken: string;
 	friendApplyNotice: string;
+	filter: FriendLinkFilter;
 	alert?: { type: "success" | "error"; message: string };
 }) {
-	const { rows, csrfToken, friendApplyNotice, alert } = options;
-	const pendingCount = rows.filter((item) => item.status === "pending").length;
+	const { rows, csrfToken, friendApplyNotice, filter, alert } = options;
+	const counts: Record<FriendLinkFilter, number> = {
+		all: rows.length,
+		pending: rows.filter((item) => item.status === "pending").length,
+		approved: rows.filter((item) => item.status === "approved").length,
+		rejected: rows.filter((item) => item.status === "rejected").length,
+		offline: rows.filter((item) => item.status === "offline").length,
+	};
+
+	const filteredRows =
+		filter === "all"
+			? sortFriendRows(rows)
+			: sortFriendRows(rows.filter((item) => item.status === filter));
+
+	const defaultFilterHint =
+		counts.pending > 0 && filter === "all"
+			? "待审核条目已置顶，可直接点「通过 / 拒绝」。"
+			: "可直接点「通过 / 拒绝」，展开后可改字段。";
 
 	return adminLayout(
 		"友链管理",
 		`
-			<h1>友链管理</h1>
-			<p class="form-help" style="margin-bottom: 1rem;">支持后台直接新增友链，也支持审核前台申请并管理状态。</p>
-			${alert ? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>` : ""}
-			<div class="page-actions">
-				<a href="#friend-create-form" class="btn btn-primary">添加友链</a>
+			<div class="page-header">
+				<div>
+					<h1 style="margin-bottom: 0.35rem;">友链管理</h1>
+					<p class="form-help" style="margin: 0;">${escapeHtml(defaultFilterHint)}</p>
+				</div>
+				<div class="page-actions">
+					<a href="#friend-create-form" class="btn btn-primary btn-sm">添加友链</a>
+				</div>
 			</div>
-			${renderFriendApplyNoticeForm(csrfToken, friendApplyNotice)}
-			${renderCreateForm(csrfToken)}
-
-			<section>
-				<h2 style="margin-bottom: 0.2rem;">申请列表</h2>
-				<p class="form-help" style="margin: 0 0 0.8rem;">共 ${rows.length} 条记录，待审核 ${pendingCount} 条。点击单条记录可展开审核详情。</p>
-				${renderFriendRows(rows, csrfToken)}
+			${alert ? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>` : ""}
+			${renderFilterTabs(counts, filter)}
+			<section style="margin-bottom: 1.25rem;">
+				${renderFriendRows(filteredRows, csrfToken, filter)}
 			</section>
+			${renderCreateForm(csrfToken)}
+			${renderFriendApplyNoticeForm(csrfToken, friendApplyNotice)}
 		`,
 		{ csrfToken },
 	);
@@ -463,6 +669,7 @@ friendsRoutes.get("/", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const db = getDb(c.env.DB);
 	const status = c.req.query("status") || null;
+	const filter = normalizeFriendLinkFilter(c.req.query("filter"));
 
 	const [rows, settingsRow] = await Promise.all([
 		db.select().from(friendLinks).orderBy(desc(friendLinks.createdAt)),
@@ -481,6 +688,7 @@ friendsRoutes.get("/", async (c) => {
 			rows,
 			csrfToken: session.csrfToken,
 			friendApplyNotice: settingsRow?.friendApplyNotice ?? "",
+			filter,
 			alert: resolveAlert(status),
 		}),
 	);
@@ -559,26 +767,68 @@ friendsRoutes.post("/create", async (c) => {
 	return c.redirect("/api/admin/friends?status=created");
 });
 
-friendsRoutes.post("/:id/review", async (c) => {
+friendsRoutes.post("/:id/status", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const body = await c.req.parseBody();
+	const filter = normalizeFriendLinkFilter(getBodyText(body, "filter"));
+
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.redirect("/api/admin/friends?status=csrf-failed");
+		return c.redirect(buildFriendsRedirect({ status: "csrf-failed", filter }));
 	}
 
 	const id = parseOptionalPositiveInt(c.req.param("id"));
 	if (!id) {
-		return c.redirect("/api/admin/friends?status=invalid-id");
+		return c.redirect(buildFriendsRedirect({ status: "invalid-id", filter }));
 	}
 
 	const nextStatus = normalizeFriendLinkStatus(getBodyText(body, "status"));
 	if (!nextStatus) {
-		return c.redirect("/api/admin/friends?status=invalid-status");
+		return c.redirect(
+			buildFriendsRedirect({ status: "invalid-status", filter }),
+		);
+	}
+
+	const now = new Date().toISOString();
+	const db = getDb(c.env.DB);
+
+	await db
+		.update(friendLinks)
+		.set({
+			status: nextStatus,
+			reviewedAt: nextStatus === "pending" ? null : now,
+			updatedAt: now,
+		})
+		.where(eq(friendLinks.id, id));
+
+	return c.redirect(buildFriendsRedirect({ status: "status-updated", filter }));
+});
+
+friendsRoutes.post("/:id/review", async (c) => {
+	const session = getAuthenticatedSession(c);
+	const body = await c.req.parseBody();
+	const filter = normalizeFriendLinkFilter(getBodyText(body, "filter"));
+
+	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
+		return c.redirect(buildFriendsRedirect({ status: "csrf-failed", filter }));
+	}
+
+	const id = parseOptionalPositiveInt(c.req.param("id"));
+	if (!id) {
+		return c.redirect(buildFriendsRedirect({ status: "invalid-id", filter }));
+	}
+
+	const nextStatus = normalizeFriendLinkStatus(getBodyText(body, "status"));
+	if (!nextStatus) {
+		return c.redirect(
+			buildFriendsRedirect({ status: "invalid-status", filter }),
+		);
 	}
 
 	const parsed = parseFriendReviewInput(body);
 	if ("error" in parsed) {
-		return c.redirect("/api/admin/friends?status=update-invalid");
+		return c.redirect(
+			buildFriendsRedirect({ status: "update-invalid", filter }),
+		);
 	}
 
 	const now = new Date().toISOString();
@@ -591,7 +841,9 @@ friendsRoutes.post("/:id/review", async (c) => {
 		)
 		.limit(1);
 	if (existing) {
-		return c.redirect("/api/admin/friends?status=update-duplicate");
+		return c.redirect(
+			buildFriendsRedirect({ status: "update-duplicate", filter }),
+		);
 	}
 
 	await db
@@ -610,24 +862,26 @@ friendsRoutes.post("/:id/review", async (c) => {
 		})
 		.where(eq(friendLinks.id, id));
 
-	return c.redirect("/api/admin/friends?status=updated");
+	return c.redirect(buildFriendsRedirect({ status: "updated", filter }));
 });
 
 friendsRoutes.post("/:id/delete", async (c) => {
 	const session = getAuthenticatedSession(c);
 	const body = await c.req.parseBody();
+	const filter = normalizeFriendLinkFilter(getBodyText(body, "filter"));
+
 	if (!assertCsrfToken(getBodyText(body, "_csrf"), session)) {
-		return c.redirect("/api/admin/friends?status=csrf-failed");
+		return c.redirect(buildFriendsRedirect({ status: "csrf-failed", filter }));
 	}
 
 	const id = parseOptionalPositiveInt(c.req.param("id"));
 	if (!id) {
-		return c.redirect("/api/admin/friends?status=invalid-id");
+		return c.redirect(buildFriendsRedirect({ status: "invalid-id", filter }));
 	}
 
 	const db = getDb(c.env.DB);
 	await db.delete(friendLinks).where(eq(friendLinks.id, id));
-	return c.redirect("/api/admin/friends?status=deleted");
+	return c.redirect(buildFriendsRedirect({ status: "deleted", filter }));
 });
 
 export { friendsRoutes };

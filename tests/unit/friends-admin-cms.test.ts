@@ -6,10 +6,8 @@ describe("后台友链直录能力", () => {
 	test("友链管理页提供后台直接新增按钮和完整配置项", async () => {
 		const source = await readFile("src/admin/routes/friends.ts", "utf8");
 
-		assert.match(
-			source,
-			/href="#friend-create-form" class="btn btn-primary">添加友链/u,
-		);
+		assert.match(source, /href="#friend-create-form"/u);
+		assert.match(source, /添加友链/u);
 		assert.match(source, /action="\/api\/admin\/friends\/settings"/u);
 		assert.match(source, /name="friendApplyNotice"/u);
 		assert.match(source, /仅在「\/friends\/apply」申请页面展示/u);
@@ -29,6 +27,7 @@ describe("后台友链直录能力", () => {
 		assert.match(source, /name="createReviewNote"/u);
 		assert.match(source, /name="createNote"/u);
 		assert.match(source, /不需要前台申请/u);
+		assert.match(source, /admin-secondary-panel/u);
 	});
 
 	test("友链管理路由支持创建友链并处理非法参数与重复站点", async () => {
@@ -60,11 +59,24 @@ describe("后台友链直录能力", () => {
 		assert.match(source, /name="contact"/u);
 		assert.match(source, /name="note"/u);
 		assert.match(source, /parseFriendReviewInput/u);
-		assert.match(source, /status=update-invalid/u);
-		assert.match(source, /status=update-duplicate/u);
+		assert.match(source, /status: "update-invalid"/u);
+		assert.match(source, /status: "update-duplicate"/u);
 		assert.match(source, /and\(eq\(friendLinks\.siteUrl/u);
 		assert.match(source, /ne\(friendLinks\.id, id\)/u);
 		assert.match(source, /siteUrl: parsed\.data\.siteUrl/u);
 		assert.match(source, /status: nextStatus/u);
+	});
+
+	test("友链支持一键改状态并保留筛选上下文", async () => {
+		const source = await readFile("src/admin/routes/friends.ts", "utf8");
+
+		assert.match(source, /friendsRoutes\.post\("\/:id\/status"/u);
+		assert.match(source, /status-updated/u);
+		assert.match(source, /buildFriendsRedirect/u);
+		assert.match(source, /normalizeFriendLinkFilter/u);
+		assert.match(source, /btn-success-solid/u);
+		assert.match(source, /label: "通过"/u);
+		assert.match(source, /label: "拒绝"/u);
+		assert.match(source, /action="\/api\/admin\/friends\/\$\{id\}\/status"/u);
 	});
 });

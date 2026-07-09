@@ -26,7 +26,10 @@ describe("Webmention 接入保护", () => {
 		const source = await readFile("src/admin/routes/mentions.ts", "utf8");
 
 		assert.ok(source.includes('mentionsRoutes.use("*", requireAuth)'));
-		assert.ok(source.includes('"/api/admin/mentions?status=updated"'));
-		assert.ok(source.includes('"/api/admin/mentions?status=deleted"'));
+		assert.ok(source.includes("buildMentionsRedirect"));
+		assert.ok(source.includes('status: "updated"'));
+		assert.ok(source.includes('status: "deleted"'));
+		assert.ok(source.includes("quick-actions"));
+		assert.ok(source.includes("filter-tabs"));
 	});
 });

@@ -2540,3 +2540,22 @@ if (appearanceBackgroundKeyInput instanceof HTMLInputElement) {
 }
 
 updateAppearancePreview();
+
+// 锚点定位时自动展开对应 <details>（例如「添加友链」）
+function openDetailsFromHash() {
+	const hash = window.location.hash.replace(/^#/u, "");
+	if (!hash) {
+		return;
+	}
+
+	const target = document.getElementById(hash);
+	if (!(target instanceof HTMLDetailsElement)) {
+		return;
+	}
+
+	target.open = true;
+	target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+openDetailsFromHash();
+window.addEventListener("hashchange", openDetailsFromHash);

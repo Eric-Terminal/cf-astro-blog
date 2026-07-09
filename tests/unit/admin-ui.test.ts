@@ -376,30 +376,30 @@ describe("后台界面风格保护", () => {
 		);
 	});
 
-	test("友链与提及审核页使用结构化卡片布局，避免信息遮挡", async () => {
+	test("友链与提及审核页支持一键操作与紧凑队列布局", async () => {
 		const [friendsSource, mentionsSource, layoutSource] = await Promise.all([
 			readFile("src/admin/routes/friends.ts", "utf8"),
 			readFile("src/admin/routes/mentions.ts", "utf8"),
 			readFile("src/admin/views/layout.ts", "utf8"),
 		]);
 
-		assert.match(
-			friendsSource,
-			/<details class="appearance-panel review-card friend-review-item">/u,
-		);
-		assert.match(mentionsSource, /class="appearance-panel review-card"/u);
-		assert.match(friendsSource, /friend-review-summary/u);
-		assert.match(friendsSource, /friend-review-content/u);
+		assert.match(friendsSource, /friend-queue-item/u);
+		assert.match(friendsSource, /friendsRoutes\.post\("\/:id\/status"/u);
+		assert.match(friendsSource, /renderQuickActions/u);
+		assert.match(friendsSource, /filter-tabs/u);
+		assert.match(friendsSource, /form-textarea-sm/u);
 		assert.match(friendsSource, /review-card-body/u);
+		assert.match(mentionsSource, /mention-queue-item/u);
+		assert.match(mentionsSource, /quick-actions/u);
+		assert.match(mentionsSource, /filter-tabs/u);
 		assert.match(mentionsSource, /review-card-body/u);
 		assert.match(friendsSource, /toLocaleString\("zh-CN"/u);
 		assert.match(mentionsSource, /toLocaleString\("zh-CN"/u);
-		assert.doesNotMatch(friendsSource, /待审核（/u);
-		assert.doesNotMatch(friendsSource, /已通过（/u);
-		assert.doesNotMatch(friendsSource, /已拒绝（/u);
-		assert.doesNotMatch(friendsSource, /已下架（/u);
 		assert.match(layoutSource, /\.review-card/u);
-		assert.match(layoutSource, /\.friend-review-summary/u);
+		assert.match(layoutSource, /\.friend-queue-head/u);
+		assert.match(layoutSource, /\.form-textarea-sm/u);
+		assert.match(layoutSource, /\.btn-success-solid/u);
+		assert.match(layoutSource, /\.filter-tabs/u);
 		assert.match(layoutSource, /\.review-item-value/u);
 		assert.match(layoutSource, /\.appearance-inline-grid/u);
 	});
