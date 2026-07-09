@@ -68,18 +68,20 @@ export const adminSharedStyles = `
 
 		:root {
 			color-scheme: light;
-			--bg: #e8eef6;
-			--bg-secondary: rgba(255, 255, 255, 0.72);
-			--bg-tertiary: rgba(255, 255, 255, 0.48);
-			--surface-elevated: rgba(255, 255, 255, 0.86);
+			/* 与前台统一的 indigo-slate 色板 */
+			--bg: #eef1f6;
+			--bg-secondary: rgba(255, 255, 255, 0.74);
+			--bg-tertiary: rgba(255, 255, 255, 0.5);
+			--surface-elevated: rgba(255, 255, 255, 0.88);
 			--text: #0f172a;
 			--text-secondary: #334155;
 			--text-muted: #64748b;
 			--border: rgba(15, 23, 42, 0.08);
 			--border-strong: rgba(15, 23, 42, 0.12);
-			--accent: #2563eb;
-			--accent-hover: #1d4ed8;
-			--accent-soft: rgba(37, 99, 235, 0.12);
+			--accent: #4f46e5;
+			--accent-hover: #4338ca;
+			--accent-soft: rgba(79, 70, 229, 0.12);
+			--accent-rgb: 79, 70, 229;
 			--success: #16a34a;
 			--warning: #d97706;
 			--danger: #dc2626;
@@ -110,18 +112,19 @@ export const adminSharedStyles = `
 		@media (prefers-color-scheme: dark) {
 			:root:not([data-theme="light"]) {
 				color-scheme: dark;
-				--bg: #0a101a;
-				--bg-secondary: rgba(18, 28, 44, 0.82);
-				--bg-tertiary: rgba(22, 34, 52, 0.68);
-				--surface-elevated: rgba(24, 36, 54, 0.94);
-				--text: #eef4ff;
-				--text-secondary: #c5d0e4;
-				--text-muted: #8b9bb5;
-				--border: rgba(148, 163, 184, 0.12);
-				--border-strong: rgba(148, 163, 184, 0.2);
-				--accent: #60a5fa;
-				--accent-hover: #93c5fd;
-				--accent-soft: rgba(96, 165, 250, 0.14);
+				--bg: #090b12;
+				--bg-secondary: rgba(18, 22, 36, 0.84);
+				--bg-tertiary: rgba(24, 28, 44, 0.7);
+				--surface-elevated: rgba(26, 30, 48, 0.94);
+				--text: #eef0ff;
+				--text-secondary: #c4c9e0;
+				--text-muted: #9399b5;
+				--border: rgba(160, 170, 210, 0.12);
+				--border-strong: rgba(160, 170, 210, 0.2);
+				--accent: #818cf8;
+				--accent-hover: #a5b4fc;
+				--accent-soft: rgba(129, 140, 248, 0.16);
+				--accent-rgb: 129, 140, 248;
 				--success: #4ade80;
 				--warning: #fbbf24;
 				--danger: #f87171;
@@ -131,35 +134,36 @@ export const adminSharedStyles = `
 				--shadow-strong:
 					0 2px 6px rgba(0, 0, 0, 0.32),
 					0 22px 48px -22px rgba(0, 0, 0, 0.55);
-				--card-surface-rgb: 18, 28, 44;
-				--card-sheen-rgb: 120, 160, 220;
+				--card-surface-rgb: 20, 24, 40;
+				--card-sheen-rgb: 160, 170, 255;
 			}
 			:root:not([data-theme="light"]) body {
 				background:
-					radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.18), transparent 32%),
-					radial-gradient(circle at 92% 8%, rgba(14, 165, 233, 0.1), transparent 26%),
-					radial-gradient(circle at 50% 100%, rgba(30, 64, 175, 0.12), transparent 34%),
+					radial-gradient(circle at 8% 0%, rgba(var(--accent-rgb), 0.18), transparent 32%),
+					radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.1), transparent 26%),
+					radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.12), transparent 34%),
 					var(--bg);
 			}
 			:root:not([data-theme="light"]) body::after {
-				background: rgba(37, 99, 235, 0.16);
+				background: rgba(var(--accent-rgb), 0.14);
 			}
 		}
 
 		[data-theme="dark"] {
 			color-scheme: dark;
-			--bg: #0a101a;
-			--bg-secondary: rgba(18, 28, 44, 0.82);
-			--bg-tertiary: rgba(22, 34, 52, 0.68);
-			--surface-elevated: rgba(24, 36, 54, 0.94);
-			--text: #eef4ff;
-			--text-secondary: #c5d0e4;
-			--text-muted: #8b9bb5;
-			--border: rgba(148, 163, 184, 0.12);
-			--border-strong: rgba(148, 163, 184, 0.2);
-			--accent: #60a5fa;
-			--accent-hover: #93c5fd;
-			--accent-soft: rgba(96, 165, 250, 0.14);
+			--bg: #090b12;
+			--bg-secondary: rgba(18, 22, 36, 0.84);
+			--bg-tertiary: rgba(24, 28, 44, 0.7);
+			--surface-elevated: rgba(26, 30, 48, 0.94);
+			--text: #eef0ff;
+			--text-secondary: #c4c9e0;
+			--text-muted: #9399b5;
+			--border: rgba(160, 170, 210, 0.12);
+			--border-strong: rgba(160, 170, 210, 0.2);
+			--accent: #818cf8;
+			--accent-hover: #a5b4fc;
+			--accent-soft: rgba(129, 140, 248, 0.16);
+			--accent-rgb: 129, 140, 248;
 			--success: #4ade80;
 			--warning: #fbbf24;
 			--danger: #f87171;
@@ -169,20 +173,20 @@ export const adminSharedStyles = `
 			--shadow-strong:
 				0 2px 6px rgba(0, 0, 0, 0.32),
 				0 22px 48px -22px rgba(0, 0, 0, 0.55);
-			--card-surface-rgb: 18, 28, 44;
-			--card-sheen-rgb: 120, 160, 220;
+			--card-surface-rgb: 20, 24, 40;
+			--card-sheen-rgb: 160, 170, 255;
 		}
 
 		[data-theme="dark"] body {
 			background:
-				radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.18), transparent 32%),
-				radial-gradient(circle at 92% 8%, rgba(14, 165, 233, 0.1), transparent 26%),
-				radial-gradient(circle at 50% 100%, rgba(30, 64, 175, 0.12), transparent 34%),
+				radial-gradient(circle at 8% 0%, rgba(var(--accent-rgb), 0.18), transparent 32%),
+				radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.1), transparent 26%),
+				radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.12), transparent 34%),
 				var(--bg);
 		}
 
 		[data-theme="dark"] body::after {
-			background: rgba(37, 99, 235, 0.16);
+			background: rgba(var(--accent-rgb), 0.14);
 		}
 
 		html {
@@ -200,9 +204,9 @@ export const adminSharedStyles = `
 			position: relative;
 			overflow-x: hidden;
 			background:
-				radial-gradient(ellipse 70% 50% at 12% -8%, rgba(96, 165, 250, 0.22), transparent 55%),
+				radial-gradient(ellipse 70% 50% at 12% -8%, rgba(var(--accent-rgb), 0.22), transparent 55%),
 				radial-gradient(ellipse 50% 40% at 88% 0%, rgba(255, 255, 255, 0.45), transparent 50%),
-				radial-gradient(ellipse 60% 45% at 60% 100%, rgba(59, 130, 246, 0.1), transparent 55%),
+				radial-gradient(ellipse 60% 45% at 60% 100%, rgba(var(--accent-rgb), 0.1), transparent 55%),
 				linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 28%),
 				var(--bg);
 		}
@@ -224,7 +228,7 @@ export const adminSharedStyles = `
 		body::before {
 			top: -10rem;
 			left: -8rem;
-			background: rgba(96, 165, 250, 0.4);
+			background: rgba(var(--accent-rgb), 0.4);
 		}
 
 		body::after {
@@ -304,7 +308,7 @@ export const adminSharedStyles = `
 			inset: 0;
 			background:
 				linear-gradient(165deg, rgba(var(--card-sheen-rgb), 0.14), transparent 42%),
-				radial-gradient(circle at top left, rgba(37, 99, 235, 0.07), transparent 34%);
+				radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.07), transparent 34%);
 			pointer-events: none;
 			z-index: 0;
 		}
@@ -337,7 +341,7 @@ export const adminSharedStyles = `
 			border-radius: 12px;
 			background:
 				linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 68%),
-				linear-gradient(135deg, #3b82f6, #2563eb 55%, #1d4ed8);
+				linear-gradient(135deg, #6366f1, var(--accent) 55%, var(--accent-hover));
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -345,7 +349,7 @@ export const adminSharedStyles = `
 			font-weight: 800;
 			color: #fff;
 			box-shadow:
-				0 8px 18px -10px rgba(37, 99, 235, 0.7),
+				0 8px 18px -10px rgba(var(--accent-rgb), 0.7),
 				inset 0 1px 0 rgba(255, 255, 255, 0.3);
 			flex-shrink: 0;
 			letter-spacing: -0.02em;
@@ -445,11 +449,11 @@ export const adminSharedStyles = `
 		.sidebar-nav a.active {
 			color: var(--text);
 			background:
-				linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0.04) 70%),
+				linear-gradient(135deg, rgba(var(--accent-rgb), 0.14), rgba(var(--accent-rgb), 0.04) 70%),
 				var(--surface-elevated);
-			border-color: rgba(37, 99, 235, 0.18);
+			border-color: rgba(var(--accent-rgb), 0.18);
 			box-shadow:
-				0 8px 20px -16px rgba(37, 99, 235, 0.45),
+				0 8px 20px -16px rgba(var(--accent-rgb), 0.45),
 				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.35);
 		}
 
@@ -459,7 +463,7 @@ export const adminSharedStyles = `
 				linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 70%),
 				var(--accent);
 			border-color: transparent;
-			box-shadow: 0 6px 14px -8px rgba(37, 99, 235, 0.7);
+			box-shadow: 0 6px 14px -8px rgba(var(--accent-rgb), 0.7);
 		}
 
 		.sidebar-footer {
@@ -671,7 +675,7 @@ export const adminSharedStyles = `
 		}
 
 		.data-table tbody tr:hover {
-			background: rgba(37, 99, 235, 0.04);
+			background: rgba(var(--accent-rgb), 0.04);
 		}
 
 		.data-table tbody tr:last-child td {
@@ -741,18 +745,18 @@ export const adminSharedStyles = `
 		.btn-primary {
 			background:
 				linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 65%),
-				linear-gradient(135deg, #3b82f6, var(--accent));
+				linear-gradient(135deg, #6366f1, var(--accent));
 			color: #fff;
 			border-color: transparent;
 			box-shadow:
-				0 10px 22px -14px rgba(37, 99, 235, 0.75),
+				0 10px 22px -14px rgba(var(--accent-rgb), 0.75),
 				inset 0 1px 0 rgba(255, 255, 255, 0.22);
 		}
 
 		.btn-primary:hover {
 			background:
 				linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 65%),
-				linear-gradient(135deg, #60a5fa, var(--accent-hover));
+				linear-gradient(135deg, var(--accent), var(--accent-hover));
 			color: #fff;
 		}
 
@@ -874,9 +878,9 @@ export const adminSharedStyles = `
 
 		.form-input:focus, .form-textarea:focus, .form-select:focus {
 			outline: none;
-			border-color: rgba(37, 99, 235, 0.45);
+			border-color: rgba(var(--accent-rgb), 0.45);
 			box-shadow:
-				0 0 0 3px rgba(37, 99, 235, 0.12),
+				0 0 0 3px rgba(var(--accent-rgb), 0.12),
 				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.25);
 			background: var(--surface-elevated);
 		}
@@ -904,10 +908,10 @@ export const adminSharedStyles = `
 		}
 
 		.form-textarea.is-dragover {
-			border-color: rgba(10, 132, 255, 0.55);
-			background: rgba(10, 132, 255, 0.08);
+			border-color: rgba(var(--accent-rgb), 0.55);
+			background: rgba(var(--accent-rgb), 0.08);
 			box-shadow:
-				0 0 0 4px rgba(10, 132, 255, 0.16),
+				0 0 0 4px rgba(var(--accent-rgb), 0.16),
 				inset 0 1px 0 rgba(var(--card-sheen-rgb), 0.22);
 		}
 
@@ -950,7 +954,7 @@ export const adminSharedStyles = `
 
 		.filter-tab.is-active {
 			color: var(--text);
-			border-color: rgba(37, 99, 235, 0.16);
+			border-color: rgba(var(--accent-rgb), 0.16);
 			background: var(--surface-elevated);
 			box-shadow: var(--shadow-soft);
 		}
@@ -1050,7 +1054,7 @@ export const adminSharedStyles = `
 			border-radius: 14px;
 			overflow: hidden;
 			background:
-				radial-gradient(circle at top left, rgba(10, 132, 255, 0.18), transparent 55%),
+				radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.18), transparent 55%),
 				var(--bg-tertiary);
 			border: 1px solid var(--border);
 			display: grid;
@@ -1142,7 +1146,7 @@ export const adminSharedStyles = `
 
 		.friend-queue-edit[open] > summary {
 			color: var(--accent);
-			background: rgba(10, 132, 255, 0.05);
+			background: rgba(var(--accent-rgb), 0.05);
 		}
 
 		.friend-queue-edit-body {
@@ -1265,13 +1269,13 @@ export const adminSharedStyles = `
 		}
 
 		.friend-review-item[open] .friend-review-summary {
-			background: rgba(10, 132, 255, 0.06);
+			background: rgba(var(--accent-rgb), 0.06);
 			border-bottom: 1px solid var(--border);
 		}
 
 		.friend-review-item[open] .friend-review-summary-caret {
 			color: var(--accent);
-			border-color: rgba(10, 132, 255, 0.4);
+			border-color: rgba(var(--accent-rgb), 0.4);
 			transform: rotate(180deg);
 		}
 
@@ -1445,9 +1449,9 @@ export const adminSharedStyles = `
 		.markdown-preview-body blockquote {
 			margin: 0.2rem 0 0.9rem;
 			padding: 0.12rem 0.82rem;
-			border-left: 3px solid rgba(10, 132, 255, 0.42);
+			border-left: 3px solid rgba(var(--accent-rgb), 0.42);
 			color: var(--text-secondary);
-			background: rgba(10, 132, 255, 0.08);
+			background: rgba(var(--accent-rgb), 0.08);
 			border-radius: 0 12px 12px 0;
 		}
 
@@ -1463,7 +1467,7 @@ export const adminSharedStyles = `
 			margin: 0.2rem 0 0.9rem;
 			border-radius: 12px;
 			border: 1px solid var(--border);
-			background: rgba(10, 132, 255, 0.06);
+			background: rgba(var(--accent-rgb), 0.06);
 			overflow: hidden;
 		}
 
@@ -1493,7 +1497,7 @@ export const adminSharedStyles = `
 		.markdown-preview-body .markdown-preview-spoiler:focus,
 		.markdown-preview-body .markdown-preview-spoiler:focus-visible {
 			filter: blur(0);
-			background: rgba(10, 132, 255, 0.12);
+			background: rgba(var(--accent-rgb), 0.12);
 		}
 
 		.markdown-preview-body pre {
@@ -1510,7 +1514,7 @@ export const adminSharedStyles = `
 		.markdown-preview-body code {
 			padding: 0.08rem 0.34rem;
 			border-radius: 8px;
-			background: rgba(10, 132, 255, 0.1);
+			background: rgba(var(--accent-rgb), 0.1);
 			font-family: var(--font-mono);
 			font-size: 0.84em;
 		}
@@ -1555,7 +1559,7 @@ export const adminSharedStyles = `
 			border-radius: var(--radius);
 			border: 1px dashed var(--border);
 			background:
-				radial-gradient(circle at top left, rgba(10, 132, 255, 0.08), transparent 28%),
+				radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.08), transparent 28%),
 				var(--bg-tertiary);
 			display: flex;
 			align-items: center;
@@ -1570,8 +1574,8 @@ export const adminSharedStyles = `
 
 		.cover-dropzone:hover,
 		.cover-dropzone.is-dragover {
-			border-color: rgba(10, 132, 255, 0.42);
-			background-color: rgba(10, 132, 255, 0.08);
+			border-color: rgba(var(--accent-rgb), 0.42);
+			background-color: rgba(var(--accent-rgb), 0.08);
 			transform: translate3d(0, -1px, 0);
 		}
 
@@ -1733,10 +1737,10 @@ export const adminSharedStyles = `
 			position: relative;
 			width: 100%;
 			aspect-ratio: 5 / 2;
-			border: 1px dashed rgba(10, 132, 255, 0.34);
+			border: 1px dashed rgba(var(--accent-rgb), 0.34);
 			border-radius: var(--radius);
 			background:
-				linear-gradient(140deg, rgba(10, 132, 255, 0.08), rgba(10, 132, 255, 0.02)),
+				linear-gradient(140deg, rgba(var(--accent-rgb), 0.08), rgba(var(--accent-rgb), 0.02)),
 				rgba(255, 255, 255, 0.02);
 			display: grid;
 			place-items: center;
@@ -1751,15 +1755,15 @@ export const adminSharedStyles = `
 
 		.media-upload-dropzone:hover,
 		.media-upload-dropzone.is-dragover {
-			border-color: rgba(10, 132, 255, 0.65);
+			border-color: rgba(var(--accent-rgb), 0.65);
 			background:
-				linear-gradient(140deg, rgba(10, 132, 255, 0.16), rgba(10, 132, 255, 0.06)),
+				linear-gradient(140deg, rgba(var(--accent-rgb), 0.16), rgba(var(--accent-rgb), 0.06)),
 				rgba(255, 255, 255, 0.03);
 			transform: translateY(-1px);
 		}
 
 		.media-upload-dropzone:focus-visible {
-			outline: 2px solid rgba(10, 132, 255, 0.6);
+			outline: 2px solid rgba(var(--accent-rgb), 0.6);
 			outline-offset: 2px;
 		}
 
@@ -1816,7 +1820,7 @@ export const adminSharedStyles = `
 			align-items: center;
 			justify-content: center;
 			background:
-				radial-gradient(circle at top left, rgba(10, 132, 255, 0.12), transparent 22%),
+				radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.12), transparent 22%),
 				var(--bg-tertiary);
 			border-bottom: 1px solid var(--border);
 		}
@@ -1877,7 +1881,7 @@ export const adminSharedStyles = `
 			margin-bottom: 1.15rem;
 			color: var(--text-muted);
 			background:
-				linear-gradient(160deg, rgba(37, 99, 235, 0.04), transparent 50%),
+				linear-gradient(160deg, rgba(var(--accent-rgb), 0.04), transparent 50%),
 				var(--bg-secondary);
 			border: 1px dashed var(--border-strong);
 			border-radius: var(--radius-lg);

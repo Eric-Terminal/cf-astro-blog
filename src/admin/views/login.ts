@@ -23,13 +23,14 @@ export function loginPage(options: LoginPageOptions = {}): string {
 	<script src="/theme.js"></script>
 	<style>
 		:root {
-			--color-bg: #edf3f8;
-			--color-text: #101828;
-			--color-text-secondary: #3a4357;
-			--color-text-muted: #6d7688;
+			--color-bg: #eef1f6;
+			--color-text: #0f172a;
+			--color-text-secondary: #334155;
+			--color-text-muted: #64748b;
 			--color-border: rgba(15, 23, 42, 0.08);
-			--color-accent: #0a84ff;
-			--color-accent-hover: #0066cc;
+			--color-accent: #4f46e5;
+			--color-accent-hover: #4338ca;
+			--color-accent-rgb: 79, 70, 229;
 			--card-surface-rgb: 255, 255, 255;
 			--card-sheen-rgb: 255, 255, 255;
 			--shadow-card:
@@ -40,41 +41,43 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			--font-sans:
 				"SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB",
 				"Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-			--glow-a: rgba(126, 171, 255, 0.32);
-			--glow-b: rgba(100, 200, 255, 0.22);
+			--glow-a: rgba(129, 140, 248, 0.34);
+			--glow-b: rgba(79, 70, 229, 0.22);
 			--glass-opacity: 0.13;
 		}
 
 		/* JS 设置 data-theme 的精确覆盖 */
 		[data-theme="dark"] {
-			--color-bg: #040d17;
-			--color-text: #eef4ff;
-			--color-text-secondary: #cad4e6;
-			--color-text-muted: #93a1bc;
-			--color-border: rgba(147, 161, 188, 0.14);
-			--color-accent: #57a6ff;
-			--color-accent-hover: #88c0ff;
-			--card-surface-rgb: 24, 36, 54;
-			--card-sheen-rgb: 142, 178, 224;
-			--glow-a: rgba(48, 100, 220, 0.42);
-			--glow-b: rgba(20, 60, 140, 0.34);
+			--color-bg: #090b12;
+			--color-text: #eef0ff;
+			--color-text-secondary: #c4c9e0;
+			--color-text-muted: #9399b5;
+			--color-border: rgba(160, 170, 210, 0.14);
+			--color-accent: #818cf8;
+			--color-accent-hover: #a5b4fc;
+			--color-accent-rgb: 129, 140, 248;
+			--card-surface-rgb: 22, 26, 42;
+			--card-sheen-rgb: 160, 170, 255;
+			--glow-a: rgba(129, 140, 248, 0.36);
+			--glow-b: rgba(79, 70, 229, 0.28);
 			--glass-opacity: 0.16;
 		}
 
 		/* 系统深色模式兜底（未访问博客/无 localStorage 时）*/
 		@media (prefers-color-scheme: dark) {
 			:root:not([data-theme="light"]) {
-				--color-bg: #040d17;
-				--color-text: #eef4ff;
-				--color-text-secondary: #cad4e6;
-				--color-text-muted: #93a1bc;
-				--color-border: rgba(147, 161, 188, 0.14);
-				--color-accent: #57a6ff;
-				--color-accent-hover: #88c0ff;
-				--card-surface-rgb: 24, 36, 54;
-				--card-sheen-rgb: 142, 178, 224;
-				--glow-a: rgba(48, 100, 220, 0.42);
-				--glow-b: rgba(20, 60, 140, 0.34);
+				--color-bg: #090b12;
+				--color-text: #eef0ff;
+				--color-text-secondary: #c4c9e0;
+				--color-text-muted: #9399b5;
+				--color-border: rgba(160, 170, 210, 0.14);
+				--color-accent: #818cf8;
+				--color-accent-hover: #a5b4fc;
+				--color-accent-rgb: 129, 140, 248;
+				--card-surface-rgb: 22, 26, 42;
+				--card-sheen-rgb: 160, 170, 255;
+				--glow-a: rgba(129, 140, 248, 0.36);
+				--glow-b: rgba(79, 70, 229, 0.28);
 				--glass-opacity: 0.16;
 			}
 		}
@@ -104,9 +107,9 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			font-family: var(--font-sans);
 			color: var(--color-text);
 			background:
-				radial-gradient(circle at 14% 10%, rgba(126, 192, 255, 0.14), transparent 24%),
+				radial-gradient(circle at 14% 10%, rgba(var(--color-accent-rgb), 0.14), transparent 24%),
 				radial-gradient(circle at 84% 12%, rgba(255, 255, 255, 0.24), transparent 20%),
-				radial-gradient(circle at 48% 100%, rgba(88, 192, 255, 0.08), transparent 26%),
+				radial-gradient(circle at 48% 100%, rgba(var(--color-accent-rgb), 0.08), transparent 26%),
 				linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 30%),
 				var(--color-bg);
 			position: relative;
@@ -387,17 +390,17 @@ export function loginPage(options: LoginPageOptions = {}): string {
 		}
 
 		.entry-btn-primary {
-			border: 1px solid rgba(10, 132, 255, 0.15);
+			border: 1px solid rgba(var(--color-accent-rgb), 0.15);
 			background: var(--color-accent);
 			color: #f0f7ff;
-			box-shadow: 0 12px 28px -20px rgba(10, 132, 255, 0.5);
+			box-shadow: 0 12px 28px -20px rgba(var(--color-accent-rgb), 0.5);
 			flex: 1;
 		}
 
 		.entry-btn-primary:hover {
 			color: #ffffff;
 			background: var(--color-accent-hover);
-			box-shadow: 0 16px 32px -20px rgba(10, 132, 255, 0.45);
+			box-shadow: 0 16px 32px -20px rgba(var(--color-accent-rgb), 0.45);
 		}
 
 		.entry-btn-primary[aria-disabled="true"] {

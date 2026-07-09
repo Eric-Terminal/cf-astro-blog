@@ -86,7 +86,7 @@
 		),
 		radial-gradient(
 			circle at 24% 22%,
-			rgba(10, 132, 255, 0.28),
+			rgba(var(--color-accent-rgb), 0.28),
 			transparent 58%
 		);
 	box-shadow:
@@ -228,7 +228,7 @@
 
 .post-card:hover {
 	transform: translate3d(0, -5px, 0);
-	border-color: rgba(10, 132, 255, 0.14);
+	border-color: rgba(var(--color-accent-rgb), 0.14);
 	box-shadow:
 		0 22px 38px -34px rgba(8, 18, 34, 0.22),
 		0 8px 18px -16px rgba(8, 18, 34, 0.16);
@@ -242,7 +242,7 @@
 @media (hover: hover) and (pointer: fine) {
 	.post-card:hover {
 		transform: translate3d(0, -8px, 0);
-		border-color: rgba(10, 132, 255, 0.18);
+		border-color: rgba(var(--color-accent-rgb), 0.18);
 		box-shadow:
 			0 30px 48px -34px rgba(8, 18, 34, 0.26),
 			0 10px 24px -18px rgba(8, 18, 34, 0.18);

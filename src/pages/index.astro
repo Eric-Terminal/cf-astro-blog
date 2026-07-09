@@ -382,7 +382,7 @@ function isInternalHref(href: string) {
 			),
 			radial-gradient(
 				circle at 18% 20%,
-				rgba(10, 132, 255, calc(0.14 * var(--hero-opacity-scale))),
+				rgba(var(--color-accent-rgb), calc(0.14 * var(--hero-opacity-scale))),
 				transparent 32%
 			);
 	}
@@ -407,7 +407,7 @@ function isInternalHref(href: string) {
 		right: -2rem;
 		width: 18rem;
 		height: 18rem;
-		background: radial-gradient(circle, rgba(10, 132, 255, 0.28), transparent 68%);
+		background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.28), transparent 68%);
 		transform: translate3d(
 			calc(var(--hero-pointer-x) * -18px),
 			calc(var(--hero-pointer-y) * -14px),
@@ -494,7 +494,7 @@ function isInternalHref(href: string) {
 		border: 1px solid rgba(255, 255, 255, 0.14);
 		background:
 			linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
-			radial-gradient(circle at 16% 24%, rgba(10, 132, 255, 0.24), transparent 52%);
+			radial-gradient(circle at 16% 24%, rgba(var(--color-accent-rgb), 0.24), transparent 52%);
 		overflow: hidden;
 		min-height: clamp(8.8rem, 22vh, 14rem);
 		box-shadow: 0 22px 44px -34px rgba(8, 18, 34, 0.34);
@@ -667,7 +667,7 @@ function isInternalHref(href: string) {
 			border-radius: calc(var(--radius-card) + 4px);
 			background:
 				linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.1)),
-				radial-gradient(circle at 18% 18%, rgba(10, 132, 255, 0.18), transparent 42%);
+				radial-gradient(circle at 18% 18%, rgba(var(--color-accent-rgb), 0.18), transparent 42%);
 			border: 1px solid rgba(255, 255, 255, 0.16);
 			box-shadow: 0 24px 50px -34px rgba(8, 18, 34, 0.3);
 			overflow: hidden;
@@ -767,7 +767,7 @@ function isInternalHref(href: string) {
 		width: 11rem;
 		height: 11rem;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(10, 132, 255, 0.24), transparent 70%);
+		background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.24), transparent 70%);
 		filter: blur(14px);
 			opacity: 0.78;
 			transform: translate3d(

@@ -133,7 +133,7 @@ function isLinkActive(href: string) {
 		overflow-y: hidden;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: thin;
-		scrollbar-color: rgba(10, 132, 255, 0.3) transparent;
+		scrollbar-color: rgba(var(--color-accent-rgb), 0.3) transparent;
 		pointer-events: auto;
 		will-change: width, margin-inline, border-radius, transform;
 		transition:
@@ -153,7 +153,7 @@ function isLinkActive(href: string) {
 
 	.site-nav-shell-scroll::-webkit-scrollbar-thumb {
 		border-radius: 999px;
-		background: rgba(10, 132, 255, 0.28);
+		background: rgba(var(--color-accent-rgb), 0.28);
 	}
 
 	.site-nav-shell {
@@ -208,9 +208,9 @@ function isLinkActive(href: string) {
 		height: 2.8rem;
 		border-radius: var(--radius-inner);
 		padding: 0.28rem;
-		background: rgba(10, 132, 255, 0.1);
-		border: 1px solid rgba(10, 132, 255, 0.18);
-		box-shadow: 0 12px 28px -24px rgba(10, 132, 255, 0.45);
+		background: rgba(var(--color-accent-rgb), 0.1);
+		border: 1px solid rgba(var(--color-accent-rgb), 0.18);
+		box-shadow: 0 12px 28px -24px rgba(var(--color-accent-rgb), 0.45);
 	}
 
 	.site-brand-mark img {
@@ -287,8 +287,8 @@ function isLinkActive(href: string) {
 	.nav-link:hover,
 	.nav-link.active {
 		color: var(--color-accent);
-		background: rgba(10, 132, 255, 0.08);
-		border-color: rgba(10, 132, 255, 0.12);
+		background: rgba(var(--color-accent-rgb), 0.08);
+		border-color: rgba(var(--color-accent-rgb), 0.12);
 	}
 
 	.nav-link:hover,

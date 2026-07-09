@@ -282,10 +282,10 @@ function renderAppearancePage(options: {
 				position: relative;
 				width: 100%;
 				aspect-ratio: 5 / 2;
-				border: 1px dashed rgba(10, 132, 255, 0.34);
+				border: 1px dashed rgba(var(--accent-rgb), 0.34);
 				border-radius: 0.95rem;
 				background:
-					linear-gradient(140deg, rgba(10, 132, 255, 0.08), rgba(10, 132, 255, 0.02)),
+					linear-gradient(140deg, rgba(var(--accent-rgb), 0.08), rgba(var(--accent-rgb), 0.02)),
 					rgba(255, 255, 255, 0.02);
 				display: grid;
 				place-items: center;
@@ -312,15 +312,15 @@ function renderAppearancePage(options: {
 
 			.appearance-upload-dropzone:hover,
 			.appearance-upload-dropzone.is-dragover {
-				border-color: rgba(10, 132, 255, 0.65);
+				border-color: rgba(var(--accent-rgb), 0.65);
 				background:
-					linear-gradient(140deg, rgba(10, 132, 255, 0.16), rgba(10, 132, 255, 0.06)),
+					linear-gradient(140deg, rgba(var(--accent-rgb), 0.16), rgba(var(--accent-rgb), 0.06)),
 					rgba(255, 255, 255, 0.03);
 				transform: translateY(-1px);
 			}
 
 			.appearance-upload-dropzone:focus-visible {
-				outline: 2px solid rgba(10, 132, 255, 0.6);
+				outline: 2px solid rgba(var(--accent-rgb), 0.6);
 				outline-offset: 2px;
 			}
 

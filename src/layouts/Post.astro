@@ -273,7 +273,7 @@ const hasToc = tocEntries.length > 0;
 		border-radius: calc(var(--radius-inner) - 2px);
 		overflow: hidden;
 		background:
-			linear-gradient(145deg, rgba(10, 132, 255, 0.22), rgba(10, 132, 255, 0.06)),
+			linear-gradient(145deg, rgba(var(--color-accent-rgb), 0.22), rgba(var(--color-accent-rgb), 0.06)),
 			rgba(255, 255, 255, 0.06);
 		border: 1px solid rgba(255, 255, 255, 0.16);
 		display: grid;
@@ -298,8 +298,8 @@ const hasToc = tocEntries.length > 0;
 		width: fit-content;
 		padding: 0.34rem 0.68rem;
 		border-radius: var(--radius-pill);
-		background: rgba(10, 132, 255, 0.12);
-		border: 1px solid rgba(10, 132, 255, 0.2);
+		background: rgba(var(--color-accent-rgb), 0.12);
+		border: 1px solid rgba(var(--color-accent-rgb), 0.2);
 		font-size: 0.74rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -373,7 +373,7 @@ const hasToc = tocEntries.length > 0;
 		overflow-x: hidden;
 		/* 细滚动条 */
 		scrollbar-width: thin;
-		scrollbar-color: rgba(10, 132, 255, 0.3) transparent;
+		scrollbar-color: rgba(var(--color-accent-rgb), 0.3) transparent;
 		padding-bottom: 0.25rem;
 	}
 
