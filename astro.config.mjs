@@ -13,6 +13,11 @@ export default defineConfig({
 	adapter: cloudflare(),
 	site: "https://blog.ericterminal.com",
 	vite: {
+		build: {
+			// Lightning CSS 会在 WebKit 声明后误删标准 backdrop-filter，导致生产环境玻璃失效。
+			// 保持升级前的 CSS 压缩器，保留两种声明：https://github.com/parcel-bundler/lightningcss/issues/1327
+			cssMinify: "esbuild",
+		},
 		resolve: {
 			alias: {
 				"@": "/src",
