@@ -161,16 +161,12 @@ describe("源码回归保护", () => {
 		assert.match(postCardSource, /\{hasCover && \(/u);
 		assert.match(postCardSource, /articleLengthLabel/u);
 		assert.match(postCardSource, /articleReadingTimeLabel/u);
-		assert.match(postCardSource, /<div class="pill-row"/u);
-		assert.match(
-			postCardSource,
-			/<span class="pill">\{articleLengthLabel\}<\/span>/u,
-		);
-		assert.match(
-			postCardSource,
-			/<span class="pill">\{articleReadingTimeLabel\}<\/span>/u,
-		);
+		assert.match(postCardSource, /class="post-card-eyebrow"/u);
+		assert.match(postCardSource, /class="post-card-stats"/u);
+		assert.match(postCardSource, /<span>\{articleLengthLabel\}<\/span>/u);
+		assert.match(postCardSource, /<span>\{articleReadingTimeLabel\}<\/span>/u);
 		assert.match(postCardStyleSource, /object-position: center;/u);
+		assert.ok(!postCardStyleSource.includes("clip-path: polygon"));
 	});
 
 	test("首页与归档会为文章卡片计算并传递阅读统计", async () => {

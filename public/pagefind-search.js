@@ -86,20 +86,23 @@ function createResultCard(post) {
 	const cardClassName = [
 		"post-card",
 		"glass-panel",
-		hasCover ? "post-card-cover-left" : "post-card-no-cover",
+		"post-card-regular",
+		hasCover ? "post-card-has-cover" : "post-card-no-cover",
 	].join(" ");
 
 	return `<article class="${cardClassName}">
 	${hasCover
-		? `<a href="${escapeHtml(post.url)}" class="post-card-cover">
+		? `<a href="${escapeHtml(post.url)}" class="post-card-cover" tabindex="-1" aria-hidden="true">
 		<img src="${escapeHtml(coverImageUrl)}" alt="${escapeHtml(coverImageAlt)}" loading="lazy" decoding="async" />
 	</a>`
 		: ""}
 	<div class="post-card-content">
 		<div class="post-card-top">
-			<div class="pill-row">
-				${formattedDate ? `<time class="pill" datetime="${escapeHtml(post.publishedAt || "")}">${escapeHtml(formattedDate)}</time>` : ""}
-				${post.categoryName ? `<span class="pill">${escapeHtml(post.categoryName)}</span>` : ""}
+			<div class="post-card-eyebrow">
+				<div class="post-card-taxonomy">
+					${post.categoryName ? `<span class="post-card-category">${escapeHtml(post.categoryName)}</span>` : ""}
+					${formattedDate ? `<time class="post-card-date" datetime="${escapeHtml(post.publishedAt || "")}">${escapeHtml(formattedDate)}</time>` : ""}
+				</div>
 			</div>
 			<a href="${escapeHtml(post.url)}" class="post-card-link">
 				<h3 class="post-card-title">${escapeHtml(post.title)}</h3>
@@ -107,8 +110,11 @@ function createResultCard(post) {
 		</div>
 		${post.excerpt ? `<p class="post-card-excerpt">${escapeHtml(post.excerpt)}</p>` : ""}
 		<div class="post-card-meta">
-			<span>${escapeHtml(post.authorName || "本站作者")}</span>
-			<a href="${escapeHtml(post.url)}" class="post-card-readmore">继续阅读</a>
+			<span class="post-card-author">${escapeHtml(post.authorName || "本站作者")}</span>
+			<span class="post-card-readmore" aria-hidden="true">
+				<span>阅读全文</span>
+				<span class="post-card-arrow">→</span>
+			</span>
 		</div>
 	</div>
 </article>`;

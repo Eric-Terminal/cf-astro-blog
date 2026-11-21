@@ -33,8 +33,8 @@ const isCommentConfigReady = Boolean(
 		data-comments-toggle
 	>
 		<span class="comments-toggle-copy">
-			<strong>评论区</strong>
-			<small>默认折叠，点开后再加载 GitHub Discussions </small>
+			<strong>文章讨论区</strong>
+			<small>展开后按需加载 GitHub Discussions</small>
 		</span>
 		<span class="comments-toggle-icon" aria-hidden="true">+</span>
 	</button>
@@ -48,14 +48,13 @@ const isCommentConfigReady = Boolean(
 		{isCommentConfigReady ? (
 			<div class="comments-surface">
 				<div class="comments-note">
-					<p>评论会通过 GitHub Discussions 加载</p>
+					<p>评论由 GitHub Discussions 承载</p>
 				</div>
 				<div class="comments-host" data-giscus-host></div>
 			</div>
 		) : (
 			<div class="comments-empty-state">
-				<p>评论组件已经接好了</p>
-				<p>还差在 GitHub 仓库里开启 Discussions，并回填分类 ID 后才能真正发评论</p>
+				<p>评论组件已就绪，请在 GitHub 仓库开启 Discussions 并补齐分类 ID。</p>
 				<p>当前仓库：{commentsConfig.repo}</p>
 			</div>
 		)}
@@ -70,8 +69,8 @@ const isCommentConfigReady = Boolean(
 		gap: 0;
 		overflow: hidden;
 		border-radius: var(--radius-inner);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-tertiary);
 	}
 
 	.comments-toggle {
@@ -80,7 +79,7 @@ const isCommentConfigReady = Boolean(
 		justify-content: space-between;
 		gap: var(--space-md);
 		width: 100%;
-		padding: 1.05rem 1.2rem;
+		padding: 1.05rem 1.35rem;
 		border: none;
 		background: transparent;
 		color: inherit;
@@ -94,24 +93,25 @@ const isCommentConfigReady = Boolean(
 
 	.comments-toggle:hover,
 	.comments-toggle:focus-visible {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-bg-tertiary);
 		outline: none;
 	}
 
 	.comments-toggle-copy {
 		display: grid;
-		gap: 0.2rem;
+		gap: 0.18rem;
 	}
 
 	.comments-toggle-copy strong {
-		font-size: 1rem;
+		font-size: 0.96rem;
+		font-weight: 680;
 		color: var(--color-text);
 	}
 
 	.comments-toggle-copy small {
-		font-size: 0.86rem;
+		font-size: 0.84rem;
 		color: var(--color-text-muted);
-		line-height: 1.65;
+		line-height: 1.6;
 	}
 
 	.comments-toggle-icon {
@@ -120,15 +120,22 @@ const isCommentConfigReady = Boolean(
 		justify-content: center;
 		width: 2rem;
 		height: 2rem;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.12);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		font-size: 1.2rem;
-		color: var(--color-accent-hover);
+		border-radius: var(--radius-pill);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+		font-size: 1.15rem;
+		color: var(--color-text-secondary);
 		transition:
 			transform var(--transition),
 			background-color var(--transition),
-			border-color var(--transition);
+			border-color var(--transition),
+			color var(--transition);
+	}
+
+	.comments-toggle:hover .comments-toggle-icon {
+		color: var(--color-accent);
+		border-color: rgba(var(--color-accent-rgb), 0.3);
+		background: var(--color-accent-soft);
 	}
 
 	.comments-panel.is-open .comments-toggle-icon {
@@ -136,56 +143,43 @@ const isCommentConfigReady = Boolean(
 	}
 
 	.comments-panel.is-open .comments-toggle {
-		border-bottom-color: rgba(255, 255, 255, 0.1);
+		border-bottom-color: var(--color-border);
 	}
 
 	.comments-body {
-		padding: 0 1.2rem 1.2rem;
+		padding: 1rem 1.35rem 1.35rem;
 	}
 
 	.comments-surface,
 	.comments-empty-state {
 		display: grid;
-		gap: 0.9rem;
+		gap: 0.8rem;
 		padding: 1rem;
 		border-radius: var(--radius-inner);
-		background: rgba(255, 255, 255, 0.06);
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
 	}
 
 	.comments-note,
 	.comments-empty-state {
-		font-size: 0.92rem;
+		font-size: 0.86rem;
 		color: var(--color-text-muted);
-		line-height: 1.75;
+		line-height: 1.7;
 	}
 
 	.comments-host {
 		min-height: 8rem;
 	}
 
-	.comments-panel.is-open .comments-toggle:hover .comments-toggle-icon {
-		background: var(--color-accent-soft);
-		border-color: rgba(10, 132, 255, 0.16);
-	}
-
 	:global(html.article-opaque-mode) .comments-panel {
-		background: rgba(var(--card-surface-rgb), 0.92);
-		border-color: rgba(255, 255, 255, 0.14);
+		background: rgba(var(--card-surface-rgb), 0.94);
+		border-color: var(--color-border-strong);
 	}
 
 	:global(html.article-opaque-mode) .comments-surface,
 	:global(html.article-opaque-mode) .comments-empty-state {
-		background: rgba(var(--card-surface-rgb), 0.96);
-		border-color: rgba(255, 255, 255, 0.16);
-	}
-
-	:global(html.article-opaque-mode) .comments-toggle {
-		background: rgba(var(--card-surface-rgb), 0.94);
-	}
-
-	:global(html.article-opaque-mode) .comments-toggle-icon {
-		background: rgba(255, 255, 255, 0.1);
+		background: rgba(var(--card-surface-rgb), 0.98);
+		border-color: var(--color-border-strong);
 	}
 
 	@media (max-width: 640px) {

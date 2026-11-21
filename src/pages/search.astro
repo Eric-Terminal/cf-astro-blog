@@ -93,16 +93,18 @@ const activeFilters = [
 
 <Base title="搜索" description="使用 Pagefind 在浏览器本地检索文章内容">
 	<section
-		class="search-hero search-hero-depth glass-panel"
+		class="search-hero glass-panel"
 		data-tilt-card
-		data-tilt-scale="0.42"
-		data-tilt-shift-scale="0.72"
+		data-tilt-scale="0.34"
+		data-tilt-shift-scale="0.58"
 	>
-		<span class="section-kicker">站内检索</span>
-		<h1 class="page-title">搜索</h1>
-		<p class="page-intro">
-			本页搜索由 Pagefind 在浏览器内执行，不依赖服务端检索 API。
-		</p>
+		<div class="search-hero-head">
+			<span class="section-kicker">站内检索</span>
+			<h1 class="page-title">搜索文章</h1>
+			<p class="page-intro">
+				由本地离线索引驱动，支持按关键词、分类、标签与发布时间组合检索。
+			</p>
+		</div>
 		<div class="search-entry-stage" transition:name="search-entry">
 			<SearchBox
 				initialQuery={query}
@@ -119,7 +121,7 @@ const activeFilters = [
 	<section class="search-results-block" id="search-results-section" style={hasSearchCriteria ? undefined : "display:none"}>
 		<div class="section-head">
 			<div>
-				<h2 class="section-heading">搜索结果</h2>
+				<h2 class="section-heading">检索结果</h2>
 				<p class="section-subheading">
 					{activeFilters.length > 0 ? activeFilters.join(" · ") : "输入关键词后开始检索"}
 				</p>
@@ -139,62 +141,22 @@ const activeFilters = [
 		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
 		--glass-panel-blur: var(--hero-card-blur, 18px);
 		display: grid;
-		gap: 1rem;
-		padding: clamp(1.5rem, 1rem + 2vw, 2.6rem);
-	}
-
-	.search-hero-depth {
-		position: relative;
-		overflow: hidden;
+		gap: 1.35rem;
+		padding: clamp(1.5rem, 1.1rem + 2vw, 2.4rem);
 		transform:
 			perspective(1200px)
 			rotateX(var(--tilt-rotate-x, 0deg))
-			rotateY(var(--tilt-rotate-y, 0deg))
-			scale3d(1.002, 1.002, 1.002);
-		transform-style: preserve-3d;
-		transition:
-			transform var(--nav-motion-surface),
-			box-shadow var(--nav-motion-surface);
+			rotateY(var(--tilt-rotate-y, 0deg));
+		transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
-	.search-hero-depth::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background:
-			radial-gradient(
-				circle at 18% 24%,
-				rgba(10, 132, 255, 0.22),
-				transparent 38%
-			),
-			linear-gradient(
-				135deg,
-				rgba(255, 255, 255, 0.16),
-				rgba(255, 255, 255, 0.02) 58%,
-				transparent
-			);
-		opacity: 0.72;
-		pointer-events: none;
-		transform: translate3d(
-			calc(var(--tilt-shift-x, 0) * -8px),
-			calc(var(--tilt-shift-y, 0) * -8px),
-			0
-		);
-		transition: transform var(--nav-motion-surface);
+	.search-hero-head {
+		display: grid;
+		gap: 0.7rem;
 	}
 
-	.search-hero-depth .section-kicker,
-	.search-hero-depth .page-title,
-	.search-hero-depth .page-intro {
-		position: relative;
-		z-index: 1;
-		transform: translate3d(
-			calc(var(--tilt-shift-x, 0) * 2px),
-			calc(var(--tilt-shift-y, 0) * 2px),
-			14px
-		);
-		transition: transform var(--nav-motion-surface);
+	.search-entry-stage {
+		width: 100%;
 	}
 
 	.search-results-block {
@@ -202,31 +164,20 @@ const activeFilters = [
 		gap: 1.2rem;
 	}
 
-	.search-entry-stage {
-		width: 100%;
-	}
-
-	.search-hero-depth .search-entry-stage {
-		position: relative;
-		z-index: 1;
-		transform: translate3d(
-			calc(var(--tilt-shift-x, 0) * 4px),
-			calc(var(--tilt-shift-y, 0) * 4px),
-			24px
-		);
-		transition: transform var(--nav-motion-surface);
-	}
-
 	.section-head {
 		display: flex;
-		align-items: end;
+		align-items: flex-end;
 		justify-content: space-between;
 		gap: 1rem;
+		padding-bottom: 0.85rem;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.results-summary {
+		font-family: var(--font-mono);
 		color: var(--color-text-muted);
-		font-size: 0.92rem;
+		font-size: 0.84rem;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.search-grid {
@@ -237,17 +188,12 @@ const activeFilters = [
 	@media (max-width: 840px) {
 		.section-head {
 			flex-direction: column;
-			align-items: start;
+			align-items: flex-start;
 		}
 	}
 
 	@media (hover: none), (pointer: coarse) {
-		.search-hero-depth,
-		.search-hero-depth::before,
-		.search-hero-depth .section-kicker,
-		.search-hero-depth .page-title,
-		.search-hero-depth .page-intro,
-		.search-hero-depth .search-entry-stage {
+		.search-hero {
 			transform: none;
 		}
 	}

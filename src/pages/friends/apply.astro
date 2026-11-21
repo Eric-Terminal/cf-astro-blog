@@ -57,10 +57,12 @@ const applyMessage = getApplyMessage(applyStatus);
 
 <Base title="友链申请" description="提交友链申请，审核通过后会展示在友链列表。">
 	<section class="friends-apply-hero glass-panel">
-		<span class="section-kicker">友情链接</span>
-		<h1 class="page-title">友链申请</h1>
-		<p class="page-intro">填写站点资料后提交，默认进入待审核。通过后会出现在友链页。</p>
-		<a href="/friends" class="button button-secondary">返回友链列表</a>
+		<div class="friends-apply-head">
+			<span class="section-kicker">友情链接</span>
+			<h1 class="page-title">申请交换友链</h1>
+			<p class="page-intro">填写站点资料后提交，审核通过后会自动展示在友链页面。</p>
+		</div>
+		<a href="/friends" class="button button-secondary">← 返回友链列表</a>
 	</section>
 
 	{
@@ -80,25 +82,29 @@ const applyMessage = getApplyMessage(applyStatus);
 		) : null}
 
 		<form method="post" action="/api/friend-links/apply" class="friends-apply-form">
-			<label>
-				<span>站点名称</span>
-				<input type="text" name="name" maxlength="80" required />
-			</label>
-			<label>
-				<span>站点 URL</span>
-				<input type="url" name="siteUrl" maxlength="240" placeholder="https://example.com" required />
-			</label>
-			<label>
-				<span>头像 URL（可选）</span>
-				<input type="url" name="avatarUrl" maxlength="240" placeholder="https://example.com/avatar.png" />
-			</label>
+			<div class="friends-apply-row">
+				<label>
+					<span>站点名称 *</span>
+					<input type="text" name="name" maxlength="80" required />
+				</label>
+				<label>
+					<span>联系方式 *</span>
+					<input type="text" name="contact" maxlength="120" placeholder="邮箱或社媒账号" required />
+				</label>
+			</div>
+			<div class="friends-apply-row">
+				<label>
+					<span>站点 URL *</span>
+					<input type="url" name="siteUrl" maxlength="240" placeholder="https://blog.example" required />
+				</label>
+				<label>
+					<span>头像 URL（可选）</span>
+					<input type="url" name="avatarUrl" maxlength="240" placeholder="https://blog.example/avatar.png" />
+				</label>
+			</div>
 			<label>
 				<span>站点简介（可选）</span>
 				<textarea name="description" rows="3" maxlength="320"></textarea>
-			</label>
-			<label>
-				<span>联系方式</span>
-				<input type="text" name="contact" maxlength="120" placeholder="邮箱 / 社媒账号" required />
 			</label>
 			<label>
 				<span>备注（可选）</span>
@@ -116,7 +122,9 @@ const applyMessage = getApplyMessage(applyStatus);
 			) : (
 				<p class="turnstile-hint">当前未配置 Turnstile Site Key，发布前请在环境变量中补齐。</p>
 			)}
-			<button type="submit" class="button">提交申请</button>
+			<div class="friends-apply-actions">
+				<button type="submit" class="button">提交申请</button>
+			</div>
 		</form>
 	</section>
 
@@ -136,14 +144,31 @@ const applyMessage = getApplyMessage(applyStatus);
 	.friends-apply-box {
 		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
 		--glass-panel-blur: var(--hero-card-blur, 18px);
+		padding: clamp(1.35rem, 1rem + 1.6vw, 2.1rem);
+	}
+
+	.friends-apply-hero {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1.2rem;
+	}
+
+	.friends-apply-head {
 		display: grid;
-		gap: 1rem;
-		padding: clamp(1.3rem, 1rem + 1.6vw, 2.1rem);
+		gap: 0.65rem;
+	}
+
+	.friends-apply-notice {
+		display: grid;
+		gap: 0.65rem;
 	}
 
 	.friends-apply-notice h2 {
 		margin: 0;
-		font-size: 1.05rem;
+		font-size: 1rem;
+		font-weight: 680;
 	}
 
 	.friends-apply-notice p {
@@ -151,51 +176,87 @@ const applyMessage = getApplyMessage(applyStatus);
 		white-space: pre-line;
 	}
 
+	.friends-apply-box {
+		display: grid;
+		gap: 1.1rem;
+	}
+
 	.friends-apply-form {
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.95rem;
+	}
+
+	.friends-apply-row {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.95rem;
 	}
 
 	.friends-apply-form label {
 		display: grid;
-		gap: 0.4rem;
+		gap: 0.38rem;
 	}
 
 	.friends-apply-form span {
-		font-size: 0.87rem;
-		color: var(--color-text-muted);
+		font-size: 0.84rem;
+		font-weight: 550;
+		color: var(--color-text-secondary);
 	}
 
 	.friends-apply-form input,
 	.friends-apply-form textarea {
 		width: 100%;
-		padding: 0.78rem 0.9rem;
+		padding: 0.72rem 0.88rem;
 		border-radius: var(--radius-inner);
-		border: 1px solid rgba(255, 255, 255, 0.14);
-		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid var(--color-border-strong);
+		background: var(--color-bg-tertiary);
 		color: var(--color-text);
+		transition:
+			border-color var(--transition),
+			background-color var(--transition);
+	}
+
+	.friends-apply-form input:focus,
+	.friends-apply-form textarea:focus {
+		outline: none;
+		border-color: var(--color-accent);
+		background: var(--color-bg-secondary);
 	}
 
 	.friends-apply-form textarea {
 		resize: vertical;
 	}
 
+	.friends-apply-actions {
+		display: flex;
+		justify-content: flex-start;
+		margin-top: 0.25rem;
+	}
+
 	.alert {
-		padding: 0.75rem 0.85rem;
+		padding: 0.75rem 0.9rem;
 		border-radius: var(--radius-inner);
 		font-size: 0.86rem;
 	}
 
 	.alert-success {
-		background: rgba(22, 163, 74, 0.14);
-		border: 1px solid rgba(22, 163, 74, 0.22);
-		color: #5be08b;
+		background: rgba(22, 163, 74, 0.12);
+		border: 1px solid rgba(22, 163, 74, 0.28);
+		color: #15803d;
+	}
+
+	:global([data-theme="dark"]) .alert-success {
+		color: #86efac;
 	}
 
 	.alert-error {
-		background: rgba(239, 68, 68, 0.14);
-		border: 1px solid rgba(239, 68, 68, 0.22);
-		color: #ff8d8d;
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.28);
+		color: #b91c1c;
+	}
+
+	:global([data-theme="dark"]) .alert-error {
+		color: #fca5a5;
 	}
 
 	.turnstile-row {
@@ -205,7 +266,13 @@ const applyMessage = getApplyMessage(applyStatus);
 
 	.turnstile-hint {
 		margin: 0;
-		font-size: 0.84rem;
+		font-size: 0.82rem;
 		color: var(--color-text-muted);
+	}
+
+	@media (max-width: 680px) {
+		.friends-apply-row {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

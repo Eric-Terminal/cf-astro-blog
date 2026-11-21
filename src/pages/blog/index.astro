@@ -8,7 +8,10 @@ import { getDb } from "@/lib/db";
 import { estimateArticleReadStats } from "@/lib/format";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
 
-const page = Number(Astro.url.searchParams.get("page") || "1");
+const page = Math.max(
+	1,
+	Number(Astro.url.searchParams.get("page") || "1") || 1,
+);
 const limit = 10;
 const offset = (page - 1) * limit;
 
@@ -44,32 +47,33 @@ let totalPosts = 0;
 try {
 	const db = getDb(env.DB);
 
-	const [countResult] = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(blogPosts)
-		.where(getPublicPostVisibilityCondition());
-	totalPosts = countResult?.count ?? 0;
+	const [countResult, rows] = await Promise.all([
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(blogPosts)
+			.where(getPublicPostVisibilityCondition()),
+		db
+			.select({
+				title: blogPosts.title,
+				slug: blogPosts.slug,
+				content: blogPosts.content,
+				excerpt: blogPosts.excerpt,
+				publishedAt: blogPosts.publishedAt,
+				authorName: blogPosts.authorName,
+				categoryName: blogCategories.name,
+				featuredImageKey: blogPosts.featuredImageKey,
+				featuredImageAlt: blogPosts.featuredImageAlt,
+			})
+			.from(blogPosts)
+			.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
+			.where(getPublicPostVisibilityCondition())
+			.orderBy(desc(blogPosts.publishedAt))
+			.limit(limit)
+			.offset(offset),
+	]);
+	totalPosts = countResult[0]?.count ?? 0;
 
-	const rows: ArchivePostSourceRow[] = await db
-		.select({
-			title: blogPosts.title,
-			slug: blogPosts.slug,
-			content: blogPosts.content,
-			excerpt: blogPosts.excerpt,
-			publishedAt: blogPosts.publishedAt,
-			authorName: blogPosts.authorName,
-			categoryName: blogCategories.name,
-			featuredImageKey: blogPosts.featuredImageKey,
-			featuredImageAlt: blogPosts.featuredImageAlt,
-		})
-		.from(blogPosts)
-		.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
-		.where(getPublicPostVisibilityCondition())
-		.orderBy(desc(blogPosts.publishedAt))
-		.limit(limit)
-		.offset(offset);
-
-	posts = rows.map((row) => {
+	posts = (rows as ArchivePostSourceRow[]).map((row) => {
 		const readingStats = estimateArticleReadStats(row.content);
 
 		return {
@@ -95,24 +99,24 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 <Base title="归档" description="按时间顺序浏览全部已发布文章">
 	<section
-		class="archive-hero archive-hero-depth glass-panel"
+		class="archive-hero glass-panel"
 		data-tilt-card
 		data-tilt-scale="0.38"
-		data-tilt-shift-scale="0.68"
+		data-tilt-shift-scale="0.65"
 	>
 		<div class="archive-hero-copy">
 			<span class="section-kicker">归档目录</span>
-			<h1 class="page-title">归档</h1>
+			<h1 class="page-title">全部文章</h1>
 			<p class="page-intro">
-				所有已发布文章都按时间顺序排列在这里，适合顺着浏览，也适合翻到某篇旧文重新确认一个判断。
+				按发布时间倒序收录全部技术记录与复盘笔记。
 			</p>
 		</div>
-		<div class="archive-hero-meta">
-			<div class="hero-summary">
-				<span>已发布文章</span>
+		<div class="archive-hero-meta" aria-label="归档统计">
+			<div class="archive-stat">
+				<span>已发布篇目</span>
 				<strong>{totalPosts}</strong>
 			</div>
-			<div class="hero-summary">
+			<div class="archive-stat">
 				<span>当前页码</span>
 				<strong>{page} / {Math.max(totalPages, 1)}</strong>
 			</div>
@@ -134,7 +138,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 					cjkCharCount={post.cjkCharCount}
 					latinWordCount={post.latinWordCount}
 					estimatedReadingMinutes={post.estimatedReadingMinutes}
-					coverSide={index % 2 === 0 ? "left" : "right"}
+					variant={page === 1 && index === 0 ? "featured" : "regular"}
 				/>
 			))}
 		</div>
@@ -147,13 +151,13 @@ const totalPages = Math.ceil(totalPosts / limit);
 	{totalPages > 1 && (
 		<nav class="pagination glass-panel" aria-label="分页">
 			{page > 1 ? (
-				<a href={`/blog?page=${page - 1}`} class="button button-secondary">上一页</a>
+				<a href={`/blog?page=${page - 1}`} class="button button-secondary">← 上一页</a>
 			) : (
 				<span class="pagination-placeholder" />
 			)}
-			<span class="pagination-status">第 {page} 页，共 {totalPages} 页</span>
+			<span class="pagination-status">第 {page} 页 · 共 {totalPages} 页</span>
 			{page < totalPages ? (
-				<a href={`/blog?page=${page + 1}`} class="button button-secondary">下一页</a>
+				<a href={`/blog?page=${page + 1}`} class="button button-secondary">下一页 →</a>
 			) : (
 				<span class="pagination-placeholder" />
 			)}
@@ -170,105 +174,57 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 	.archive-hero {
 		display: grid;
-		grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.7fr);
-		gap: 1.2rem;
-		padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
-	}
-
-	.archive-hero-depth {
-		position: relative;
-		overflow: hidden;
+		grid-template-columns: minmax(0, 1.3fr) auto;
+		align-items: end;
+		gap: 1.5rem 2.5rem;
+		padding: clamp(1.5rem, 1.1rem + 2vw, 2.4rem);
 		transform:
 			perspective(1200px)
 			rotateX(var(--tilt-rotate-x, 0deg))
-			rotateY(var(--tilt-rotate-y, 0deg))
-			scale3d(1.002, 1.002, 1.002);
-		transform-style: preserve-3d;
-		transition:
-			transform var(--nav-motion-surface),
-			box-shadow var(--nav-motion-surface);
-	}
-
-	.archive-hero-depth::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background:
-			radial-gradient(
-				circle at 84% 18%,
-				rgba(10, 132, 255, 0.18),
-				transparent 42%
-			),
-			linear-gradient(
-				135deg,
-				rgba(255, 255, 255, 0.12),
-				rgba(255, 255, 255, 0.02) 54%,
-				transparent
-			);
-		opacity: 0.68;
-		pointer-events: none;
-		transform: translate3d(
-			calc(var(--tilt-shift-x, 0) * -8px),
-			calc(var(--tilt-shift-y, 0) * -8px),
-			0
-		);
-		transition: transform var(--nav-motion-surface);
+			rotateY(var(--tilt-rotate-y, 0deg));
+		transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	.archive-hero-copy {
 		display: grid;
-		gap: 1rem;
-		position: relative;
-		z-index: 1;
-		transform: translate3d(
-			calc(var(--tilt-shift-x, 0) * 2px),
-			calc(var(--tilt-shift-y, 0) * 2px),
-			14px
-		);
-		transition: transform var(--nav-motion-surface);
+		gap: 0.75rem;
 	}
 
 	.archive-hero-meta {
-		display: grid;
-		gap: 0.9rem;
-		position: relative;
-		z-index: 1;
-		transform: translate3d(
-			calc(var(--tilt-shift-x, 0) * 4px),
-			calc(var(--tilt-shift-y, 0) * 4px),
-			24px
-		);
-		transition: transform var(--nav-motion-surface);
+		display: flex;
+		align-items: stretch;
+		gap: 1.5rem;
+		padding-left: 2rem;
+		border-left: 1px solid var(--color-border);
 	}
 
-	.hero-summary {
+	.archive-stat {
 		display: grid;
-		gap: 0.35rem;
-		padding: 1.15rem 1.2rem;
-		border-radius: var(--radius-inner);
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(10px) saturate(120%);
-		-webkit-backdrop-filter: blur(10px) saturate(120%);
+		align-content: end;
+		gap: 0.25rem;
 	}
 
-	.hero-summary span {
-		font-size: 0.84rem;
-		letter-spacing: 0.08em;
+	.archive-stat span {
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--color-text-muted);
 	}
 
-	.hero-summary strong {
-		font-size: clamp(1.5rem, 1.2rem + 1vw, 2.1rem);
+	.archive-stat strong {
+		font-family: var(--font-mono);
+		font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2.05rem);
+		font-weight: 700;
+		line-height: 1.1;
 		color: var(--color-text);
-		letter-spacing: -0.04em;
+		letter-spacing: -0.03em;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.archive-grid {
 		display: grid;
-		gap: 1.2rem;
+		gap: 1rem;
 	}
 
 	.pagination {
@@ -276,13 +232,15 @@ const totalPages = Math.ceil(totalPosts / limit);
 		grid-template-columns: 1fr auto 1fr;
 		align-items: center;
 		gap: 1rem;
-		padding: 1rem 1.2rem;
+		padding: 0.9rem 1.2rem;
 	}
 
 	.pagination-status {
 		text-align: center;
+		font-family: var(--font-mono);
 		color: var(--color-text-muted);
-		font-size: 0.92rem;
+		font-size: 0.84rem;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.pagination .button:last-child {
@@ -303,6 +261,14 @@ const totalPages = Math.ceil(totalPosts / limit);
 			grid-template-columns: 1fr;
 		}
 
+		.archive-hero-meta {
+			padding-left: 0;
+			padding-top: 1rem;
+			border-left: none;
+			border-top: 1px solid var(--color-border);
+			gap: 2rem;
+		}
+
 		.pagination {
 			grid-template-columns: 1fr;
 		}
@@ -314,10 +280,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 	}
 
 	@media (hover: none), (pointer: coarse) {
-		.archive-hero-depth,
-		.archive-hero-depth::before,
-		.archive-hero-copy,
-		.archive-hero-meta {
+		.archive-hero {
 			transform: none;
 		}
 	}

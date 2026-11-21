@@ -23,6 +23,14 @@ function buildFriendAvatarProxyUrl(url: string | null): string | null {
 	return `/api/friend-links/avatar?url=${encodeURIComponent(url)}`;
 }
 
+function formatHostname(url: string): string {
+	try {
+		return new URL(url).hostname.replace(/^www\./u, "");
+	} catch {
+		return url;
+	}
+}
+
 try {
 	const db = getDb(env.DB);
 
@@ -47,24 +55,35 @@ try {
 }
 ---
 
-<Base title="友链" description="展示已经通过审核的友情链接。友链申请请从入口卡片进入独立页面。">
-	<section class="friends-hero glass-panel">
-		<span class="section-kicker">友情链接</span>
-		<h1 class="page-title">友链</h1>
-		<p class="page-intro">这里展示已经通过审核的站点。申请入口放在列表下方，点击进入独立申请页填写资料。</p>
+<Base title="友链" description="展示已收录的同行者站点与独立博客。">
+	<section
+		class="friends-hero glass-panel"
+		data-tilt-card
+		data-tilt-scale="0.34"
+		data-tilt-shift-scale="0.58"
+	>
+		<div class="friends-hero-copy">
+			<span class="section-kicker">同行站点</span>
+			<h1 class="page-title">友情链接</h1>
+			<p class="page-intro">收录持续输出技术与思考的独立博客。欢迎在底部提交交换申请。</p>
+		</div>
+		<div class="friends-hero-count" aria-label="友链数量">
+			<span>已收录</span>
+			<strong>{approvedLinks.length}</strong>
+		</div>
 	</section>
 
 	<section class="friends-list glass-panel">
-		<div class="section-head">
-			<h2 class="section-heading">友链</h2>
-			<p class="results-summary">共 {approvedLinks.length} 个站点</p>
-		</div>
-
 		{approvedLinks.length > 0 ? (
 			<ul class="friend-link-list">
 				{approvedLinks.map((item) => (
 					<li class="friend-link-item">
-						<div class="friend-link-meta">
+						<a
+							href={item.siteUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="friend-link-card"
+						>
 							<div class="friend-link-avatar" aria-hidden="true">
 								{item.avatarUrl ? (
 									<img
@@ -78,19 +97,15 @@ try {
 									<span>{item.name.slice(0, 1)}</span>
 								)}
 							</div>
-							<div>
-								<a
-									href={item.siteUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="friend-link-name"
-								>
-									{item.name}
-								</a>
+							<div class="friend-link-body">
+								<div class="friend-link-title-row">
+									<strong class="friend-link-name">{item.name}</strong>
+									<span class="friend-link-arrow" aria-hidden="true">↗</span>
+								</div>
+								<span class="friend-link-host">{formatHostname(item.siteUrl)}</span>
 								{item.description ? <p class="friend-link-desc">{item.description}</p> : null}
-								<p class="friend-link-contact">联系方式：{item.contact}</p>
 							</div>
-						</div>
+						</a>
 					</li>
 				))}
 			</ul>
@@ -104,10 +119,10 @@ try {
 	<section class="friend-apply-entry glass-panel" aria-label="友链申请入口">
 		<a href="/friends/apply" class="friend-apply-link">
 			<span class="friend-apply-copy">
-				<strong>友链申请</strong>
-				<small>入口独立展示，点击进入后再填写站点信息，体验和评论区入口类似。</small>
+				<strong>申请加入友链</strong>
+				<small>填写站点名称、地址与简介，审核通过后自动展示在此列表中。</small>
 			</span>
-			<span class="friend-apply-icon" aria-hidden="true">+</span>
+			<span class="friend-apply-icon" aria-hidden="true">→</span>
 		</a>
 	</section>
 </Base>
@@ -122,54 +137,95 @@ try {
 
 	.friends-hero {
 		display: grid;
-		gap: 1rem;
-		padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: end;
+		gap: 1.5rem 2rem;
+		padding: clamp(1.5rem, 1.1rem + 2vw, 2.4rem);
+		transform:
+			perspective(1200px)
+			rotateX(var(--tilt-rotate-x, 0deg))
+			rotateY(var(--tilt-rotate-y, 0deg));
+		transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
-	.friends-list,
-	.friend-apply-entry {
+	.friends-hero-copy {
 		display: grid;
-		gap: 0;
-		overflow: hidden;
+		gap: 0.7rem;
+	}
+
+	.friends-hero-count {
+		display: grid;
+		align-content: end;
+		gap: 0.2rem;
+		padding-left: 1.8rem;
+		border-left: 1px solid var(--color-border);
+	}
+
+	.friends-hero-count span {
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.friends-hero-count strong {
+		font-family: var(--font-mono);
+		font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2.05rem);
+		font-weight: 700;
+		line-height: 1.1;
+		color: var(--color-text);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.friends-list {
-		padding: 1.2rem;
-		display: grid;
-		gap: 1rem;
+		padding: clamp(1rem, 0.8rem + 1vw, 1.4rem);
 	}
 
 	.friend-link-list {
 		list-style: none;
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.8rem;
+		gap: 0.85rem;
 	}
 
 	.friend-link-item {
-		padding: 0.9rem;
-		border-radius: var(--radius-inner);
-		background: rgba(255, 255, 255, 0.06);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		min-width: 0;
 	}
 
-	.friend-link-meta {
+	.friend-link-card {
 		display: flex;
-		gap: 0.75rem;
+		gap: 0.85rem;
 		align-items: flex-start;
+		height: 100%;
+		padding: 1rem 1.05rem;
+		border-radius: var(--radius-inner);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+		transition:
+			transform var(--transition),
+			border-color var(--transition),
+			background-color var(--transition);
+	}
+
+	.friend-link-card:hover {
+		color: inherit;
+		transform: translateY(-2px);
+		border-color: rgba(var(--color-accent-rgb), 0.3);
+		background: var(--color-accent-soft);
 	}
 
 	.friend-link-avatar {
-		width: 2.3rem;
-		height: 2.3rem;
+		width: 2.6rem;
+		height: 2.6rem;
 		border-radius: 50%;
 		overflow: hidden;
 		display: grid;
 		place-items: center;
-		background: rgba(10, 132, 255, 0.14);
-		border: 1px solid rgba(10, 132, 255, 0.26);
+		background: var(--color-accent-soft);
+		border: 1px solid var(--color-border-strong);
 		font-weight: 700;
-		color: var(--color-text);
+		color: var(--color-accent);
 		flex-shrink: 0;
 	}
 
@@ -179,16 +235,61 @@ try {
 		object-fit: cover;
 	}
 
-	.friend-link-name {
-		font-weight: 700;
-		font-size: 1rem;
+	.friend-link-body {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		gap: 0.22rem;
 	}
 
-	.friend-link-desc,
-	.friend-link-contact {
-		margin-top: 0.3rem;
+	.friend-link-title-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.friend-link-name {
+		font-weight: 680;
+		font-size: 0.98rem;
+		color: var(--color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.friend-link-arrow {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+		transition:
+			transform var(--transition),
+			color var(--transition);
+	}
+
+	.friend-link-card:hover .friend-link-name,
+	.friend-link-card:hover .friend-link-arrow {
+		color: var(--color-accent);
+	}
+
+	.friend-link-card:hover .friend-link-arrow {
+		transform: translate(2px, -2px);
+	}
+
+	.friend-link-host {
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		color: var(--color-text-muted);
+	}
+
+	.friend-link-desc {
+		margin-top: 0.22rem;
 		color: var(--color-text-secondary);
-		font-size: 0.88rem;
+		font-size: 0.86rem;
+		line-height: 1.6;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
 	.friend-apply-link {
@@ -197,65 +298,73 @@ try {
 		align-items: center;
 		gap: var(--space-md);
 		width: 100%;
-		min-height: 5.5rem;
-		padding: 1.05rem 1.2rem;
-		background: transparent;
-		border: none;
+		padding: 1.15rem 1.35rem;
 		color: inherit;
-		text-decoration: none;
-		cursor: pointer;
-		text-align: left;
 	}
 
 	.friend-apply-copy {
 		display: grid;
-		gap: 0.24rem;
+		gap: 0.22rem;
 		min-width: 0;
 	}
 
 	.friend-apply-copy strong {
-		font-size: 1rem;
+		font-size: 0.98rem;
+		font-weight: 680;
 		color: var(--color-text);
 	}
 
 	.friend-apply-copy small {
 		font-size: 0.86rem;
 		color: var(--color-text-secondary);
-		line-height: 1.65;
-		max-width: 62ch;
+		line-height: 1.6;
 	}
 
 	.friend-apply-icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.12);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		font-size: 1.2rem;
-		color: var(--color-accent-hover);
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: var(--radius-pill);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+		font-size: 1rem;
+		color: var(--color-text-secondary);
 		transition:
 			transform var(--transition),
 			background-color var(--transition),
-			border-color var(--transition);
+			border-color var(--transition),
+			color var(--transition);
 	}
 
 	.friend-apply-link:hover .friend-apply-icon {
-		transform: rotate(90deg);
+		transform: translateX(3px);
 		background: var(--color-accent-soft);
-		border-color: rgba(10, 132, 255, 0.16);
+		border-color: rgba(var(--color-accent-rgb), 0.3);
+		color: var(--color-accent);
 	}
 
 	@media (max-width: 768px) {
+		.friends-hero {
+			grid-template-columns: 1fr;
+		}
+
+		.friends-hero-count {
+			padding-left: 0;
+			padding-top: 0.85rem;
+			border-left: none;
+			border-top: 1px solid var(--color-border);
+		}
+
 		.friend-link-list {
 			grid-template-columns: minmax(0, 1fr);
 		}
+	}
 
-		.friend-apply-link {
-			padding-inline: 1rem;
-			min-height: 5.8rem;
+	@media (hover: none), (pointer: coarse) {
+		.friends-hero {
+			transform: none;
 		}
 	}
 </style>

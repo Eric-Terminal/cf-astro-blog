@@ -50,31 +50,28 @@ const missingPath = Astro.url.pathname || "/";
 <style>
 	.not-found-terminal {
 		display: grid;
-		gap: 0.9rem;
-		padding: clamp(1rem, 0.8rem + 1vw, 1.6rem);
-		margin-bottom: 1.25rem;
-		border: 1px solid rgba(96, 165, 250, 0.25);
-		/* 透明度/模糊跟随后台「卡片」控制，与 friends / search 页面 glass-panel 保持一致 */
+		gap: 0.95rem;
+		padding: clamp(1.15rem, 0.9rem + 1vw, 1.65rem);
+		border: 1px solid var(--color-border-strong);
+		/* 透明度/模糊跟随后台「卡片」控制，与全站光学面板保持一致 */
 		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
 		--glass-panel-blur: var(--hero-card-blur, 18px);
-		/* 终端语义色（深色模式默认值） */
-		--terminal-cmd-color: #a7f3d0;
+		--terminal-cmd-color: #6ee7b7;
 		--terminal-error-color: #fca5a5;
-		--terminal-prompt-color: #86efac;
+		--terminal-prompt-color: #4da3ff;
 	}
 
-	/* 浅色主题：终端语义色切换为深色可读版本 */
 	:root[data-theme="light"] .not-found-terminal {
 		--terminal-cmd-color: #047857;
 		--terminal-error-color: #dc2626;
-		--terminal-prompt-color: #16a34a;
+		--terminal-prompt-color: #0066dc;
 	}
 
 	@media (prefers-color-scheme: light) {
 		:root:not([data-theme="dark"]) .not-found-terminal {
 			--terminal-cmd-color: #047857;
 			--terminal-error-color: #dc2626;
-			--terminal-prompt-color: #16a34a;
+			--terminal-prompt-color: #0066dc;
 		}
 	}
 
@@ -182,17 +179,25 @@ const missingPath = Astro.url.pathname || "/";
 	}
 
 	.terminal-submit {
-		border: 1px solid rgba(96, 165, 250, 0.35);
-		background: linear-gradient(120deg, rgba(30, 64, 175, 0.55), rgba(37, 99, 235, 0.36));
-		color: rgba(239, 246, 255, 0.96);
-		padding: 0.6rem 0.85rem;
-		border-radius: 12px;
-		font-size: 0.82rem;
+		border: 1px solid transparent;
+		background: var(--color-text);
+		color: var(--color-bg);
+		padding: 0.62rem 1rem;
+		border-radius: var(--radius-inner);
+		font-size: 0.84rem;
+		font-weight: 600;
 		cursor: pointer;
+		transition:
+			background-color var(--transition),
+			transform 100ms ease-out;
 	}
 
 	.terminal-submit:hover {
-		border-color: rgba(147, 197, 253, 0.58);
+		background: var(--color-accent);
+	}
+
+	.terminal-submit:active {
+		transform: scale(0.96);
 	}
 
 	@media (max-width: 640px) {
