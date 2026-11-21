@@ -119,15 +119,15 @@ const resolvedDescription =
 		<script is:inline src="/code-block-enhance.js"></script>
 		{!isAdminPreview && <script is:inline src="/analytics.js"></script>}
 		{!isAdminPreview && <script is:inline src="/home-motion.js"></script>}
-		{!isAdminPreview && <script is:inline src="/footer-reveal.js"></script>}
 	</head>
-		<body
-			class:list={[
-				"site-shell",
-				{ "site-shell-has-background-image": Boolean(backgroundImageUrl) },
-			]}
-			style={surfaceStyle}
-		>
+	<body
+		class:list={[
+			"site-shell",
+			{ "site-shell-has-background-image": Boolean(backgroundImageUrl) },
+		]}
+		style={surfaceStyle}
+	>
+		<a href="#main-content" class="skip-link">跳转到正文</a>
 		<div class="site-background" aria-hidden="true">
 			{backgroundImageUrl && (
 				<img
@@ -142,7 +142,7 @@ const resolvedDescription =
 		</div>
 		<Header siteAppearance={siteAppearance} />
 		<div class="site-route-frame">
-			<main class="container site-main">
+			<main id="main-content" class="container site-main">
 				<slot />
 			</main>
 			<Footer />

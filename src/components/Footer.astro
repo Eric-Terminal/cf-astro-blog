@@ -4,18 +4,20 @@ import { siteConfig } from "@/lib/types";
 const year = new Date().getFullYear();
 ---
 
-<footer class="site-footer" data-footer-reveal>
+<footer class="site-footer">
 	<div class="container">
-			<div class="footer-inner glass-panel">
-				<div class="footer-copy">
-					<p class="footer-title">{siteConfig.name}</p>
-				</div>
-				<p class="footer-meta">
-					© {year} · {siteConfig.author} ·
-					<a href="https://icp.gov.moe/?keyword=20260256" target="_blank" rel="noopener noreferrer"
-						>萌ICP备20260256号</a
-					>
-				</p>
+		<div class="footer-inner glass-panel">
+			<div class="footer-copy">
+				<p class="footer-title">{siteConfig.name}</p>
+				<span class="footer-divider" aria-hidden="true">/</span>
+				<a href="/rss.xml" class="footer-rss">RSS</a>
 			</div>
+			<p class="footer-meta">
+				© {year} · {siteConfig.author} ·
+				<a href="https://icp.gov.moe/?keyword=20260256" target="_blank" rel="noopener noreferrer"
+					>萌ICP备20260256号</a
+				>
+			</p>
+		</div>
 	</div>
 </footer>

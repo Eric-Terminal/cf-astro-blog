@@ -2,8 +2,8 @@
 	const HERO_SELECTOR = "[data-hero-depth]";
 	const TILT_SELECTOR = "[data-tilt-card]";
 	const FINE_POINTER_QUERY = "(any-hover: hover) and (any-pointer: fine)";
-	const HERO_SMOOTHING = 0.16;
-	const TILT_SMOOTHING = 0.2;
+	const HERO_SMOOTHING = 0.14;
+	const TILT_SMOOTHING = 0.16;
 	const MOTION_EPSILON = 0.001;
 	let disposeHomeMotion = () => {};
 
@@ -89,7 +89,7 @@
 		};
 
 		const updateScrollShift = () => {
-			targetScrollShift = Math.min(180, Math.max(0, window.scrollY));
+			targetScrollShift = Math.min(140, Math.max(0, window.scrollY));
 			requestRender();
 		};
 
@@ -99,7 +99,6 @@
 			}
 
 			const rect = hero.getBoundingClientRect();
-
 			if (!rect.width || !rect.height) {
 				return;
 			}
@@ -107,8 +106,8 @@
 			const nextX = (event.clientX - rect.left) / rect.width - 0.5;
 			const nextY = (event.clientY - rect.top) / rect.height - 0.5;
 
-			targetPointerX = nextX * 1.45;
-			targetPointerY = nextY * 1.3;
+			targetPointerX = nextX * 1.1;
+			targetPointerY = nextY * 1.0;
 			requestRender();
 		};
 
@@ -148,29 +147,36 @@
 		card.style.setProperty("--tilt-rotate-y", "0deg");
 		card.style.setProperty("--tilt-shift-x", "0");
 		card.style.setProperty("--tilt-shift-y", "0");
+		card.style.setProperty("--tilt-spot-x", "24%");
+		card.style.setProperty("--tilt-spot-y", "0%");
 	};
 
+	// 阻尼 3D 透视微倾 + 光学反光焦点追踪
 	const attachTiltCard = (card, disposers) => {
 		let frame = 0;
 		const tiltScale = Math.min(
 			1,
-			Math.max(0.18, Number.parseFloat(card.dataset.tiltScale || "1") || 1),
+			Math.max(0.15, Number.parseFloat(card.dataset.tiltScale || "0.65") || 0.65),
 		);
 		const shiftScale = Math.min(
 			1.4,
 			Math.max(
 				0.2,
-				Number.parseFloat(card.dataset.tiltShiftScale || "1") || 1,
+				Number.parseFloat(card.dataset.tiltShiftScale || "0.85") || 0.85,
 			),
 		);
 		let currentRotateX = 0;
 		let currentRotateY = 0;
 		let currentShiftX = 0;
 		let currentShiftY = 0;
+		let currentSpotX = 24;
+		let currentSpotY = 0;
 		let targetRotateX = 0;
 		let targetRotateY = 0;
 		let targetShiftX = 0;
 		let targetShiftY = 0;
+		let targetSpotX = 24;
+		let targetSpotY = 0;
 
 		const render = () => {
 			currentRotateX = stepValue(
@@ -185,17 +191,23 @@
 			);
 			currentShiftX = stepValue(currentShiftX, targetShiftX, TILT_SMOOTHING);
 			currentShiftY = stepValue(currentShiftY, targetShiftY, TILT_SMOOTHING);
+			currentSpotX = stepValue(currentSpotX, targetSpotX, TILT_SMOOTHING);
+			currentSpotY = stepValue(currentSpotY, targetSpotY, TILT_SMOOTHING);
 
 			card.style.setProperty("--tilt-rotate-x", `${currentRotateX.toFixed(2)}deg`);
 			card.style.setProperty("--tilt-rotate-y", `${currentRotateY.toFixed(2)}deg`);
 			card.style.setProperty("--tilt-shift-x", currentShiftX.toFixed(3));
 			card.style.setProperty("--tilt-shift-y", currentShiftY.toFixed(3));
+			card.style.setProperty("--tilt-spot-x", `${currentSpotX.toFixed(1)}%`);
+			card.style.setProperty("--tilt-spot-y", `${currentSpotY.toFixed(1)}%`);
 
 			if (
 				currentRotateX !== targetRotateX ||
 				currentRotateY !== targetRotateY ||
 				currentShiftX !== targetShiftX ||
-				currentShiftY !== targetShiftY
+				currentShiftY !== targetShiftY ||
+				currentSpotX !== targetSpotX ||
+				currentSpotY !== targetSpotY
 			) {
 				frame = window.requestAnimationFrame(render);
 				return;
@@ -218,18 +230,21 @@
 			}
 
 			const rect = card.getBoundingClientRect();
-
 			if (!rect.width || !rect.height) {
 				return;
 			}
 
-			const normalizedX = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-			const normalizedY = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+			const ratioX = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+			const ratioY = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+			const normalizedX = (ratioX - 0.5) * 2;
+			const normalizedY = (ratioY - 0.5) * 2;
 
-			targetRotateY = normalizedX * 5.8 * tiltScale;
-			targetRotateX = normalizedY * -5.8 * tiltScale;
-			targetShiftX = normalizedX * 1.05 * shiftScale;
-			targetShiftY = normalizedY * 0.92 * shiftScale;
+			targetRotateY = normalizedX * 4.2 * tiltScale;
+			targetRotateX = normalizedY * -4.2 * tiltScale;
+			targetShiftX = normalizedX * 0.9 * shiftScale;
+			targetShiftY = normalizedY * 0.8 * shiftScale;
+			targetSpotX = ratioX * 100;
+			targetSpotY = ratioY * 100;
 			requestRender();
 		};
 
@@ -238,6 +253,8 @@
 			targetRotateY = 0;
 			targetShiftX = 0;
 			targetShiftY = 0;
+			targetSpotX = 24;
+			targetSpotY = 0;
 			requestRender();
 		};
 

@@ -14,6 +14,10 @@
 		},
 		{
 			order: 2,
+			matches: (pathname) => pathname === "/friends" || pathname.startsWith("/friends/"),
+		},
+		{
+			order: 3,
 			matches: (pathname) => pathname === "/search",
 		},
 	];
@@ -67,7 +71,7 @@
 		return normalizedScrollY >= NAV_CONDENSE_ENTER_Y;
 	};
 
-	// 测量导航栏子元素的自然内容宽度（不受容器宽度约束）
+	// 测量导航栏子元素自然内容宽度，在链接较多或出现阅读胶囊时自适应拓宽灵动岛
 	const measureNavContentWidth = () => {
 		const shell = document.querySelector(".site-nav-shell");
 		if (!shell) return 0;
@@ -84,32 +88,71 @@
 		return Math.ceil(totalW);
 	};
 
-	// 根据内容宽度动态计算胶囊内距，仅在内容超过默认胶囊时扩展
 	const syncCondensedNavWidth = () => {
 		if (!isNavCondensed) {
 			root.style.removeProperty("--nav-shell-condensed-computed-inset");
 			return;
 		}
-		const MIN_INSET_PX = 13; // ~0.8rem 保证与屏幕边缘的最小间距
-		const NAV_MAX_W = 1060; // 与 CSS --nav-shell-max-width 对应
+		const MIN_INSET_PX = 16;
+		const NAV_MAX_W = 760;
 		const vw = window.innerWidth;
-		// 计算默认胶囊宽度（当前 CSS 公式的 JS 等价）
 		const defaultInset = Math.max(MIN_INSET_PX, (vw - NAV_MAX_W) / 2);
 		const defaultCapsuleW = vw - defaultInset * 2;
 		const contentW = measureNavContentWidth();
 		if (contentW <= defaultCapsuleW || contentW === 0) {
-			// 内容在默认胶囊内放得下，维持现状
 			root.style.removeProperty("--nav-shell-condensed-computed-inset");
 			return;
 		}
-		// 内容超出，扩展胶囊到内容所需宽度（但不超过屏幕边距限制）
 		const maxCapsuleW = vw - MIN_INSET_PX * 2;
-		const newCapsuleW = Math.min(contentW, maxCapsuleW);
+		const newCapsuleW = Math.min(contentW + 12, maxCapsuleW);
 		const newInset = Math.max(MIN_INSET_PX, (vw - newCapsuleW) / 2);
 		root.style.setProperty(
 			"--nav-shell-condensed-computed-inset",
 			`${newInset.toFixed(1)}px`,
 		);
+	};
+
+	// 同步文章阅读进度至灵动岛底部流光条与百分比回顶胶囊
+	const syncReadingProgress = () => {
+		const articleBody = document.querySelector(".article-body");
+		const backTopButton = document.querySelector("[data-nav-back-top]");
+		const percentEl = document.querySelector("[data-nav-reading-percent]");
+
+		if (!(articleBody instanceof HTMLElement)) {
+			root.removeAttribute("data-reading-active");
+			root.style.removeProperty("--nav-reading-progress");
+			if (backTopButton instanceof HTMLElement) {
+				backTopButton.hidden = true;
+			}
+			return;
+		}
+
+		const rect = articleBody.getBoundingClientRect();
+		const articleTop = rect.top + window.scrollY;
+		const scrollable = Math.max(
+			1,
+			articleTop + rect.height - window.innerHeight * 0.75,
+		);
+		const rawProgress = Math.min(
+			1,
+			Math.max(0, (window.scrollY - articleTop * 0.35) / Math.max(1, scrollable - articleTop * 0.35)),
+		);
+		const percent = Math.round(rawProgress * 100);
+
+		root.setAttribute("data-reading-active", "true");
+		root.style.setProperty("--nav-reading-progress", rawProgress.toFixed(4));
+
+		if (backTopButton instanceof HTMLElement) {
+			const wasHidden = backTopButton.hidden;
+			backTopButton.hidden = false;
+			if (wasHidden && isNavCondensed) {
+				window.requestAnimationFrame(syncCondensedNavWidth);
+			}
+		}
+
+		if (percentEl instanceof HTMLElement) {
+			percentEl.textContent = `${percent}%`;
+		}
 	};
 
 	const applyNavState = (nextCondensed) => {
@@ -119,7 +162,6 @@
 
 		isNavCondensed = nextCondensed;
 		root.toggleAttribute("data-nav-condensed", nextCondensed);
-		// 状态切换后重新计算胶囊宽度
 		window.requestAnimationFrame(syncCondensedNavWidth);
 	};
 
@@ -144,6 +186,7 @@
 			: getNextNavCondensedState(window.scrollY);
 
 		applyNavState(nextCondensed);
+		syncReadingProgress();
 	};
 
 	const requestNavSync = (force = false) => {
@@ -162,8 +205,8 @@
 	};
 
 	syncNavState({ force: true });
-	// 首次加载时，DOM 就绪后测量并调整胶囊宽度（处理页面刷新时已滚动的情况）
 	document.addEventListener("DOMContentLoaded", () => {
+		syncReadingProgress();
 		window.requestAnimationFrame(syncCondensedNavWidth);
 	});
 	window.addEventListener("scroll", () => requestNavSync(), { passive: true });
@@ -171,12 +214,14 @@
 		"resize",
 		() => {
 			requestNavSync(true);
-			// resize 时重新测量，即使胶囊状态未变化
 			window.requestAnimationFrame(syncCondensedNavWidth);
 		},
 		{ passive: true },
 	);
-	document.addEventListener("astro:page-load", () => requestNavSync(true));
+	document.addEventListener("astro:page-load", () => {
+		requestNavSync(true);
+		window.requestAnimationFrame(syncCondensedNavWidth);
+	});
 	document.addEventListener("astro:before-preparation", (event) => {
 		event.direction = getRouteTransitionDirection(
 			event.from,
@@ -292,7 +337,7 @@
 						clipPath,
 					},
 					{
-						duration: 620,
+						duration: 580,
 						easing: "cubic-bezier(0.22, 1, 0.36, 1)",
 						pseudoElement: "::view-transition-new(root)",
 					},
@@ -311,6 +356,15 @@
 
 	document.addEventListener("click", (event) => {
 		if (!(event.target instanceof Element)) {
+			return;
+		}
+
+		const backTop = event.target.closest("[data-nav-back-top]");
+		if (backTop) {
+			window.scrollTo({
+				top: 0,
+				behavior: prefersReducedMotion() ? "auto" : "smooth",
+			});
 			return;
 		}
 

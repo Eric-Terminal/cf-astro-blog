@@ -2,42 +2,39 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { describe, test } from "node:test";
 
-describe("页脚精简保护", () => {
-	test("页脚不再渲染重复的小导航链接", async () => {
+describe("页脚精简与流式收尾保护", () => {
+	test("页脚不再渲染重复的小导航链接，保留版权、RSS 与备案号", async () => {
 		const footerSource = await readFile("src/components/Footer.astro", "utf8");
 
 		assert.ok(!footerSource.includes('class="footer-links"'));
 		assert.ok(!footerSource.includes('href="/blog"'));
 		assert.ok(!footerSource.includes('href="/search"'));
 		assert.ok(!footerSource.includes('href="/sitemap.xml"'));
+		assert.match(footerSource, /href="\/rss\.xml"/u);
 		assert.match(footerSource, /footer-meta/u);
 		assert.match(footerSource, /icp\.gov\.moe\/\?keyword=20260256/u);
 		assert.match(footerSource, /萌ICP备20260256号/u);
 		assert.match(footerSource, /target="_blank"/u);
 	});
 
-	test("页脚会在接近页面底部时缓慢上浮出现", async () => {
-		const [
-			footerSource,
-			baseLayoutSource,
-			globalStylesSource,
-			footerScriptSource,
-		] = await Promise.all([
-			readFile("src/components/Footer.astro", "utf8"),
+	test("页脚回归自然文档流，不再使用固定定位弹窗遮挡正文", async () => {
+		const [baseLayoutSource, globalStylesSource] = await Promise.all([
 			readFile("src/layouts/Base.astro", "utf8"),
 			readFile("src/styles/global.css", "utf8"),
-			readFile("public/footer-reveal.js", "utf8"),
 		]);
 
-		assert.match(footerSource, /data-footer-reveal/u);
-		assert.match(baseLayoutSource, /footer-reveal\.js/u);
-		assert.match(globalStylesSource, /--footer-reveal-space:/u);
-		assert.match(globalStylesSource, /\.site-footer\.is-visible/u);
-		assert.match(footerScriptSource, /remaining <=/u);
-		assert.match(footerScriptSource, /is-visible/u);
+		assert.ok(!baseLayoutSource.includes("footer-reveal.js"));
+		assert.match(
+			globalStylesSource,
+			/\.site-footer\s*\{[\s\S]*?margin-top:\s*auto;/u,
+		);
+		assert.doesNotMatch(
+			globalStylesSource,
+			/\.site-footer\s*\{[^}]*position:\s*fixed/u,
+		);
 	});
 
-	test("页脚浮层会跟随首页卡片透明度与高斯模糊参数", async () => {
+	test("页脚面板会跟随首页卡片透明度与高斯模糊参数", async () => {
 		const globalStylesSource = await readFile("src/styles/global.css", "utf8");
 
 		assert.match(

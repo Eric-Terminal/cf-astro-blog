@@ -29,7 +29,7 @@ function isLinkActive(href: string) {
 ---
 
 <header class="site-header">
-	<nav class="site-nav" transition:persist>
+	<nav class="site-nav" aria-label="主导航" transition:persist>
 		<div class="site-nav-shell-scroll">
 			<div class="site-nav-shell">
 				<div class="site-brand">
@@ -68,9 +68,37 @@ function isLinkActive(href: string) {
 					}
 				</ul>
 				<div class="nav-actions">
+					<button
+						type="button"
+						class="nav-reading-pill"
+						data-nav-back-top
+						aria-label="回到文章顶部"
+						title="点击回到顶部"
+						hidden
+					>
+						<span class="nav-reading-percent" data-nav-reading-percent>0%</span>
+						<svg
+							class="nav-reading-arrow"
+							width="13"
+							height="13"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M12 19V5"></path>
+							<path d="m5 12 7-7 7 7"></path>
+						</svg>
+					</button>
 					<ThemeToggle />
 				</div>
 			</div>
+			<span class="nav-reading-track" aria-hidden="true">
+				<span class="nav-reading-bar" data-nav-reading-bar></span>
+			</span>
 		</div>
 	</nav>
 </header>
@@ -95,6 +123,7 @@ function isLinkActive(href: string) {
 		contain: paint;
 	}
 
+	/* 外壳背景层与内容层拆分：避免宽度与圆角收拢成灵动岛时触发子项重排抖动 */
 	.site-nav::before {
 		content: "";
 		position: absolute;
@@ -106,9 +135,9 @@ function isLinkActive(href: string) {
 		border-radius: 0;
 		background: var(--nav-shell-open-surface);
 		box-shadow: var(--nav-shell-open-shadow);
-		backdrop-filter: blur(var(--nav-shell-blur-effective, 14px)) saturate(125%);
+		backdrop-filter: blur(var(--nav-shell-blur-effective, 14px)) saturate(145%);
 		-webkit-backdrop-filter: blur(var(--nav-shell-blur-effective, 14px))
-			saturate(125%);
+			saturate(145%);
 		transform-origin: top center;
 		transform: translate3d(0, 0, 0);
 		backface-visibility: hidden;
@@ -132,8 +161,7 @@ function isLinkActive(href: string) {
 		overflow-x: auto;
 		overflow-y: hidden;
 		-webkit-overflow-scrolling: touch;
-		scrollbar-width: thin;
-		scrollbar-color: rgba(10, 132, 255, 0.3) transparent;
+		scrollbar-width: none;
 		pointer-events: auto;
 		will-change: width, margin-inline, border-radius, transform;
 		transition:
@@ -144,32 +172,22 @@ function isLinkActive(href: string) {
 	}
 
 	.site-nav-shell-scroll::-webkit-scrollbar {
-		height: 5px;
-	}
-
-	.site-nav-shell-scroll::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.site-nav-shell-scroll::-webkit-scrollbar-thumb {
-		border-radius: 999px;
-		background: rgba(10, 132, 255, 0.28);
+		display: none;
 	}
 
 	.site-nav-shell {
 		position: relative;
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		gap: 1rem;
-		min-width: 100%;
-		width: max-content;
+		gap: 0.9rem;
+		width: min(100%, var(--max-width));
+		min-width: max-content;
 		margin-inline: auto;
 		padding:
-			0.88rem
-			calc(1.18rem + env(safe-area-inset-right))
-			0.96rem
-			calc(1.18rem + env(safe-area-inset-left));
-		will-change: max-width;
+			0.72rem
+			calc(1.25rem + env(safe-area-inset-right))
+			0.72rem
+			calc(1.25rem + env(safe-area-inset-left));
 		transform-origin: top center;
 		transform: translate3d(0, 0, 0) scale(1);
 		transition:
@@ -181,36 +199,46 @@ function isLinkActive(href: string) {
 	.site-brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.85rem;
+		gap: 0.7rem;
 		flex: 0 0 auto;
 	}
 
 	.site-brand-mark-link,
 	.site-brand-copy-link {
 		display: inline-flex;
+		align-items: center;
 		min-width: 0;
 		color: inherit;
 	}
 
 	.site-brand-mark-link {
-		border-radius: var(--radius-inner);
+		border-radius: 10px;
 	}
 
-	.site-brand-copy-link {
-		display: grid;
+	.site-brand-mark-link:active {
+		transform: scale(0.95);
 	}
 
 	.site-brand-mark {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.8rem;
-		height: 2.8rem;
-		border-radius: var(--radius-inner);
-		padding: 0.28rem;
-		background: rgba(10, 132, 255, 0.1);
-		border: 1px solid rgba(10, 132, 255, 0.18);
-		box-shadow: 0 12px 28px -24px rgba(10, 132, 255, 0.45);
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 10px;
+		padding: 0.22rem;
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+		box-shadow: inset 0 1px 0 var(--glass-highlight);
+		transition:
+			width var(--nav-motion-main),
+			height var(--nav-motion-main),
+			border-radius var(--nav-motion-main),
+			border-color var(--transition);
+	}
+
+	.site-brand-mark-link:hover .site-brand-mark {
+		border-color: rgba(var(--color-accent-rgb), 0.32);
 	}
 
 	.site-brand-mark img {
@@ -222,29 +250,35 @@ function isLinkActive(href: string) {
 
 	.site-brand-copy {
 		display: grid;
-		gap: 0.18rem;
+		gap: 0.08rem;
 		min-width: 0;
 	}
 
 	.site-brand-copy strong {
 		display: block;
-		max-width: 18rem;
-		font-size: 1rem;
-		font-weight: 700;
+		max-width: 16rem;
+		font-size: 0.94rem;
+		font-weight: 680;
+		line-height: 1.25;
 		color: var(--color-text);
-		letter-spacing: -0.02em;
+		letter-spacing: -0.018em;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.site-brand-copy small {
+		display: block;
+		max-height: 1.2rem;
 		color: var(--color-text-muted);
-		font-size: 0.78rem;
+		font-size: 0.74rem;
+		line-height: 1.2;
 		white-space: nowrap;
-		transform-origin: left center;
+		overflow: hidden;
+		transform-origin: left top;
 		transition:
-			opacity var(--nav-motion-surface),
+			opacity 240ms ease,
+			max-height var(--nav-motion-main),
 			transform var(--nav-motion-main);
 	}
 
@@ -252,28 +286,33 @@ function isLinkActive(href: string) {
 	.nav-actions {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--space-md);
 		list-style: none;
-		transition: transform var(--nav-motion-surface);
 		transform: translate3d(0, 0, 0);
+		transition:
+			gap var(--nav-motion-main),
+			transform var(--nav-motion-surface);
 	}
 
 	.nav-links {
 		margin-left: auto;
 		flex-wrap: nowrap;
 		white-space: nowrap;
-		gap: 0.4rem;
+		gap: 0.22rem;
 	}
 
 	.nav-actions {
 		flex: 0 0 auto;
+		gap: 0.42rem;
 		min-width: max-content;
 	}
 
 	.nav-link {
+		position: relative;
 		color: var(--color-text-secondary);
-		font-size: 0.92rem;
-		padding: 0.72rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 520;
+		line-height: 1.2;
+		padding: 0.48rem 0.84rem;
 		border-radius: var(--radius-pill);
 		border: 1px solid transparent;
 		background: transparent;
@@ -281,32 +320,105 @@ function isLinkActive(href: string) {
 			color var(--transition),
 			background-color var(--transition),
 			border-color var(--transition),
-			transform var(--transition);
+			padding var(--nav-motion-main),
+			transform 120ms ease-out;
 	}
 
-	.nav-link:hover,
+	.nav-link:hover {
+		color: var(--color-text);
+		background: var(--color-bg-tertiary);
+	}
+
 	.nav-link.active {
+		color: var(--color-text);
+		font-weight: 620;
+		background: var(--color-bg-tertiary);
+		border-color: var(--color-border);
+		box-shadow: inset 0 1px 0 var(--glass-highlight);
+	}
+
+	.nav-link:active {
+		transform: scale(0.96);
+	}
+
+	/* 文章页灵动岛专属：阅读进度百分比与一键回顶胶囊 */
+	.nav-reading-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		padding: 0.38rem 0.64rem;
+		border-radius: var(--radius-pill);
+		border: 1px solid var(--color-border);
+		background: var(--color-accent-soft);
 		color: var(--color-accent);
-		background: rgba(10, 132, 255, 0.08);
-		border-color: rgba(10, 132, 255, 0.12);
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+		cursor: pointer;
+		opacity: 0;
+		transform: scale(0.92);
+		pointer-events: none;
+		transition:
+			opacity 220ms ease,
+			transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+			background-color var(--transition),
+			border-color var(--transition);
 	}
 
-	.nav-link:hover,
-	.nav-link.active {
-		transform: translateY(-1px);
+	.nav-reading-pill[hidden] {
+		display: none;
 	}
 
+	.nav-reading-pill:hover {
+		background: rgba(var(--color-accent-rgb), 0.18);
+		border-color: rgba(var(--color-accent-rgb), 0.32);
+	}
+
+	.nav-reading-pill:active {
+		transform: scale(0.94);
+	}
+
+	.nav-reading-arrow {
+		transition: transform var(--transition);
+	}
+
+	.nav-reading-pill:hover .nav-reading-arrow {
+		transform: translateY(-1.5px);
+	}
+
+	/* 灵动岛下沿光学阅读进度细丝 */
+	.nav-reading-track {
+		position: absolute;
+		left: 1.25rem;
+		right: 1.25rem;
+		bottom: 0;
+		height: 2px;
+		border-radius: var(--radius-pill);
+		overflow: hidden;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 240ms ease;
+	}
+
+	.nav-reading-bar {
+		display: block;
+		width: 100%;
+		height: 100%;
+		background: var(--color-accent);
+		transform-origin: left center;
+		transform: scaleX(var(--nav-reading-progress, 0));
+		will-change: transform;
+	}
+
+	/* === 下滑凝聚为悬浮灵动岛（data-nav-condensed） === */
 	:global(html[data-nav-condensed]) .site-header {
-		top: 0.75rem;
-		padding-inline: 0.8rem;
+		top: 0.65rem;
+		padding-inline: 0.75rem;
 	}
 
 	:global(html[data-nav-condensed]) .site-nav::before {
-		/*
-		 * --nav-shell-condensed-computed-inset 由 JS 动态设置：
-		 * 内容超出默认 1060px 胶囊时扩展，保证所有导航项可见；
-		 * 未设置时降级到原始公式。
-		 */
 		inset-inline: var(
 			--nav-shell-condensed-computed-inset,
 			max(
@@ -314,7 +426,7 @@ function isLinkActive(href: string) {
 				calc((100% - var(--nav-shell-max-width)) / 2)
 			)
 		);
-		border: 1px solid var(--color-border);
+		border: 1px solid var(--glass-border);
 		border-radius: var(--nav-shell-condensed-radius);
 		background: var(--nav-shell-condensed-surface);
 		box-shadow: var(--nav-shell-condensed-shadow);
@@ -346,17 +458,37 @@ function isLinkActive(href: string) {
 	}
 
 	:global(html[data-nav-condensed]) .site-nav-shell {
+		width: 100%;
+		padding: 0.42rem 0.62rem 0.42rem 0.72rem;
+		gap: 0.65rem;
 		transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 	}
 
-	:global(html[data-nav-condensed]) .site-brand-copy small {
-		opacity: 0.68;
-		transform: translateY(-1px);
+	:global(html[data-nav-condensed]) .site-brand-mark {
+		width: 1.95rem;
+		height: 1.95rem;
+		border-radius: 50%;
 	}
 
-	:global(html[data-nav-condensed]) .nav-links,
-	:global(html[data-nav-condensed]) .nav-actions {
-		transform: translate3d(0, -1px, 0);
+	/* 成岛时优雅收起副标题，使灵动岛保持修长同心胶囊比例 */
+	:global(html[data-nav-condensed]) .site-brand-copy small {
+		opacity: 0;
+		max-height: 0;
+		transform: translateY(-3px);
+	}
+
+	:global(html[data-nav-condensed]) .nav-link {
+		padding: 0.42rem 0.74rem;
+	}
+
+	:global(html[data-nav-condensed][data-reading-active="true"]) .nav-reading-pill {
+		opacity: 1;
+		transform: scale(1);
+		pointer-events: auto;
+	}
+
+	:global(html[data-nav-condensed][data-reading-active="true"]) .nav-reading-track {
+		opacity: 0.85;
 	}
 
 	@media (max-width: 960px) {
@@ -365,40 +497,18 @@ function isLinkActive(href: string) {
 			padding-inline: 0;
 		}
 
-		.site-nav {
-			width: 100%;
-		}
-
 		.site-nav-shell {
-			gap: 0.72rem;
+			gap: 0.65rem;
 			padding:
-				0.82rem
+				0.65rem
 				calc(0.9rem + env(safe-area-inset-right))
-				0.95rem
+				0.65rem
 				calc(0.9rem + env(safe-area-inset-left));
 		}
 
-		.site-brand-copy {
-			justify-items: start;
-		}
-
-		.site-brand-copy small {
-			white-space: nowrap;
-			text-align: left;
-		}
-
-		.nav-links {
-			gap: 0.36rem;
-		}
-
 		.nav-link {
-			padding: 0.62rem 0.78rem;
-			font-size: 0.88rem;
-			white-space: nowrap;
-		}
-
-		.nav-actions :global(.theme-toggle) {
-			padding: 0.62rem;
+			padding: 0.44rem 0.72rem;
+			font-size: 0.85rem;
 		}
 
 		:global(html[data-nav-condensed]) .site-header {
@@ -408,40 +518,45 @@ function isLinkActive(href: string) {
 
 		:global(html[data-nav-condensed]) .site-nav::before {
 			inset-inline: var(--nav-shell-condensed-inset-mobile);
-			border-radius: 28px;
+			border-radius: var(--radius-pill);
 			transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 		}
 
 		:global(html[data-nav-condensed]) .site-nav-shell {
+			padding: 0.38rem 0.55rem;
 			transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 		}
 
 		:global(html[data-nav-condensed]) .site-nav-shell-scroll {
 			width: calc(100% - (var(--nav-shell-condensed-inset-mobile) * 2));
 			margin-inline: var(--nav-shell-condensed-inset-mobile);
-			border-radius: 28px;
+			border-radius: var(--radius-pill);
 		}
 	}
 
 	@media (max-width: 640px) {
 		.site-nav-shell {
-			gap: 0.56rem;
-			padding: 0.72rem 0.8rem;
+			width: 100%;
+			min-width: 0;
+			gap: 0.35rem;
+			padding: 0.54rem 0.68rem;
 		}
 
 		.site-brand {
-			gap: 0.52rem;
+			gap: 0.4rem;
+			min-width: 0;
+			flex: 0 1 auto;
 		}
 
 		.site-brand-mark {
-			width: 2.45rem;
-			height: 2.45rem;
-			padding: 0.22rem;
+			width: 1.85rem;
+			height: 1.85rem;
+			padding: 0.18rem;
 		}
 
 		.site-brand-copy strong {
-			max-width: min(42vw, 10.5rem);
-			font-size: 0.92rem;
+			max-width: 4.8rem;
+			font-size: 0.82rem;
 		}
 
 		.site-brand-copy small {
@@ -449,30 +564,29 @@ function isLinkActive(href: string) {
 		}
 
 		.nav-links {
-			gap: 0.2rem;
+			gap: 0.08rem;
 		}
 
 		.nav-link {
-			padding: 0.52rem 0.66rem;
-			font-size: 0.84rem;
+			padding: 0.36rem 0.5rem;
+			font-size: 0.8rem;
+		}
+
+		.nav-actions {
+			gap: 0.28rem;
 		}
 
 		.nav-actions :global(.theme-toggle) {
-			padding: 0.58rem;
+			width: 1.9rem;
+			height: 1.9rem;
 		}
 
-		:global(html[data-nav-condensed]) .site-nav::before {
-			border-radius: 24px;
-		}
-
-		:global(html[data-nav-condensed]) .site-nav-shell-scroll {
-			border-radius: 24px;
+		.nav-reading-pill {
+			padding: 0.3rem 0.44rem;
+			font-size: 0.68rem;
 		}
 	}
 
-	/* 主题切换动画期间，View Transition 的截图层会阻断 backdrop-filter 采样，
-	 * 导致导航栏的磨玻璃背景变透明并透出下方内容。
-	 * 在切换过渡期间改用不透明的背景色兜底，视觉上保持导航栏不透明。 */
 	:global([data-theme-switching]) .site-nav::before {
 		background: var(--color-bg);
 		transition: none;
