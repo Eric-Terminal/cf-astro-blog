@@ -19,19 +19,23 @@ describe("后台界面风格保护", () => {
 		assert.match(html, /href="\/api\/admin\/mentions"/u);
 		assert.match(html, /sidebar-nav-icon/u);
 		assert.match(html, />提及</u);
+		assert.match(html, /theme-toggle/u);
 		assert.match(html, /退出登录/u);
+		assert.ok(!html.includes("#4f46e5"));
 	});
 
 	test("登录页会使用前台风格并保留 GitHub OAuth 入口", () => {
 		const html = loginPage({ oauthEnabled: true });
 
 		assert.match(html, /class="entry-shell"/u);
+		assert.match(html, /theme-toggle/u);
 		assert.match(html, /返回首页/u);
 		assert.match(html, /欢迎回来/u);
 		assert.match(html, /GitHub/u);
 		assert.match(html, /\/api\/auth\/github/u);
 		assert.doesNotMatch(html, /站点管理入口/u);
 		assert.ok(!html.includes("允许访问账号"));
+		assert.ok(!html.includes("#4f46e5"));
 	});
 
 	test("外观页提供顶部状态栏与首页文案编辑入口", async () => {

@@ -18,67 +18,79 @@ export function loginPage(options: LoginPageOptions = {}): string {
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>登录 · EricTerminal's Blog</title>
+	<title>登录 · Eric-Terminal 的博客</title>
 	<meta name="robots" content="noindex, nofollow" />
 	<script src="/theme.js"></script>
 	<style>
 		:root {
-			--color-bg: #eef1f6;
-			--color-text: #0f172a;
-			--color-text-secondary: #334155;
-			--color-text-muted: #64748b;
-			--color-border: rgba(15, 23, 42, 0.08);
-			--color-accent: #4f46e5;
-			--color-accent-hover: #4338ca;
-			--color-accent-rgb: 79, 70, 229;
+			--color-bg: #f6f7f9;
+			--color-bg-tertiary: rgba(15, 23, 42, 0.045);
+			--color-text: #0f1419;
+			--color-text-secondary: #3b4454;
+			--color-text-muted: #687385;
+			--color-border: rgba(15, 23, 42, 0.085);
+			--color-border-strong: rgba(15, 23, 42, 0.14);
+			--color-accent: #0066dc;
+			--color-accent-hover: #0052b4;
+			--color-accent-rgb: 0, 102, 220;
+			--color-accent-soft: rgba(0, 102, 220, 0.09);
 			--card-surface-rgb: 255, 255, 255;
-			--card-sheen-rgb: 255, 255, 255;
+			--glass-border: rgba(15, 23, 42, 0.085);
+			--glass-highlight: rgba(255, 255, 255, 0.72);
 			--shadow-card:
-				0 18px 40px -30px rgba(8, 18, 34, 0.18),
-				0 6px 18px -12px rgba(8, 18, 34, 0.12);
-			--radius-panel: 34px;
+				0 1px 2px rgba(9, 14, 24, 0.04),
+				0 18px 42px -22px rgba(9, 14, 24, 0.14);
+			--radius-panel: 20px;
+			--radius-inner: 12px;
 			--radius-pill: 999px;
+			--transition: 200ms cubic-bezier(0.22, 1, 0.36, 1);
 			--font-sans:
-				"SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB",
-				"Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-			--glow-a: rgba(129, 140, 248, 0.34);
-			--glow-b: rgba(79, 70, 229, 0.22);
-			--glass-opacity: 0.13;
+				"SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+				"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+			--font-mono:
+				"SF Mono", "JetBrains Mono", ui-monospace, "Cascadia Code", "Menlo",
+				"Consolas", monospace;
 		}
 
-		/* JS 设置 data-theme 的精确覆盖 */
 		[data-theme="dark"] {
-			--color-bg: #090b12;
-			--color-text: #eef0ff;
-			--color-text-secondary: #c4c9e0;
-			--color-text-muted: #9399b5;
-			--color-border: rgba(160, 170, 210, 0.14);
-			--color-accent: #818cf8;
-			--color-accent-hover: #a5b4fc;
-			--color-accent-rgb: 129, 140, 248;
-			--card-surface-rgb: 22, 26, 42;
-			--card-sheen-rgb: 160, 170, 255;
-			--glow-a: rgba(129, 140, 248, 0.36);
-			--glow-b: rgba(79, 70, 229, 0.28);
-			--glass-opacity: 0.16;
+			--color-bg: #090c10;
+			--color-bg-tertiary: rgba(255, 255, 255, 0.055);
+			--color-text: #f0f4f8;
+			--color-text-secondary: #a8b3c4;
+			--color-text-muted: #6e7b8f;
+			--color-border: rgba(255, 255, 255, 0.085);
+			--color-border-strong: rgba(255, 255, 255, 0.15);
+			--color-accent: #4da3ff;
+			--color-accent-hover: #7cc0ff;
+			--color-accent-rgb: 77, 163, 255;
+			--color-accent-soft: rgba(77, 163, 255, 0.13);
+			--card-surface-rgb: 18, 23, 31;
+			--glass-border: rgba(255, 255, 255, 0.09);
+			--glass-highlight: rgba(255, 255, 255, 0.09);
+			--shadow-card:
+				0 2px 6px rgba(0, 0, 0, 0.35),
+				0 24px 52px -22px rgba(0, 0, 0, 0.65);
 		}
 
-		/* 系统深色模式兜底（未访问博客/无 localStorage 时）*/
 		@media (prefers-color-scheme: dark) {
 			:root:not([data-theme="light"]) {
-				--color-bg: #090b12;
-				--color-text: #eef0ff;
-				--color-text-secondary: #c4c9e0;
-				--color-text-muted: #9399b5;
-				--color-border: rgba(160, 170, 210, 0.14);
-				--color-accent: #818cf8;
-				--color-accent-hover: #a5b4fc;
-				--color-accent-rgb: 129, 140, 248;
-				--card-surface-rgb: 22, 26, 42;
-				--card-sheen-rgb: 160, 170, 255;
-				--glow-a: rgba(129, 140, 248, 0.36);
-				--glow-b: rgba(79, 70, 229, 0.28);
-				--glass-opacity: 0.16;
+				--color-bg: #090c10;
+				--color-bg-tertiary: rgba(255, 255, 255, 0.055);
+				--color-text: #f0f4f8;
+				--color-text-secondary: #a8b3c4;
+				--color-text-muted: #6e7b8f;
+				--color-border: rgba(255, 255, 255, 0.085);
+				--color-border-strong: rgba(255, 255, 255, 0.15);
+				--color-accent: #4da3ff;
+				--color-accent-hover: #7cc0ff;
+				--color-accent-rgb: 77, 163, 255;
+				--color-accent-soft: rgba(77, 163, 255, 0.13);
+				--card-surface-rgb: 18, 23, 31;
+				--glass-border: rgba(255, 255, 255, 0.09);
+				--glass-highlight: rgba(255, 255, 255, 0.09);
+				--shadow-card:
+					0 2px 6px rgba(0, 0, 0, 0.35),
+					0 24px 52px -22px rgba(0, 0, 0, 0.65);
 			}
 		}
 
@@ -88,95 +100,35 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			box-sizing: border-box;
 		}
 
-		html,
+		html {
+			background-color: var(--color-bg);
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+		}
+
 		body {
 			margin: 0;
-			min-height: 100vh;
-		}
-
-		@keyframes float-glow {
-			0%, 100% { transform: translateY(0) scale(1); }
-			33% { transform: translateY(-2rem) scale(1.05); }
-			66% { transform: translateY(1.2rem) scale(0.96); }
-		}
-
-		body {
+			min-height: 100dvh;
 			display: grid;
 			place-items: center;
 			padding: 1.5rem 1rem;
 			font-family: var(--font-sans);
 			color: var(--color-text);
 			background:
-				radial-gradient(circle at 14% 10%, rgba(var(--color-accent-rgb), 0.14), transparent 24%),
-				radial-gradient(circle at 84% 12%, rgba(255, 255, 255, 0.24), transparent 20%),
-				radial-gradient(circle at 48% 100%, rgba(var(--color-accent-rgb), 0.08), transparent 26%),
-				linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 30%),
+				radial-gradient(
+					ellipse 80% 42% at 50% -10%,
+					rgba(var(--color-accent-rgb), 0.06),
+					transparent 70%
+				),
 				var(--color-bg);
 			position: relative;
-			min-height: 100dvh;
-			overflow: hidden;
+			overflow-x: hidden;
 		}
 
-		/* 有背景图时 body 背景透明，让背景图层显示 */
 		body.has-bg-image {
 			background: transparent;
 		}
 
-		/* 深色背景渐变（JS 设置 data-theme 时生效）*/
-		[data-theme="dark"] body {
-			background:
-				radial-gradient(circle at 14% 10%, rgba(30, 80, 200, 0.22), transparent 28%),
-				radial-gradient(circle at 84% 12%, rgba(10, 40, 100, 0.18), transparent 24%),
-				radial-gradient(circle at 48% 100%, rgba(20, 60, 160, 0.16), transparent 30%),
-				var(--color-bg);
-		}
-
-		/* 系统深色模式兜底（未访问博客 / 无 localStorage 时）*/
-		@media (prefers-color-scheme: dark) {
-			:root:not([data-theme="light"]) body {
-				background:
-					radial-gradient(circle at 14% 10%, rgba(30, 80, 200, 0.22), transparent 28%),
-					radial-gradient(circle at 84% 12%, rgba(10, 40, 100, 0.18), transparent 24%),
-					radial-gradient(circle at 48% 100%, rgba(20, 60, 160, 0.16), transparent 30%),
-					var(--color-bg);
-			}
-		}
-
-		body::before,
-		body::after {
-			content: "";
-			position: fixed;
-			inset: auto;
-			width: 24rem;
-			height: 24rem;
-			border-radius: 50%;
-			filter: blur(70px);
-			opacity: 0.24;
-			pointer-events: none;
-			z-index: -1;
-			animation: float-glow 16s ease-in-out infinite;
-		}
-
-		body::before {
-			top: -6rem;
-			left: -6rem;
-			background: var(--glow-a);
-		}
-
-		body::after {
-			right: -8rem;
-			bottom: 8rem;
-			background: var(--glow-b);
-			animation-delay: -6s;
-		}
-
-		.entry-shell {
-			width: min(520px, calc(100vw - 1rem));
-			display: grid;
-			gap: 1.5rem;
-		}
-
-		/* ---- 背景图层（与首页 .site-background 逻辑一致）---- */
 		.bg-image-layer {
 			position: fixed;
 			inset: 0;
@@ -185,24 +137,47 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			background-color: var(--color-bg);
 		}
 
+		.bg-image-layer::after {
+			content: "";
+			position: absolute;
+			inset: 0;
+			background: rgba(246, 247, 249, 0.24);
+			transition: background-color var(--transition);
+		}
+
+		[data-theme="dark"] .bg-image-layer::after {
+			background: rgba(7, 10, 15, 0.58);
+		}
+
+		@media (prefers-color-scheme: dark) {
+			:root:not([data-theme="light"]) .bg-image-layer::after {
+				background: rgba(7, 10, 15, 0.58);
+			}
+		}
+
 		.bg-image-layer img {
 			position: absolute;
 			inset: 0;
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			object-position: var(--bg-focus-x, 50%) var(--bg-focus-y, 50%);
-			filter: blur(var(--bg-blur, 24px));
-			transform: scale(var(--bg-scale, 1.12));
-			opacity: var(--bg-opacity, 0.72);
-			transform-origin: center;
+			object-position: center;
+			filter: blur(20px) saturate(1.08);
+			transform: scale(1.08);
+			opacity: 0.78;
 		}
 
-		/* ---- 顶部品牌栏 ---- */
+		.entry-shell {
+			width: min(460px, calc(100vw - 1.5rem));
+			display: grid;
+			gap: 1.15rem;
+		}
+
 		.entry-header {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
+			padding-inline: 0.2rem;
 		}
 
 		.entry-brand {
@@ -211,37 +186,84 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			gap: 0.62rem;
 			color: inherit;
 			text-decoration: none;
-			font-weight: 700;
-			font-size: 0.95rem;
-			letter-spacing: 0.01em;
-			opacity: 0.9;
-			transition: opacity 200ms ease;
+			font-weight: 680;
+			font-size: 0.92rem;
+			letter-spacing: -0.015em;
+			transition: color var(--transition);
 		}
 
 		.entry-brand:hover {
-			opacity: 1;
+			color: var(--color-accent);
+		}
+
+		.entry-brand-mark {
+			width: 2rem;
+			height: 2rem;
+			padding: 0.2rem;
+			border-radius: 9px;
+			background: var(--color-bg-tertiary);
+			border: 1px solid var(--color-border);
+			box-shadow: inset 0 1px 0 var(--glass-highlight);
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 
 		.entry-brand-logo {
-			width: 2rem;
-			height: 2rem;
-			border-radius: 0.48rem;
+			width: 100%;
+			height: 100%;
 			object-fit: contain;
-			flex-shrink: 0;
 		}
 
-		/* ---- 主卡片 ---- */
+		.theme-toggle {
+			width: 2rem;
+			height: 2rem;
+			background: var(--color-bg-tertiary);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-pill);
+			padding: 0;
+			cursor: pointer;
+			color: var(--color-text-secondary);
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: inset 0 1px 0 var(--glass-highlight);
+			transition:
+				color var(--transition),
+				border-color var(--transition),
+				transform 120ms ease-out,
+				background-color var(--transition);
+		}
+
+		.theme-toggle:hover {
+			color: var(--color-text);
+			border-color: var(--color-border-strong);
+			background: var(--color-accent-soft);
+		}
+
+		.theme-toggle:active {
+			transform: scale(0.92);
+		}
+
+		.icon-sun { display: none; }
+		.icon-moon { display: block; }
+
+		[data-theme="dark"] .icon-sun { display: block; }
+		[data-theme="dark"] .icon-moon { display: none; }
+
+		@media (prefers-color-scheme: dark) {
+			:root:not([data-theme="light"]) .icon-sun { display: block; }
+			:root:not([data-theme="light"]) .icon-moon { display: none; }
+		}
+
 		.entry-panel {
 			position: relative;
 			overflow: hidden;
-			background: transparent;
-			border: 1px solid rgba(255, 255, 255, 0.2);
+			border: 1px solid var(--glass-border);
 			border-radius: var(--radius-panel);
-			box-shadow: var(--shadow-card);
-		}
-
-		[data-theme="dark"] .entry-panel {
-			border-color: rgba(147, 161, 188, 0.12);
+			box-shadow:
+				inset 0 1px 0 var(--glass-highlight),
+				var(--shadow-card);
 		}
 
 		.entry-panel::after {
@@ -249,81 +271,65 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			position: absolute;
 			inset: 0;
 			border-radius: inherit;
-			background: rgba(var(--card-surface-rgb), var(--glass-opacity, 0.13));
-			backdrop-filter: blur(22px) saturate(148%);
-			-webkit-backdrop-filter: blur(22px) saturate(148%);
+			background: rgba(var(--card-surface-rgb), 0.78);
+			backdrop-filter: blur(28px) saturate(140%);
+			-webkit-backdrop-filter: blur(28px) saturate(140%);
 			pointer-events: none;
 			z-index: 0;
-		}
-
-		.entry-panel::before {
-			content: "";
-			position: absolute;
-			inset: 0;
-			border-radius: inherit;
-			background: linear-gradient(
-				160deg,
-				rgba(var(--card-sheen-rgb), 0.1) 0%,
-				rgba(var(--card-sheen-rgb), 0.04) 36%,
-				transparent 100%
-			);
-			pointer-events: none;
-			z-index: 1;
 		}
 
 		.entry-content {
 			position: relative;
 			z-index: 2;
 			display: grid;
-			gap: 1.1rem;
+			gap: 1.05rem;
 			padding: clamp(1.5rem, 1.2rem + 1.4vw, 2.1rem);
 		}
 
-		/* ---- 标题区 ---- */
 		.entry-eyebrow {
-			display: flex;
+			display: inline-flex;
 			align-items: center;
 			gap: 0.45rem;
-			font-size: 0.8rem;
+			font-family: var(--font-mono);
+			font-size: 0.74rem;
 			font-weight: 600;
-			letter-spacing: 0.06em;
+			letter-spacing: 0.08em;
 			text-transform: uppercase;
 			color: var(--color-accent);
-			opacity: 0.85;
 		}
 
 		.entry-eyebrow-dot {
-			width: 0.36rem;
-			height: 0.36rem;
+			width: 6px;
+			height: 6px;
 			border-radius: 50%;
 			background: currentColor;
+			box-shadow: 0 0 0 3px var(--color-accent-soft);
 		}
 
 		.entry-title {
 			margin: 0;
-			font-size: clamp(1.55rem, 1.2rem + 1vw, 2rem);
-			font-weight: 700;
-			line-height: 1.22;
-			letter-spacing: -0.02em;
+			font-size: clamp(1.55rem, 1.3rem + 0.8vw, 1.9rem);
+			font-weight: 750;
+			line-height: 1.2;
+			letter-spacing: -0.026em;
 		}
 
 		.entry-subtitle {
 			margin: 0;
 			color: var(--color-text-secondary);
-			font-size: 0.96rem;
-			line-height: 1.7;
+			font-size: 0.94rem;
+			line-height: 1.68;
 		}
 
-		/* ---- 专属提示 ---- */
 		.entry-notice {
 			display: flex;
 			align-items: flex-start;
 			gap: 0.6rem;
 			padding: 0.78rem 0.92rem;
-			border-radius: 16px;
+			border-radius: var(--radius-inner);
 			border: 1px solid var(--color-border);
-			background: rgba(var(--card-surface-rgb), 0.36);
-			font-size: 0.875rem;
+			background: var(--color-bg-tertiary);
+			font-size: 0.85rem;
 			line-height: 1.65;
 			color: var(--color-text-muted);
 		}
@@ -331,38 +337,35 @@ export function loginPage(options: LoginPageOptions = {}): string {
 		.entry-notice-icon {
 			flex-shrink: 0;
 			width: 1rem;
-			margin-top: 0.14rem;
+			margin-top: 0.16rem;
 			color: var(--color-accent);
-			opacity: 0.7;
 		}
 
 		.entry-notice strong {
-			color: var(--color-text-secondary);
+			color: var(--color-text);
 			font-weight: 600;
 		}
 
-		/* ---- 错误提示 ---- */
 		.entry-error {
 			margin: 0;
 			padding: 0.72rem 0.88rem;
-			border-radius: 14px;
-			border: 1px solid rgba(220, 38, 38, 0.25);
-			background: rgba(220, 38, 38, 0.08);
+			border-radius: var(--radius-inner);
+			border: 1px solid rgba(220, 38, 38, 0.28);
+			background: rgba(220, 38, 38, 0.1);
 			color: #dc2626;
-			font-size: 0.9rem;
-			line-height: 1.7;
+			font-size: 0.86rem;
+			line-height: 1.65;
 		}
 
 		[data-theme="dark"] .entry-error {
-			color: #f87171;
+			color: #fca5a5;
 		}
 
-		/* ---- 操作按钮 ---- */
 		.entry-actions {
 			display: flex;
 			flex-wrap: wrap;
 			gap: 0.65rem;
-			padding-top: 0.15rem;
+			padding-top: 0.2rem;
 		}
 
 		.entry-btn {
@@ -370,37 +373,38 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			align-items: center;
 			justify-content: center;
 			gap: 0.45rem;
-			padding: 0.85rem 1.25rem;
+			padding: 0.74rem 1.2rem;
 			border-radius: var(--radius-pill);
 			text-decoration: none;
-			font-size: 0.925rem;
+			font-size: 0.9rem;
 			font-weight: 600;
-			transition:
-				transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-				box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-				opacity 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-				background 220ms ease;
 			cursor: pointer;
-			border: none;
 			white-space: nowrap;
+			transition:
+				transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+				background-color var(--transition),
+				border-color var(--transition),
+				color var(--transition),
+				box-shadow var(--transition);
 		}
 
-		.entry-btn:hover {
-			transform: translateY(-1.5px);
+		.entry-btn:active {
+			transform: scale(0.97);
 		}
 
 		.entry-btn-primary {
-			border: 1px solid rgba(var(--color-accent-rgb), 0.15);
-			background: var(--color-accent);
-			color: #f0f7ff;
-			box-shadow: 0 12px 28px -20px rgba(var(--color-accent-rgb), 0.5);
 			flex: 1;
+			border: 1px solid transparent;
+			background: var(--color-text);
+			color: var(--color-bg);
+			box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.35);
 		}
 
 		.entry-btn-primary:hover {
+			background: var(--color-accent);
 			color: #ffffff;
-			background: var(--color-accent-hover);
-			box-shadow: 0 16px 32px -20px rgba(var(--color-accent-rgb), 0.45);
+			transform: translateY(-1px);
+			box-shadow: 0 10px 24px -12px rgba(var(--color-accent-rgb), 0.45);
 		}
 
 		.entry-btn-primary[aria-disabled="true"] {
@@ -410,27 +414,29 @@ export function loginPage(options: LoginPageOptions = {}): string {
 		}
 
 		.entry-btn-ghost {
-			border: 1px solid var(--color-border);
-			background: rgba(var(--card-surface-rgb), 0.55);
+			border: 1px solid var(--color-border-strong);
+			background: var(--color-bg-tertiary);
 			color: var(--color-text-secondary);
 		}
 
 		.entry-btn-ghost:hover {
-			background: rgba(var(--card-surface-rgb), 0.75);
+			border-color: rgba(var(--color-accent-rgb), 0.3);
+			background: var(--color-accent-soft);
+			color: var(--color-accent);
 		}
 
 		.entry-btn svg {
-			width: 1.05rem;
-			height: 1.05rem;
+			width: 1.02rem;
+			height: 1.02rem;
 			flex-shrink: 0;
 		}
 
-		/* ---- 底部分隔 ---- */
 		.entry-footer {
-			font-size: 0.8rem;
+			margin: 0;
+			font-family: var(--font-mono);
+			font-size: 0.76rem;
 			color: var(--color-text-muted);
 			text-align: center;
-			opacity: 0.7;
 		}
 
 		@media (max-width: 480px) {
@@ -442,20 +448,26 @@ export function loginPage(options: LoginPageOptions = {}): string {
 				width: 100%;
 			}
 		}
-</style>
+	</style>
 </head>
 <body${hasBackgroundImage ? ' class="has-bg-image"' : ""}>
 	${hasBackgroundImage ? `<div class="bg-image-layer" aria-hidden="true"><img src="${escapedBackgroundImageUrl}" alt="" loading="eager" decoding="async" /></div>` : ""}
 	<main class="entry-shell">
 		<header class="entry-header">
-			<a href="/" class="entry-brand" aria-label="返回 EricTerminal's Blog 首页">
-				<img
-					src="https://assets.ericterminal.com/logo-transparent.png"
-					alt=""
-					class="entry-brand-logo"
-				/>
-				<span>EricTerminal's Blog</span>
+			<a href="/" class="entry-brand" aria-label="返回博客首页">
+				<span class="entry-brand-mark" aria-hidden="true">
+					<img
+						src="https://assets.ericterminal.com/logo-transparent.png"
+						alt=""
+						class="entry-brand-logo"
+					/>
+				</span>
+				<span>Eric-Terminal 的博客</span>
 			</a>
+			<button class="theme-toggle" type="button" aria-label="切换主题" title="切换主题">
+				<svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+				<svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+			</button>
 		</header>
 
 		<section class="entry-panel">
@@ -465,13 +477,13 @@ export function loginPage(options: LoginPageOptions = {}): string {
 					<span>站点管理</span>
 				</div>
 				<h1 class="entry-title">欢迎回来</h1>
-				<p class="entry-subtitle">请通过 GitHub 验证身份以继续访问后台。</p>
+				<p class="entry-subtitle">请通过 GitHub 验证管理员身份以进入工作台。</p>
 
 				<div class="entry-notice" role="note">
 					<svg class="entry-notice-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
 						<path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4a1 1 0 011 1v4a1 1 0 11-2 0V7a1 1 0 011-1zm0 8a1.25 1.25 0 110-2.5A1.25 1.25 0 0110 14z" fill="currentColor"/>
 					</svg>
-					<span>此后台仅供 <strong>@Eric-Terminal</strong> 登录使用，暂不对外开放。</span>
+					<span>此工作台仅供 <strong>@Eric-Terminal</strong> 本人登录维护，暂不对外开放。</span>
 				</div>
 
 				${error ? `<p class="entry-error" role="alert">${escapeHtml(error)}</p>` : ""}
@@ -492,7 +504,7 @@ export function loginPage(options: LoginPageOptions = {}): string {
 			</div>
 		</section>
 
-		<p class="entry-footer">EricTerminal's Blog &mdash; 后台入口</p>
+		<p class="entry-footer">Eric-Terminal 的博客 · 管理入口</p>
 	</main>
 </body>
 </html>`;

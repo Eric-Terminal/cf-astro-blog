@@ -60,6 +60,7 @@ const selectedDateLabel = hasDateFilter
 					autocomplete="off"
 					value={initialQuery}
 				/>
+				<kbd class="search-kbd" aria-hidden="true">⌘K</kbd>
 			</div>
 			{categories.length > 0 ? (
 				<select name="category" class="search-select" aria-label="按分类筛选">
@@ -184,7 +185,26 @@ const selectedDateLabel = hasDateFilter
 		display: flex;
 		align-items: center;
 		gap: 0.55rem;
-		padding-left: 0.75rem;
+		padding-inline: 0.75rem 0.5rem;
+	}
+
+	.search-kbd {
+		flex-shrink: 0;
+		padding: 0.16rem 0.42rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		line-height: 1.2;
+		user-select: none;
+	}
+
+	@media (max-width: 640px) {
+		.search-kbd {
+			display: none;
+		}
 	}
 
 	.search-icon {

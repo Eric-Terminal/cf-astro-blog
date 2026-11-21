@@ -68,26 +68,26 @@ export const adminSharedStyles = `
 
 		:root {
 			color-scheme: light;
-			/* 与前台统一的 indigo-slate 色板 */
-			--bg: #eef1f6;
-			--bg-secondary: rgba(255, 255, 255, 0.74);
-			--bg-tertiary: rgba(255, 255, 255, 0.5);
-			--surface-elevated: rgba(255, 255, 255, 0.88);
-			--text: #0f172a;
-			--text-secondary: #334155;
-			--text-muted: #64748b;
-			--border: rgba(15, 23, 42, 0.08);
-			--border-strong: rgba(15, 23, 42, 0.12);
-			--accent: #4f46e5;
-			--accent-hover: #4338ca;
-			--accent-soft: rgba(79, 70, 229, 0.12);
-			--accent-rgb: 79, 70, 229;
+			/* 与前台统一的矿石白 × 光学钴蓝色板 */
+			--bg: #f6f7f9;
+			--bg-secondary: rgba(255, 255, 255, 0.78);
+			--bg-tertiary: rgba(15, 23, 42, 0.045);
+			--surface-elevated: rgba(255, 255, 255, 0.92);
+			--text: #0f1419;
+			--text-secondary: #3b4454;
+			--text-muted: #687385;
+			--border: rgba(15, 23, 42, 0.085);
+			--border-strong: rgba(15, 23, 42, 0.14);
+			--accent: #0066dc;
+			--accent-hover: #0052b4;
+			--accent-soft: rgba(0, 102, 220, 0.1);
+			--accent-rgb: 0, 102, 220;
 			--success: #16a34a;
 			--warning: #d97706;
 			--danger: #dc2626;
-			--radius-sm: 12px;
-			--radius: 16px;
-			--radius-lg: 22px;
+			--radius-sm: 10px;
+			--radius: 14px;
+			--radius-lg: 18px;
 			--radius-pill: 999px;
 			--font:
 				"SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB",
@@ -95,12 +95,12 @@ export const adminSharedStyles = `
 			--font-mono:
 				"SF Mono", "JetBrains Mono", "Cascadia Code", "Menlo", "Consolas", monospace;
 			--shadow-soft:
-				0 1px 2px rgba(15, 23, 42, 0.04),
-				0 12px 32px -18px rgba(15, 23, 42, 0.16);
+				0 1px 2px rgba(9, 14, 24, 0.04),
+				0 12px 32px -18px rgba(9, 14, 24, 0.12);
 			--shadow-strong:
-				0 2px 4px rgba(15, 23, 42, 0.05),
-				0 18px 40px -20px rgba(15, 23, 42, 0.2);
-			--transition-fast: 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+				0 2px 6px rgba(9, 14, 24, 0.05),
+				0 18px 40px -20px rgba(9, 14, 24, 0.16);
+			--transition-fast: 180ms cubic-bezier(0.22, 1, 0.36, 1);
 			--transition-slow: 360ms cubic-bezier(0.22, 1, 0.36, 1);
 			--shell-width: min(1480px, calc(100vw - 1.5rem));
 			--sidebar-width: 252px;
@@ -112,81 +112,70 @@ export const adminSharedStyles = `
 		@media (prefers-color-scheme: dark) {
 			:root:not([data-theme="light"]) {
 				color-scheme: dark;
-				--bg: #090b12;
-				--bg-secondary: rgba(18, 22, 36, 0.84);
-				--bg-tertiary: rgba(24, 28, 44, 0.7);
-				--surface-elevated: rgba(26, 30, 48, 0.94);
-				--text: #eef0ff;
-				--text-secondary: #c4c9e0;
-				--text-muted: #9399b5;
-				--border: rgba(160, 170, 210, 0.12);
-				--border-strong: rgba(160, 170, 210, 0.2);
-				--accent: #818cf8;
-				--accent-hover: #a5b4fc;
-				--accent-soft: rgba(129, 140, 248, 0.16);
-				--accent-rgb: 129, 140, 248;
+				--bg: #090c10;
+				--bg-secondary: rgba(18, 23, 31, 0.84);
+				--bg-tertiary: rgba(255, 255, 255, 0.055);
+				--surface-elevated: rgba(24, 31, 42, 0.94);
+				--text: #f0f4f8;
+				--text-secondary: #a8b3c4;
+				--text-muted: #6e7b8f;
+				--border: rgba(255, 255, 255, 0.085);
+				--border-strong: rgba(255, 255, 255, 0.15);
+				--accent: #4da3ff;
+				--accent-hover: #7cc0ff;
+				--accent-soft: rgba(77, 163, 255, 0.14);
+				--accent-rgb: 77, 163, 255;
 				--success: #4ade80;
 				--warning: #fbbf24;
 				--danger: #f87171;
 				--shadow-soft:
-					0 1px 2px rgba(0, 0, 0, 0.28),
-					0 16px 36px -20px rgba(0, 0, 0, 0.5);
+					0 1px 2px rgba(0, 0, 0, 0.32),
+					0 16px 36px -20px rgba(0, 0, 0, 0.52);
 				--shadow-strong:
-					0 2px 6px rgba(0, 0, 0, 0.32),
-					0 22px 48px -22px rgba(0, 0, 0, 0.55);
-				--card-surface-rgb: 20, 24, 40;
-				--card-sheen-rgb: 160, 170, 255;
+					0 2px 6px rgba(0, 0, 0, 0.38),
+					0 22px 48px -22px rgba(0, 0, 0, 0.6);
+				--card-surface-rgb: 18, 23, 31;
+				--card-sheen-rgb: 210, 226, 248;
 			}
 			:root:not([data-theme="light"]) body {
 				background:
-					radial-gradient(circle at 8% 0%, rgba(var(--accent-rgb), 0.18), transparent 32%),
-					radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.1), transparent 26%),
-					radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.12), transparent 34%),
+					radial-gradient(ellipse 80% 42% at 50% -10%, rgba(var(--accent-rgb), 0.07), transparent 70%),
 					var(--bg);
-			}
-			:root:not([data-theme="light"]) body::after {
-				background: rgba(var(--accent-rgb), 0.14);
 			}
 		}
 
 		[data-theme="dark"] {
 			color-scheme: dark;
-			--bg: #090b12;
-			--bg-secondary: rgba(18, 22, 36, 0.84);
-			--bg-tertiary: rgba(24, 28, 44, 0.7);
-			--surface-elevated: rgba(26, 30, 48, 0.94);
-			--text: #eef0ff;
-			--text-secondary: #c4c9e0;
-			--text-muted: #9399b5;
-			--border: rgba(160, 170, 210, 0.12);
-			--border-strong: rgba(160, 170, 210, 0.2);
-			--accent: #818cf8;
-			--accent-hover: #a5b4fc;
-			--accent-soft: rgba(129, 140, 248, 0.16);
-			--accent-rgb: 129, 140, 248;
+			--bg: #090c10;
+			--bg-secondary: rgba(18, 23, 31, 0.84);
+			--bg-tertiary: rgba(255, 255, 255, 0.055);
+			--surface-elevated: rgba(24, 31, 42, 0.94);
+			--text: #f0f4f8;
+			--text-secondary: #a8b3c4;
+			--text-muted: #6e7b8f;
+			--border: rgba(255, 255, 255, 0.085);
+			--border-strong: rgba(255, 255, 255, 0.15);
+			--accent: #4da3ff;
+			--accent-hover: #7cc0ff;
+			--accent-soft: rgba(77, 163, 255, 0.14);
+			--accent-rgb: 77, 163, 255;
 			--success: #4ade80;
 			--warning: #fbbf24;
 			--danger: #f87171;
 			--shadow-soft:
-				0 1px 2px rgba(0, 0, 0, 0.28),
-				0 16px 36px -20px rgba(0, 0, 0, 0.5);
+				0 1px 2px rgba(0, 0, 0, 0.32),
+				0 16px 36px -20px rgba(0, 0, 0, 0.52);
 			--shadow-strong:
-				0 2px 6px rgba(0, 0, 0, 0.32),
-				0 22px 48px -22px rgba(0, 0, 0, 0.55);
-			--card-surface-rgb: 20, 24, 40;
-			--card-sheen-rgb: 160, 170, 255;
+				0 2px 6px rgba(0, 0, 0, 0.38),
+				0 22px 48px -22px rgba(0, 0, 0, 0.6);
+			--card-surface-rgb: 18, 23, 31;
+			--card-sheen-rgb: 210, 226, 248;
 		}
 
 		[data-theme="dark"] body {
 			background:
-				radial-gradient(circle at 8% 0%, rgba(var(--accent-rgb), 0.18), transparent 32%),
-				radial-gradient(circle at 92% 8%, rgba(129, 140, 248, 0.1), transparent 26%),
-				radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.12), transparent 34%),
+				radial-gradient(ellipse 80% 42% at 50% -10%, rgba(var(--accent-rgb), 0.07), transparent 70%),
 				var(--bg);
-		}
-
-		[data-theme="dark"] body::after {
-			background: rgba(var(--accent-rgb), 0.14);
 		}
 
 		html {
@@ -204,38 +193,8 @@ export const adminSharedStyles = `
 			position: relative;
 			overflow-x: hidden;
 			background:
-				radial-gradient(ellipse 70% 50% at 12% -8%, rgba(var(--accent-rgb), 0.22), transparent 55%),
-				radial-gradient(ellipse 50% 40% at 88% 0%, rgba(255, 255, 255, 0.45), transparent 50%),
-				radial-gradient(ellipse 60% 45% at 60% 100%, rgba(var(--accent-rgb), 0.1), transparent 55%),
-				linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 28%),
+				radial-gradient(ellipse 80% 42% at 50% -10%, rgba(var(--accent-rgb), 0.06), transparent 70%),
 				var(--bg);
-		}
-
-		body::before,
-		body::after {
-			content: "";
-			position: fixed;
-			width: 28rem;
-			height: 28rem;
-			border-radius: 50%;
-			filter: blur(80px);
-			opacity: 0.18;
-			pointer-events: none;
-			z-index: 0;
-			animation: admin-float 22s ease-in-out infinite;
-		}
-
-		body::before {
-			top: -10rem;
-			left: -8rem;
-			background: rgba(var(--accent-rgb), 0.4);
-		}
-
-		body::after {
-			right: -10rem;
-			bottom: 4rem;
-			background: rgba(255, 255, 255, 0.35);
-			animation-delay: -9s;
 		}
 
 		a {
@@ -336,21 +295,17 @@ export const adminSharedStyles = `
 		}
 
 		.sidebar-brand-mark {
-			width: 2.25rem;
-			height: 2.25rem;
-			border-radius: 12px;
-			background:
-				linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 68%),
-				linear-gradient(135deg, #6366f1, var(--accent) 55%, var(--accent-hover));
+			width: 2.2rem;
+			height: 2.2rem;
+			border-radius: 10px;
+			background: var(--text);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 0.78rem;
+			font-size: 0.75rem;
 			font-weight: 800;
-			color: #fff;
-			box-shadow:
-				0 8px 18px -10px rgba(var(--accent-rgb), 0.7),
-				inset 0 1px 0 rgba(255, 255, 255, 0.3);
+			color: var(--bg);
+			box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.32);
 			flex-shrink: 0;
 			letter-spacing: -0.02em;
 		}
@@ -743,20 +698,14 @@ export const adminSharedStyles = `
 		}
 
 		.btn-primary {
-			background:
-				linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 65%),
-				linear-gradient(135deg, #6366f1, var(--accent));
-			color: #fff;
+			background: var(--text);
+			color: var(--bg);
 			border-color: transparent;
-			box-shadow:
-				0 10px 22px -14px rgba(var(--accent-rgb), 0.75),
-				inset 0 1px 0 rgba(255, 255, 255, 0.22);
+			box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.35);
 		}
 
 		.btn-primary:hover {
-			background:
-				linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 65%),
-				linear-gradient(135deg, var(--accent), var(--accent-hover));
+			background: var(--accent);
 			color: #fff;
 		}
 
@@ -2153,7 +2102,8 @@ ${adminSharedStyles}
 				<div class="sidebar-footer">
 					<div class="admin-toolbar">
 						<div class="sidebar-footer-links">
-							<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm">查看站点</a>
+							<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="flex: 1;">查看站点</a>
+							<button type="button" class="btn btn-sm theme-toggle" aria-label="切换主题" title="切换深浅主题" style="width: auto; padding-inline: 0.65rem;">切换主题</button>
 						</div>
 						${logoutForm}
 					</div>

@@ -42,5 +42,6 @@ describe("导航收缩与灵动岛进阶交互保护", () => {
 		assert.match(themeScriptSource, /syncReadingProgress/u);
 		assert.match(themeScriptSource, /data-reading-active/u);
 		assert.match(themeScriptSource, /window\.scrollTo/u);
+		assert.match(themeScriptSource, /focusSearchInput/u);
 	});
 });

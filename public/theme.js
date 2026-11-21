@@ -145,6 +145,14 @@
 		if (backTopButton instanceof HTMLElement) {
 			const wasHidden = backTopButton.hidden;
 			backTopButton.hidden = false;
+			const activeHeading = document.querySelector(".article-toc-link.active");
+			const sectionTitle =
+				activeHeading instanceof HTMLElement
+					? activeHeading.textContent?.trim()
+					: "";
+			backTopButton.title = sectionTitle
+				? `${sectionTitle} · 点击回到顶部`
+				: "点击回到顶部";
 			if (wasHidden && isNavCondensed) {
 				window.requestAnimationFrame(syncCondensedNavWidth);
 			}
@@ -218,9 +226,46 @@
 		},
 		{ passive: true },
 	);
+	const focusSearchInputIfRequested = () => {
+		if (window.sessionStorage.getItem("focusSearchInput") !== "1") {
+			return;
+		}
+		window.sessionStorage.removeItem("focusSearchInput");
+		const input = document.querySelector(".search-input");
+		if (input instanceof HTMLInputElement) {
+			input.focus({ preventScroll: true });
+			input.select();
+		}
+	};
+
 	document.addEventListener("astro:page-load", () => {
 		requestNavSync(true);
+		focusSearchInputIfRequested();
 		window.requestAnimationFrame(syncCondensedNavWidth);
+	});
+
+	document.addEventListener("keydown", (event) => {
+		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+			if (window.location.pathname.startsWith("/api/admin")) {
+				return;
+			}
+			event.preventDefault();
+			const existingInput = document.querySelector(".search-input");
+			if (existingInput instanceof HTMLInputElement) {
+				existingInput.focus();
+				existingInput.select();
+				return;
+			}
+			try {
+				window.sessionStorage.setItem("focusSearchInput", "1");
+			} catch {}
+			const searchNav = document.querySelector('a[href="/search"]');
+			if (searchNav instanceof HTMLAnchorElement) {
+				searchNav.click();
+			} else {
+				window.location.href = "/search";
+			}
+		}
 	});
 	document.addEventListener("astro:before-preparation", (event) => {
 		event.direction = getRouteTransitionDirection(
