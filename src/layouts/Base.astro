@@ -1,6 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import BaseHead from "@/components/BaseHead.astro";
+import CommandPalette from "@/components/CommandPalette.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import { getDb } from "@/lib/db";
@@ -117,6 +118,7 @@ const resolvedDescription =
 		<script is:inline src="/local-time.js"></script>
 		<script is:inline src="/theme.js"></script>
 		<script is:inline src="/code-block-enhance.js"></script>
+		{!isAdminPreview && <script is:inline src="/command-palette.js"></script>}
 		{!isAdminPreview && <script is:inline src="/analytics.js"></script>}
 		{!isAdminPreview && <script is:inline src="/home-motion.js"></script>}
 	</head>
@@ -147,5 +149,6 @@ const resolvedDescription =
 			</main>
 			<Footer />
 		</div>
+		{!isAdminPreview && <CommandPalette />}
 	</body>
 </html>

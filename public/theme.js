@@ -14,7 +14,8 @@
 		},
 		{
 			order: 2,
-			matches: (pathname) => pathname === "/friends" || pathname.startsWith("/friends/"),
+			matches: (pathname) =>
+				pathname === "/friends" || pathname.startsWith("/friends/"),
 		},
 		{
 			order: 3,
@@ -26,6 +27,7 @@
 	let isThemeTransitioning = false;
 	let syncFrame = 0;
 	let pendingForceSync = false;
+	let lastChapterText = "";
 
 	const theme = localStorage.getItem("theme");
 	if (theme === "dark" || theme === "light") {
@@ -71,7 +73,66 @@
 		return normalizedScrollY >= NAV_CONDENSE_ENTER_Y;
 	};
 
-	// 测量导航栏子元素自然内容宽度，在链接较多或出现阅读胶囊时自适应拓宽灵动岛
+	// 同步导航栏滑动胶囊高亮位置与当前激活路由
+	const syncNavGlidePill = (targetLink) => {
+		const navList = document.querySelector("[data-nav-links]");
+		const indicator = document.querySelector("[data-nav-indicator]");
+		if (!(navList instanceof HTMLElement) || !(indicator instanceof HTMLElement)) {
+			return;
+		}
+		const link =
+			targetLink instanceof HTMLElement
+				? targetLink
+				: navList.querySelector(".nav-link.active");
+		if (!(link instanceof HTMLElement) || link.offsetWidth === 0) {
+			navList.style.setProperty("--glide-opacity", "0");
+			return;
+		}
+		const navRect = navList.getBoundingClientRect();
+		const linkRect = link.getBoundingClientRect();
+		const offsetX = linkRect.left - navRect.left;
+		navList.style.setProperty("--glide-x", `${offsetX.toFixed(1)}px`);
+		navList.style.setProperty("--glide-w", `${linkRect.width.toFixed(1)}px`);
+		navList.style.setProperty("--glide-opacity", "1");
+	};
+
+	const syncActiveNavLinksByPath = () => {
+		const currentPath = window.location.pathname;
+		const links = document.querySelectorAll(".site-nav .nav-link");
+		for (const link of links) {
+			if (!(link instanceof HTMLAnchorElement)) continue;
+			const href = link.getAttribute("href") || "";
+			if (!href.startsWith("/") || href.startsWith("//")) {
+				link.classList.remove("active");
+				continue;
+			}
+			const isActive =
+				href === "/"
+					? currentPath === "/"
+					: currentPath === href || currentPath.startsWith(`${href}/`);
+			link.classList.toggle("active", isActive);
+		}
+		syncNavGlidePill();
+	};
+
+	const bindNavHoverGlide = () => {
+		const navList = document.querySelector("[data-nav-links]");
+		if (!(navList instanceof HTMLElement) || navList.dataset.glideBound === "1") {
+			return;
+		}
+		navList.dataset.glideBound = "1";
+		navList.addEventListener("pointerover", (event) => {
+			if (!(event.target instanceof Element)) return;
+			const link = event.target.closest(".nav-link");
+			if (link instanceof HTMLElement) {
+				syncNavGlidePill(link);
+			}
+		});
+		navList.addEventListener("pointerleave", () => {
+			syncNavGlidePill();
+		});
+	};
+
 	const measureNavContentWidth = () => {
 		const shell = document.querySelector(".site-nav-shell");
 		if (!shell) return 0;
@@ -79,10 +140,14 @@
 		const gap = parseFloat(style.columnGap) || parseFloat(style.gap) || 0;
 		const pl = parseFloat(style.paddingLeft) || 0;
 		const pr = parseFloat(style.paddingRight) || 0;
-		const children = Array.from(shell.children);
-		if (children.length === 0) return pl + pr;
-		let totalW = pl + pr + gap * Math.max(0, children.length - 1);
-		for (const child of children) {
+		const visibleChildren = Array.from(shell.children).filter(
+			(child) =>
+				child instanceof HTMLElement &&
+				window.getComputedStyle(child).display !== "none",
+		);
+		if (visibleChildren.length === 0) return pl + pr;
+		let totalW = pl + pr + gap * Math.max(0, visibleChildren.length - 1);
+		for (const child of visibleChildren) {
 			totalW += child.getBoundingClientRect().width;
 		}
 		return Math.ceil(totalW);
@@ -94,33 +159,37 @@
 			return;
 		}
 		const MIN_INSET_PX = 16;
-		const NAV_MAX_W = 760;
+		const isReadingHudCompact =
+			root.getAttribute("data-reading-active") === "true" &&
+			window.innerWidth >= 769 &&
+			!document.querySelector(".site-nav-shell-scroll:hover");
+		const NAV_MAX_W = isReadingHudCompact ? 560 : 760;
 		const vw = window.innerWidth;
-		const defaultInset = Math.max(MIN_INSET_PX, (vw - NAV_MAX_W) / 2);
-		const defaultCapsuleW = vw - defaultInset * 2;
 		const contentW = measureNavContentWidth();
-		if (contentW <= defaultCapsuleW || contentW === 0) {
-			root.style.removeProperty("--nav-shell-condensed-computed-inset");
+		if (contentW === 0) {
 			return;
 		}
-		const maxCapsuleW = vw - MIN_INSET_PX * 2;
-		const newCapsuleW = Math.min(contentW + 12, maxCapsuleW);
-		const newInset = Math.max(MIN_INSET_PX, (vw - newCapsuleW) / 2);
+		const targetW = isReadingHudCompact
+			? Math.min(Math.max(contentW + 18, 340), NAV_MAX_W)
+			: Math.min(Math.max(contentW + 16, Math.min(NAV_MAX_W, vw - MIN_INSET_PX * 2)), vw - MIN_INSET_PX * 2);
+		const newInset = Math.max(MIN_INSET_PX, (vw - targetW) / 2);
 		root.style.setProperty(
 			"--nav-shell-condensed-computed-inset",
 			`${newInset.toFixed(1)}px`,
 		);
 	};
 
-	// 同步文章阅读进度至灵动岛底部流光条与百分比回顶胶囊
+	// 同步文章阅读进度、当前章节播报舱与环形进度胶囊
 	const syncReadingProgress = () => {
 		const articleBody = document.querySelector(".article-body");
 		const backTopButton = document.querySelector("[data-nav-back-top]");
 		const percentEl = document.querySelector("[data-nav-reading-percent]");
+		const chapterEl = document.querySelector("[data-nav-reading-chapter]");
 
 		if (!(articleBody instanceof HTMLElement)) {
 			root.removeAttribute("data-reading-active");
 			root.style.removeProperty("--nav-reading-progress");
+			lastChapterText = "";
 			if (backTopButton instanceof HTMLElement) {
 				backTopButton.hidden = true;
 			}
@@ -135,24 +204,33 @@
 		);
 		const rawProgress = Math.min(
 			1,
-			Math.max(0, (window.scrollY - articleTop * 0.35) / Math.max(1, scrollable - articleTop * 0.35)),
+			Math.max(
+				0,
+				(window.scrollY - articleTop * 0.35) /
+					Math.max(1, scrollable - articleTop * 0.35),
+			),
 		);
 		const percent = Math.round(rawProgress * 100);
 
 		root.setAttribute("data-reading-active", "true");
 		root.style.setProperty("--nav-reading-progress", rawProgress.toFixed(4));
 
+		const activeToc = document.querySelector(".article-toc-link.active");
+		const articleTitle = document.querySelector(".article-title");
+		const nextChapter =
+			(activeToc instanceof HTMLElement && activeToc.textContent?.trim()) ||
+			(articleTitle instanceof HTMLElement && articleTitle.textContent?.trim()) ||
+			"正在阅读";
+
+		if (chapterEl instanceof HTMLElement && nextChapter !== lastChapterText) {
+			lastChapterText = nextChapter;
+			chapterEl.textContent = nextChapter;
+		}
+
 		if (backTopButton instanceof HTMLElement) {
 			const wasHidden = backTopButton.hidden;
 			backTopButton.hidden = false;
-			const activeHeading = document.querySelector(".article-toc-link.active");
-			const sectionTitle =
-				activeHeading instanceof HTMLElement
-					? activeHeading.textContent?.trim()
-					: "";
-			backTopButton.title = sectionTitle
-				? `${sectionTitle} · 点击回到顶部`
-				: "点击回到顶部";
+			backTopButton.title = `${nextChapter} · 点击回到顶部`;
 			if (wasHidden && isNavCondensed) {
 				window.requestAnimationFrame(syncCondensedNavWidth);
 			}
@@ -170,7 +248,12 @@
 
 		isNavCondensed = nextCondensed;
 		root.toggleAttribute("data-nav-condensed", nextCondensed);
-		window.requestAnimationFrame(syncCondensedNavWidth);
+		syncCondensedNavWidth();
+		syncNavGlidePill();
+		window.requestAnimationFrame(() => {
+			syncCondensedNavWidth();
+			syncNavGlidePill();
+		});
 	};
 
 	const syncRootAttributeToDocument = (name, nextDocument) => {
@@ -193,8 +276,8 @@
 			? getInitialNavCondensedState(window.scrollY)
 			: getNextNavCondensedState(window.scrollY);
 
-		applyNavState(nextCondensed);
 		syncReadingProgress();
+		applyNavState(nextCondensed);
 	};
 
 	const requestNavSync = (force = false) => {
@@ -212,20 +295,27 @@
 		});
 	};
 
-	syncNavState({ force: true });
-	document.addEventListener("DOMContentLoaded", () => {
-		syncReadingProgress();
-		window.requestAnimationFrame(syncCondensedNavWidth);
-	});
-	window.addEventListener("scroll", () => requestNavSync(), { passive: true });
-	window.addEventListener(
-		"resize",
-		() => {
-			requestNavSync(true);
-			window.requestAnimationFrame(syncCondensedNavWidth);
-		},
-		{ passive: true },
-	);
+	const bindShellHoverMorph = () => {
+		const scrollShell = document.querySelector(".site-nav-shell-scroll");
+		if (
+			!(scrollShell instanceof HTMLElement) ||
+			scrollShell.dataset.morphBound === "1"
+		) {
+			return;
+		}
+		scrollShell.dataset.morphBound = "1";
+		const resync = () => {
+			if (isNavCondensed) {
+				window.requestAnimationFrame(() => {
+					syncCondensedNavWidth();
+					syncNavGlidePill();
+				});
+			}
+		};
+		scrollShell.addEventListener("pointerenter", resync);
+		scrollShell.addEventListener("pointerleave", resync);
+	};
+
 	const focusSearchInputIfRequested = () => {
 		if (window.sessionStorage.getItem("focusSearchInput") !== "1") {
 			return;
@@ -238,34 +328,33 @@
 		}
 	};
 
+	syncNavState({ force: true });
+	document.addEventListener("DOMContentLoaded", () => {
+		bindNavHoverGlide();
+		bindShellHoverMorph();
+		syncActiveNavLinksByPath();
+		syncReadingProgress();
+		window.requestAnimationFrame(syncCondensedNavWidth);
+	});
+	window.addEventListener("scroll", () => requestNavSync(), { passive: true });
+	window.addEventListener(
+		"resize",
+		() => {
+			requestNavSync(true);
+			window.requestAnimationFrame(() => {
+				syncCondensedNavWidth();
+				syncNavGlidePill();
+			});
+		},
+		{ passive: true },
+	);
 	document.addEventListener("astro:page-load", () => {
+		bindNavHoverGlide();
+		bindShellHoverMorph();
+		syncActiveNavLinksByPath();
 		requestNavSync(true);
 		focusSearchInputIfRequested();
 		window.requestAnimationFrame(syncCondensedNavWidth);
-	});
-
-	document.addEventListener("keydown", (event) => {
-		if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-			if (window.location.pathname.startsWith("/api/admin")) {
-				return;
-			}
-			event.preventDefault();
-			const existingInput = document.querySelector(".search-input");
-			if (existingInput instanceof HTMLInputElement) {
-				existingInput.focus();
-				existingInput.select();
-				return;
-			}
-			try {
-				window.sessionStorage.setItem("focusSearchInput", "1");
-			} catch {}
-			const searchNav = document.querySelector('a[href="/search"]');
-			if (searchNav instanceof HTMLAnchorElement) {
-				searchNav.click();
-			} else {
-				window.location.href = "/search";
-			}
-		}
 	});
 	document.addEventListener("astro:before-preparation", (event) => {
 		event.direction = getRouteTransitionDirection(

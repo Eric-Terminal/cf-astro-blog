@@ -1,0 +1,369 @@
+---
+---
+
+<div
+	id="command-palette"
+	class="cmd-backdrop"
+	data-cmd-backdrop
+	hidden
+>
+	<div
+		class="cmd-dialog glass-panel"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="cmd-dialog-label"
+		data-cmd-dialog
+	>
+		<span id="cmd-dialog-label" class="sr-only">全站快捷命令与实时检索</span>
+		<header class="cmd-head">
+			<svg
+				class="cmd-search-icon"
+				width="18"
+				height="18"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<circle cx="11" cy="11" r="8"></circle>
+				<path d="m21 21-4.3-4.3"></path>
+			</svg>
+			<input
+				type="search"
+				class="cmd-input"
+				placeholder="输入关键词即时检索文章，或直接执行快捷指令..."
+				autocomplete="off"
+				spellcheck="false"
+				data-cmd-input
+			/>
+			<a href="/search" class="cmd-advanced-link" data-cmd-advanced>高级筛选</a>
+			<button type="button" class="cmd-esc" data-cmd-close aria-label="关闭命令面板">ESC</button>
+		</header>
+
+		<div class="cmd-body" data-cmd-body>
+			<div class="cmd-group" data-cmd-quick-group>
+				<div class="cmd-group-label">快捷指令</div>
+				<ul class="cmd-list" role="listbox" data-cmd-quick-list>
+					<li>
+						<button type="button" class="cmd-item is-selected" data-cmd-action="theme">
+							<span class="cmd-item-icon" aria-hidden="true">◐</span>
+							<span class="cmd-item-main">
+								<strong>切换深色 / 浅色光学主题</strong>
+								<small>带全屏丝滑波纹过渡</small>
+							</span>
+							<span class="cmd-item-tag">动作</span>
+						</button>
+					</li>
+					<li>
+						<a href="/blog" class="cmd-item" data-cmd-nav>
+							<span class="cmd-item-icon" aria-hidden="true">▤</span>
+							<span class="cmd-item-main">
+								<strong>浏览编年史归档目录</strong>
+								<small>按年份时间轴索引全部公开文章</small>
+							</span>
+							<span class="cmd-item-tag">/blog</span>
+						</a>
+					</li>
+					<li>
+						<a href="/friends" class="cmd-item" data-cmd-nav>
+							<span class="cmd-item-icon" aria-hidden="true">✦</span>
+							<span class="cmd-item-main">
+								<strong>访问同行者友链星图</strong>
+								<small>查看已收录的独立技术博客或申请交换</small>
+							</span>
+							<span class="cmd-item-tag">/friends</span>
+						</a>
+					</li>
+					<li>
+						<a href="/rss.xml" target="_blank" rel="noopener noreferrer" class="cmd-item">
+							<span class="cmd-item-icon" aria-hidden="true">◉</span>
+							<span class="cmd-item-main">
+								<strong>订阅站点 RSS 源</strong>
+								<small>使用阅读器追踪最新技术更新</small>
+							</span>
+							<span class="cmd-item-tag">XML</span>
+						</a>
+					</li>
+				</ul>
+			</div>
+
+			<div class="cmd-group" data-cmd-posts-group>
+				<div class="cmd-group-label" data-cmd-posts-label>近期发布</div>
+				<ul class="cmd-list" role="listbox" data-cmd-posts-list>
+					<li class="cmd-empty">正在载入文章索引...</li>
+				</ul>
+			</div>
+		</div>
+
+		<footer class="cmd-foot" aria-hidden="true">
+			<span><kbd>↑</kbd><kbd>↓</kbd> 移动选择</span>
+			<span><kbd>↵</kbd> 立即跳转</span>
+			<span><kbd>ESC</kbd> 关闭面板</span>
+		</footer>
+	</div>
+</div>
+
+<style>
+	.cmd-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 90;
+		display: grid;
+		align-items: start;
+		justify-items: center;
+		padding: clamp(3.5rem, 11vh, 7.5rem) 1rem 2rem;
+		background: rgba(6, 10, 18, 0.42);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		animation: cmd-fade-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.cmd-backdrop[hidden] {
+		display: none;
+	}
+
+	.cmd-dialog {
+		--glass-panel-opacity: 0.92;
+		--glass-panel-blur: 32px;
+		width: min(40rem, 100%);
+		max-height: min(36.5rem, calc(100dvh - 4.5rem));
+		display: flex;
+		flex-direction: column;
+		border-color: var(--color-border-strong);
+		box-shadow:
+			inset 0 1px 0 var(--glass-highlight),
+			0 28px 70px -16px rgba(0, 0, 0, 0.48),
+			0 0 0 1px rgba(var(--color-accent-rgb), 0.12);
+		animation: cmd-scale-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	.cmd-dialog.glass-panel::after {
+		background: rgba(var(--card-surface-rgb), 0.9);
+	}
+
+	.cmd-head {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.9rem 1.05rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.cmd-search-icon {
+		flex-shrink: 0;
+		color: var(--color-accent);
+	}
+
+	.cmd-input {
+		flex: 1;
+		min-width: 0;
+		border: none;
+		outline: none;
+		background: transparent;
+		color: var(--color-text);
+		font-size: 0.98rem;
+		font-family: var(--font-sans);
+	}
+
+	.cmd-advanced-link {
+		flex-shrink: 0;
+		font-size: 0.76rem;
+		font-weight: 560;
+		color: var(--color-text-muted);
+		padding: 0.24rem 0.52rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-tertiary);
+	}
+
+	.cmd-advanced-link:hover {
+		color: var(--color-accent);
+		border-color: rgba(var(--color-accent-rgb), 0.35);
+	}
+
+	.cmd-esc {
+		flex-shrink: 0;
+		padding: 0.22rem 0.48rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-tertiary);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		cursor: pointer;
+	}
+
+	.cmd-esc:hover {
+		color: var(--color-text);
+		border-color: var(--color-border-strong);
+	}
+
+	.cmd-body {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		padding: 0.65rem;
+		display: grid;
+		gap: 0.75rem;
+		scrollbar-width: thin;
+	}
+
+	.cmd-group {
+		display: grid;
+		gap: 0.32rem;
+	}
+
+	.cmd-group[hidden] {
+		display: none;
+	}
+
+	.cmd-group-label {
+		padding: 0.2rem 0.55rem;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.cmd-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.18rem;
+	}
+
+	:global(.cmd-item) {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.62rem 0.72rem;
+		border-radius: var(--radius-inner);
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--color-text);
+		text-align: left;
+		cursor: pointer;
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease;
+	}
+
+	:global(.cmd-item:hover),
+	:global(.cmd-item.is-selected) {
+		color: var(--color-text);
+		background: var(--color-accent-soft);
+		border-color: rgba(var(--color-accent-rgb), 0.26);
+	}
+
+	:global(.cmd-item-icon) {
+		width: 1.85rem;
+		height: 1.85rem;
+		flex-shrink: 0;
+		border-radius: 8px;
+		display: grid;
+		place-items: center;
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+		font-family: var(--font-mono);
+		font-size: 0.82rem;
+		color: var(--color-accent);
+	}
+
+	:global(.cmd-item-main) {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		gap: 0.12rem;
+	}
+
+	:global(.cmd-item-main strong) {
+		font-size: 0.88rem;
+		font-weight: 620;
+		line-height: 1.3;
+		color: var(--color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	:global(.cmd-item-main small) {
+		font-size: 0.76rem;
+		line-height: 1.4;
+		color: var(--color-text-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	:global(.cmd-item-tag) {
+		flex-shrink: 0;
+		font-family: var(--font-mono);
+		font-size: 0.7rem;
+		color: var(--color-text-muted);
+		padding: 0.14rem 0.44rem;
+		border-radius: 999px;
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+	}
+
+	:global(.cmd-empty) {
+		padding: 1.4rem 0.8rem;
+		text-align: center;
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+	}
+
+	.cmd-foot {
+		display: flex;
+		align-items: center;
+		gap: 1.1rem;
+		padding: 0.58rem 1rem;
+		border-top: 1px solid var(--color-border);
+		font-size: 0.74rem;
+		color: var(--color-text-muted);
+	}
+
+	.cmd-foot kbd {
+		display: inline-block;
+		padding: 0.08rem 0.34rem;
+		margin-right: 0.22rem;
+		border-radius: 5px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-tertiary);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+	}
+
+	@keyframes cmd-fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes cmd-scale-in {
+		from {
+			opacity: 0;
+			transform: translate3d(0, -10px, 0) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translate3d(0, 0, 0) scale(1);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.cmd-backdrop {
+			padding-top: 1rem;
+		}
+
+		.cmd-foot {
+			display: none;
+		}
+	}
+</style>

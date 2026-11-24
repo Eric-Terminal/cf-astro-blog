@@ -602,13 +602,40 @@ body.site-shell-has-background-image .glass-panel::after {
 	inset: 0;
 	border-radius: inherit;
 	background: radial-gradient(
-		520px circle at var(--tilt-spot-x, 24%) var(--tilt-spot-y, 0%),
+		480px circle at var(--tilt-spot-x, 24%) var(--tilt-spot-y, 0%),
 		rgba(var(--card-sheen-rgb), 0.14),
-		transparent 65%
+		transparent 62%
 	);
 	pointer-events: none;
-	opacity: 0.72;
+	opacity: 0.78;
 	z-index: 1;
+}
+
+/* 3D 交互卡片专属 1px 棱镜追光边框：仅在指针靠近的那一段边缘泛起细腻光学高光 */
+[data-tilt-card].glass-panel::before {
+	padding: 1px;
+	background: radial-gradient(
+		320px circle at var(--tilt-spot-x, 24%) var(--tilt-spot-y, 0%),
+		rgba(var(--color-accent-rgb), 0.52),
+		rgba(var(--card-sheen-rgb), 0.16) 38%,
+		transparent 70%
+	);
+	-webkit-mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask:
+		linear-gradient(#000 0 0) content-box,
+		linear-gradient(#000 0 0);
+	mask-composite: exclude;
+	opacity: 0;
+	transition: opacity 240ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	[data-tilt-card].glass-panel:hover::before {
+		opacity: 1;
+	}
 }
 
 /* 编辑级栏目标签：用精细字距与圆点取代臃肿胶囊 */

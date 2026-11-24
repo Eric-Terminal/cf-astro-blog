@@ -50,7 +50,15 @@ function isLinkActive(href: string) {
 						</span>
 					</a>
 				</div>
-				<ul class="nav-links">
+
+				<!-- 文章阅读态专属灵动岛播报舱：下滑阅读时展示当前章节与进度环，悬停灵动岛时自动翻转回完整导航 -->
+				<div class="nav-reading-hud" data-nav-reading-hud aria-hidden="true">
+					<span class="nav-hud-pulse"></span>
+					<span class="nav-hud-chapter" data-nav-reading-chapter>正在阅读</span>
+				</div>
+
+				<ul class="nav-links" data-nav-links>
+					<span class="nav-glide-pill" data-nav-indicator aria-hidden="true"></span>
 					{
 						navLinks.map((item) => (
 							<li>
@@ -67,7 +75,31 @@ function isLinkActive(href: string) {
 						))
 					}
 				</ul>
+
 				<div class="nav-actions">
+					<button
+						type="button"
+						class="nav-cmd-trigger"
+						data-command-trigger
+						aria-label="打开快捷检索与命令面板"
+						title="全站检索与快捷命令 (⌘K)"
+					>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.1"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<circle cx="11" cy="11" r="8"></circle>
+							<path d="m21 21-4.3-4.3"></path>
+						</svg>
+						<kbd>⌘K</kbd>
+					</button>
 					<button
 						type="button"
 						class="nav-reading-pill"
@@ -76,22 +108,21 @@ function isLinkActive(href: string) {
 						title="点击回到顶部"
 						hidden
 					>
-						<span class="nav-reading-percent" data-nav-reading-percent>0%</span>
-						<svg
-							class="nav-reading-arrow"
-							width="13"
-							height="13"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							aria-hidden="true"
-						>
-							<path d="M12 19V5"></path>
-							<path d="m5 12 7-7 7 7"></path>
+						<svg class="nav-progress-ring" width="16" height="16" viewBox="0 0 20 20" aria-hidden="true">
+							<circle class="nav-ring-track" cx="10" cy="10" r="7.5" fill="none" stroke-width="2.2" />
+							<circle
+								class="nav-ring-fill"
+								cx="10"
+								cy="10"
+								r="7.5"
+								fill="none"
+								stroke-width="2.2"
+								stroke-dasharray="47.12"
+								style="stroke-dashoffset: calc(47.12 * (1 - var(--nav-reading-progress, 0)));"
+							/>
 						</svg>
+						<span class="nav-reading-percent" data-nav-reading-percent>0%</span>
+						<span class="nav-reading-up" aria-hidden="true">↑</span>
 					</button>
 					<ThemeToggle />
 				</div>
@@ -123,21 +154,19 @@ function isLinkActive(href: string) {
 		contain: paint;
 	}
 
-	/* 外壳背景层与内容层拆分：避免宽度与圆角收拢成灵动岛时触发子项重排抖动 */
+	/* 外壳动画与内部布局分离，确保顶栏与灵动岛变形全程 60fps 无文字重排抖动 */
 	.site-nav::before {
 		content: "";
 		position: absolute;
 		inset: 0;
-		border-top: none;
-		border-left: none;
-		border-right: none;
-		border-bottom: 1px solid var(--color-border);
+		border: 1px solid transparent;
+		border-bottom-color: var(--color-border);
 		border-radius: 0;
 		background: var(--nav-shell-open-surface);
 		box-shadow: var(--nav-shell-open-shadow);
-		backdrop-filter: blur(var(--nav-shell-blur-effective, 14px)) saturate(145%);
+		backdrop-filter: blur(var(--nav-shell-blur-effective, 14px)) saturate(150%);
 		-webkit-backdrop-filter: blur(var(--nav-shell-blur-effective, 14px))
-			saturate(145%);
+			saturate(150%);
 		transform-origin: top center;
 		transform: translate3d(0, 0, 0);
 		backface-visibility: hidden;
@@ -179,14 +208,14 @@ function isLinkActive(href: string) {
 		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 0.9rem;
+		gap: 0.85rem;
 		width: min(100%, var(--max-width));
 		min-width: max-content;
 		margin-inline: auto;
 		padding:
-			0.72rem
+			0.75rem
 			calc(1.25rem + env(safe-area-inset-right))
-			0.72rem
+			0.75rem
 			calc(1.25rem + env(safe-area-inset-left));
 		transform-origin: top center;
 		transform: translate3d(0, 0, 0) scale(1);
@@ -199,7 +228,7 @@ function isLinkActive(href: string) {
 	.site-brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.7rem;
+		gap: 0.68rem;
 		flex: 0 0 auto;
 	}
 
@@ -238,7 +267,7 @@ function isLinkActive(href: string) {
 	}
 
 	.site-brand-mark-link:hover .site-brand-mark {
-		border-color: rgba(var(--color-accent-rgb), 0.32);
+		border-color: rgba(var(--color-accent-rgb), 0.38);
 	}
 
 	.site-brand-mark img {
@@ -252,11 +281,14 @@ function isLinkActive(href: string) {
 		display: grid;
 		gap: 0.08rem;
 		min-width: 0;
+		transition:
+			opacity 240ms ease,
+			transform var(--nav-motion-main);
 	}
 
 	.site-brand-copy strong {
 		display: block;
-		max-width: 16rem;
+		max-width: 15rem;
 		font-size: 0.94rem;
 		font-weight: 680;
 		line-height: 1.25;
@@ -271,15 +303,56 @@ function isLinkActive(href: string) {
 		display: block;
 		max-height: 1.2rem;
 		color: var(--color-text-muted);
-		font-size: 0.74rem;
+		font-size: 0.73rem;
 		line-height: 1.2;
 		white-space: nowrap;
 		overflow: hidden;
 		transform-origin: left top;
 		transition:
-			opacity 240ms ease,
+			opacity 220ms ease,
 			max-height var(--nav-motion-main),
 			transform var(--nav-motion-main);
+	}
+
+	/* 多模态章节播报舱（仅在文章阅读成岛且鼠标未悬停展开时浮现） */
+	.nav-reading-hud {
+		display: none;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		max-width: 22rem;
+		margin-right: auto;
+		animation: hud-slot-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.nav-hud-pulse {
+		width: 6px;
+		height: 6px;
+		flex-shrink: 0;
+		border-radius: 50%;
+		background: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-soft);
+	}
+
+	.nav-hud-chapter {
+		font-size: 0.84rem;
+		font-weight: 600;
+		color: var(--color-text);
+		letter-spacing: -0.01em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	@keyframes hud-slot-in {
+		from {
+			opacity: 0;
+			transform: translate3d(0, 7px, 0);
+		}
+		to {
+			opacity: 1;
+			transform: translate3d(0, 0, 0);
+		}
 	}
 
 	.nav-links,
@@ -289,15 +362,72 @@ function isLinkActive(href: string) {
 		list-style: none;
 		transform: translate3d(0, 0, 0);
 		transition:
+			opacity 220ms ease,
 			gap var(--nav-motion-main),
 			transform var(--nav-motion-surface);
 	}
 
 	.nav-links {
+		position: relative;
 		margin-left: auto;
 		flex-wrap: nowrap;
 		white-space: nowrap;
-		gap: 0.22rem;
+		gap: 0.16rem;
+		padding: 0.2rem;
+		border-radius: var(--radius-pill);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+	}
+
+	/* 物理跟随滑动胶囊背景：随鼠标悬停或激活路由在链接间丝滑游走 */
+	.nav-glide-pill {
+		position: absolute;
+		top: 0.2rem;
+		bottom: 0.2rem;
+		left: 0;
+		width: var(--glide-w, 0px);
+		border-radius: var(--radius-pill);
+		background: var(--color-surface-elevated);
+		border: 1px solid var(--color-border);
+		box-shadow:
+			0 2px 8px -2px var(--color-shadow),
+			inset 0 1px 0 var(--glass-highlight);
+		opacity: var(--glide-opacity, 0);
+		transform: translate3d(var(--glide-x, 0px), 0, 0);
+		pointer-events: none;
+		transition:
+			transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+			width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 180ms ease;
+	}
+
+	.nav-link {
+		position: relative;
+		z-index: 1;
+		display: inline-block;
+		color: var(--color-text-secondary);
+		font-size: 0.85rem;
+		font-weight: 540;
+		line-height: 1.2;
+		padding: 0.42rem 0.82rem;
+		border-radius: var(--radius-pill);
+		transition:
+			color var(--transition),
+			padding var(--nav-motion-main),
+			transform 120ms ease-out;
+	}
+
+	.nav-link:hover,
+	.nav-link.active {
+		color: var(--color-text);
+	}
+
+	.nav-link.active {
+		font-weight: 640;
+	}
+
+	.nav-link:active {
+		transform: scale(0.96);
 	}
 
 	.nav-actions {
@@ -306,54 +436,56 @@ function isLinkActive(href: string) {
 		min-width: max-content;
 	}
 
-	.nav-link {
-		position: relative;
-		color: var(--color-text-secondary);
-		font-size: 0.875rem;
-		font-weight: 520;
-		line-height: 1.2;
-		padding: 0.48rem 0.84rem;
+	.nav-cmd-trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.36rem;
+		height: 2.15rem;
+		padding: 0 0.65rem;
 		border-radius: var(--radius-pill);
-		border: 1px solid transparent;
-		background: transparent;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-tertiary);
+		color: var(--color-text-secondary);
+		box-shadow: inset 0 1px 0 var(--glass-highlight);
+		cursor: pointer;
 		transition:
 			color var(--transition),
-			background-color var(--transition),
 			border-color var(--transition),
-			padding var(--nav-motion-main),
+			background-color var(--transition),
 			transform 120ms ease-out;
 	}
 
-	.nav-link:hover {
+	.nav-cmd-trigger:hover {
 		color: var(--color-text);
-		background: var(--color-bg-tertiary);
+		border-color: var(--color-border-strong);
+		background: var(--color-accent-soft);
 	}
 
-	.nav-link.active {
-		color: var(--color-text);
-		font-weight: 620;
-		background: var(--color-bg-tertiary);
-		border-color: var(--color-border);
-		box-shadow: inset 0 1px 0 var(--glass-highlight);
+	.nav-cmd-trigger:active {
+		transform: scale(0.95);
 	}
 
-	.nav-link:active {
-		transform: scale(0.96);
+	.nav-cmd-trigger kbd {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
 	}
 
-	/* 文章页灵动岛专属：阅读进度百分比与一键回顶胶囊 */
+	/* 环形进度 + 一键回顶胶囊 */
 	.nav-reading-pill {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.28rem;
-		padding: 0.38rem 0.64rem;
+		gap: 0.32rem;
+		height: 2rem;
+		padding: 0 0.62rem 0 0.42rem;
 		border-radius: var(--radius-pill);
-		border: 1px solid var(--color-border);
+		border: 1px solid rgba(var(--color-accent-rgb), 0.24);
 		background: var(--color-accent-soft);
 		color: var(--color-accent);
 		font-family: var(--font-mono);
-		font-size: 0.74rem;
-		font-weight: 600;
+		font-size: 0.73rem;
+		font-weight: 650;
 		font-variant-numeric: tabular-nums;
 		line-height: 1;
 		cursor: pointer;
@@ -373,26 +505,41 @@ function isLinkActive(href: string) {
 
 	.nav-reading-pill:hover {
 		background: rgba(var(--color-accent-rgb), 0.18);
-		border-color: rgba(var(--color-accent-rgb), 0.32);
+		border-color: rgba(var(--color-accent-rgb), 0.42);
 	}
 
 	.nav-reading-pill:active {
 		transform: scale(0.94);
 	}
 
-	.nav-reading-arrow {
+	.nav-progress-ring {
+		transform: rotate(-90deg);
+		flex-shrink: 0;
+	}
+
+	.nav-ring-track {
+		stroke: rgba(var(--color-accent-rgb), 0.2);
+	}
+
+	.nav-ring-fill {
+		stroke: var(--color-accent);
+		stroke-linecap: round;
+		transition: stroke-dashoffset 140ms linear;
+	}
+
+	.nav-reading-up {
+		font-size: 0.76rem;
 		transition: transform var(--transition);
 	}
 
-	.nav-reading-pill:hover .nav-reading-arrow {
+	.nav-reading-pill:hover .nav-reading-up {
 		transform: translateY(-1.5px);
 	}
 
-	/* 灵动岛下沿光学阅读进度细丝 */
 	.nav-reading-track {
 		position: absolute;
-		left: 1.25rem;
-		right: 1.25rem;
+		left: 1.35rem;
+		right: 1.35rem;
 		bottom: 0;
 		height: 2px;
 		border-radius: var(--radius-pill);
@@ -459,8 +606,8 @@ function isLinkActive(href: string) {
 
 	:global(html[data-nav-condensed]) .site-nav-shell {
 		width: 100%;
-		padding: 0.42rem 0.62rem 0.42rem 0.72rem;
-		gap: 0.65rem;
+		padding: 0.38rem 0.52rem 0.38rem 0.58rem;
+		gap: 0.58rem;
 		transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 	}
 
@@ -470,15 +617,38 @@ function isLinkActive(href: string) {
 		border-radius: 50%;
 	}
 
-	/* 成岛时优雅收起副标题，使灵动岛保持修长同心胶囊比例 */
 	:global(html[data-nav-condensed]) .site-brand-copy small {
 		opacity: 0;
 		max-height: 0;
 		transform: translateY(-3px);
 	}
 
+	:global(html[data-nav-condensed]) .nav-links {
+		background: transparent;
+		border-color: transparent;
+		padding: 0.1rem;
+	}
+
 	:global(html[data-nav-condensed]) .nav-link {
-		padding: 0.42rem 0.74rem;
+		padding: 0.38rem 0.72rem;
+	}
+
+	/* 文章阅读态灵动岛变形：平时折叠为「当前章节 + 进度环」迷你岛，指针移入时无缝展开回完整导航 */
+	@media (min-width: 769px) {
+		:global(html[data-nav-condensed][data-reading-active="true"])
+			.site-nav-shell-scroll:not(:hover):not(:focus-within)
+			.site-brand-copy-link,
+		:global(html[data-nav-condensed][data-reading-active="true"])
+			.site-nav-shell-scroll:not(:hover):not(:focus-within)
+			.nav-links {
+			display: none;
+		}
+
+		:global(html[data-nav-condensed][data-reading-active="true"])
+			.site-nav-shell-scroll:not(:hover):not(:focus-within)
+			.nav-reading-hud {
+			display: inline-flex;
+		}
 	}
 
 	:global(html[data-nav-condensed][data-reading-active="true"]) .nav-reading-pill {
@@ -498,17 +668,23 @@ function isLinkActive(href: string) {
 		}
 
 		.site-nav-shell {
-			gap: 0.65rem;
+			gap: 0.58rem;
 			padding:
-				0.65rem
+				0.62rem
 				calc(0.9rem + env(safe-area-inset-right))
-				0.65rem
+				0.62rem
 				calc(0.9rem + env(safe-area-inset-left));
 		}
 
-		.nav-link {
-			padding: 0.44rem 0.72rem;
-			font-size: 0.85rem;
+		.nav-cmd-trigger kbd {
+			display: none;
+		}
+
+		.nav-cmd-trigger {
+			width: 2.05rem;
+			height: 2.05rem;
+			padding: 0;
+			justify-content: center;
 		}
 
 		:global(html[data-nav-condensed]) .site-header {
@@ -523,7 +699,7 @@ function isLinkActive(href: string) {
 		}
 
 		:global(html[data-nav-condensed]) .site-nav-shell {
-			padding: 0.38rem 0.55rem;
+			padding: 0.36rem 0.5rem;
 			transform: translate3d(0, 0, 0) scale(var(--nav-shell-condensed-scale));
 		}
 
@@ -538,51 +714,43 @@ function isLinkActive(href: string) {
 		.site-nav-shell {
 			width: 100%;
 			min-width: 0;
-			gap: 0.35rem;
-			padding: 0.54rem 0.68rem;
+			gap: 0.32rem;
+			padding: 0.52rem 0.65rem;
 		}
 
-		.site-brand {
-			gap: 0.4rem;
-			min-width: 0;
-			flex: 0 1 auto;
-		}
-
-		.site-brand-mark {
-			width: 1.85rem;
-			height: 1.85rem;
-			padding: 0.18rem;
-		}
-
-		.site-brand-copy strong {
-			max-width: 4.8rem;
-			font-size: 0.82rem;
-		}
-
-		.site-brand-copy small {
+		.site-brand-copy-link {
 			display: none;
 		}
 
+		.site-brand-mark {
+			width: 1.9rem;
+			height: 1.9rem;
+			padding: 0.18rem;
+		}
+
 		.nav-links {
-			gap: 0.08rem;
+			gap: 0.04rem;
+			padding: 0.14rem;
 		}
 
 		.nav-link {
-			padding: 0.36rem 0.5rem;
+			padding: 0.34rem 0.52rem;
 			font-size: 0.8rem;
 		}
 
 		.nav-actions {
-			gap: 0.28rem;
+			gap: 0.25rem;
 		}
 
+		.nav-cmd-trigger,
 		.nav-actions :global(.theme-toggle) {
 			width: 1.9rem;
 			height: 1.9rem;
 		}
 
 		.nav-reading-pill {
-			padding: 0.3rem 0.44rem;
+			height: 1.85rem;
+			padding: 0 0.45rem 0 0.32rem;
 			font-size: 0.68rem;
 		}
 	}

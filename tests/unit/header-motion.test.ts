@@ -30,7 +30,7 @@ describe("导航收缩与灵动岛进阶交互保护", () => {
 		);
 	});
 
-	test("灵动岛在文章阅读时提供实时阅读进度丝线与快速回顶入口", async () => {
+	test("灵动岛在文章阅读时提供双模章节播报舱、环形阅读进度与快速回顶入口", async () => {
 		const [headerSource, themeScriptSource] = await Promise.all([
 			readFile("src/components/Header.astro", "utf8"),
 			readFile("public/theme.js", "utf8"),
@@ -38,10 +38,36 @@ describe("导航收缩与灵动岛进阶交互保护", () => {
 
 		assert.match(headerSource, /data-nav-back-top/u);
 		assert.match(headerSource, /data-nav-reading-percent/u);
+		assert.match(headerSource, /data-nav-reading-hud/u);
+		assert.match(headerSource, /data-nav-reading-chapter/u);
+		assert.match(headerSource, /nav-progress-ring/u);
+		assert.match(headerSource, /data-nav-indicator/u);
 		assert.match(headerSource, /--nav-reading-progress/u);
 		assert.match(themeScriptSource, /syncReadingProgress/u);
+		assert.match(themeScriptSource, /syncNavGlidePill/u);
+		assert.match(themeScriptSource, /bindNavHoverGlide/u);
 		assert.match(themeScriptSource, /data-reading-active/u);
 		assert.match(themeScriptSource, /window\.scrollTo/u);
-		assert.match(themeScriptSource, /focusSearchInput/u);
+	});
+
+	test("全局挂载原地 Spotlight 实时命令舱并支持快捷键与顶栏按钮唤起", async () => {
+		const [baseSource, headerSource, paletteSource, paletteScriptSource] =
+			await Promise.all([
+				readFile("src/layouts/Base.astro", "utf8"),
+				readFile("src/components/Header.astro", "utf8"),
+				readFile("src/components/CommandPalette.astro", "utf8"),
+				readFile("public/command-palette.js", "utf8"),
+			]);
+
+		assert.match(baseSource, /CommandPalette/u);
+		assert.match(baseSource, /\/command-palette\.js/u);
+		assert.match(headerSource, /data-command-trigger/u);
+		assert.match(paletteSource, /data-cmd-backdrop/u);
+		assert.match(paletteSource, /data-cmd-input/u);
+		assert.match(paletteSource, /data-cmd-action="theme"/u);
+		assert.match(paletteScriptSource, /\/pagefind-meta\.json/u);
+		assert.match(paletteScriptSource, /\/pagefind\/pagefind\.js/u);
+		assert.match(paletteScriptSource, /__openCommandPalette/u);
+		assert.match(paletteScriptSource, /ArrowDown/u);
 	});
 });
