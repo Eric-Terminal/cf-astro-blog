@@ -111,9 +111,9 @@ function createResultCard(post) {
 		${post.excerpt ? `<p class="post-card-excerpt">${escapeHtml(post.excerpt)}</p>` : ""}
 		<div class="post-card-meta">
 			<span class="post-card-author">${escapeHtml(post.authorName || "本站作者")}</span>
-			<span class="post-card-readmore" aria-hidden="true">
-				<span>阅读全文</span>
-				<span class="post-card-arrow">→</span>
+			<span class="post-card-orb" aria-hidden="true">
+				<span class="post-card-readmore-text">阅读</span>
+				<span class="post-card-arrow">↗</span>
 			</span>
 		</div>
 	</div>

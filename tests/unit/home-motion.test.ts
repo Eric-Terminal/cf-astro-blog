@@ -10,15 +10,24 @@ describe("首页灵动交互与编辑级首屏保护", () => {
 		assert.match(baseLayoutSource, /site-shell-has-background-image/u);
 	});
 
-	test("首页首屏保留 3D 阻尼微倾，移除自嗨装饰卡与空图片占位框，并展示真实动态索引", async () => {
-		const homePageSource = await readFile("src/pages/index.astro", "utf8");
+	test("首页首屏采用非对称双舱 Bento 舞台，保留 3D 阻尼微倾与棱镜追光边框", async () => {
+		const [homePageSource, globalStyleSource] = await Promise.all([
+			readFile("src/pages/index.astro", "utf8"),
+			readFile("src/styles/global.css", "utf8"),
+		]);
 
+		assert.match(homePageSource, /home-bento-stage/u);
+		assert.match(homePageSource, /hero-masthead-deck/u);
+		assert.match(homePageSource, /masthead-spotlight-bar/u);
 		assert.match(homePageSource, /data-hero-depth/u);
 		assert.match(homePageSource, /data-tilt-card/u);
 		assert.match(homePageSource, /hero-dispatch/u);
+		assert.match(homePageSource, /repeat\(2,\s*minmax\(0,\s*1fr\)\)/u);
 		assert.match(homePageSource, /homepageAppearance\.heroMainImagePath &&/u);
 		assert.ok(!homePageSource.includes("hero-signal-card"));
 		assert.ok(!homePageSource.includes("图片预留位"));
+		assert.match(globalStyleSource, /\[data-tilt-card\]\.glass-panel::before/u);
+		assert.match(globalStyleSource, /mask-composite:\s*exclude/u);
 	});
 
 	test("首页会单独渲染置顶文章板块并将最近更新与置顶分离", async () => {

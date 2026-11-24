@@ -1,18 +1,18 @@
 ---
 import { env } from "cloudflare:workers";
 import { desc, eq, sql } from "drizzle-orm";
-import PostCard from "@/components/PostCard.astro";
 import { blogCategories, blogPosts } from "@/db/schema";
 import Base from "@/layouts/Base.astro";
 import { getDb } from "@/lib/db";
 import { estimateArticleReadStats } from "@/lib/format";
 import { getPublicPostVisibilityCondition } from "@/lib/public-content";
+import { encodeRouteParam } from "@/lib/security";
 
 const page = Math.max(
 	1,
 	Number(Astro.url.searchParams.get("page") || "1") || 1,
 );
-const limit = 10;
+const limit = 16;
 const offset = (page - 1) * limit;
 
 interface ArchivePostSourceRow {
@@ -32,13 +32,30 @@ interface ArchivePostCardRow {
 	slug: string;
 	excerpt: string | null;
 	publishedAt: string | null;
+	yearLabel: string;
+	monthDayLabel: string;
 	authorName: string | null;
 	categoryName: string | null;
-	featuredImageKey: string | null;
-	featuredImageAlt: string | null;
 	cjkCharCount: number;
 	latinWordCount: number;
 	estimatedReadingMinutes: number;
+}
+
+function resolveChronicleDates(publishedAt: string | null): {
+	yearLabel: string;
+	monthDayLabel: string;
+} {
+	if (!publishedAt) {
+		return { yearLabel: "未归档", monthDayLabel: "--.--" };
+	}
+	const d = new Date(publishedAt);
+	if (Number.isNaN(d.getTime())) {
+		return { yearLabel: "未归档", monthDayLabel: "--.--" };
+	}
+	const yearLabel = String(d.getUTCFullYear());
+	const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+	const day = String(d.getUTCDate()).padStart(2, "0");
+	return { yearLabel, monthDayLabel: `${month}.${day}` };
 }
 
 let posts: ArchivePostCardRow[] = [];
@@ -75,16 +92,17 @@ try {
 
 	posts = (rows as ArchivePostSourceRow[]).map((row) => {
 		const readingStats = estimateArticleReadStats(row.content);
+		const dates = resolveChronicleDates(row.publishedAt);
 
 		return {
 			title: row.title,
 			slug: row.slug,
 			excerpt: row.excerpt,
 			publishedAt: row.publishedAt,
+			yearLabel: dates.yearLabel,
+			monthDayLabel: dates.monthDayLabel,
 			authorName: row.authorName,
 			categoryName: row.categoryName,
-			featuredImageKey: row.featuredImageKey,
-			featuredImageAlt: row.featuredImageAlt,
 			cjkCharCount: readingStats.cjkCharCount,
 			latinWordCount: readingStats.latinWordCount,
 			estimatedReadingMinutes: readingStats.estimatedReadingMinutes,
@@ -94,52 +112,92 @@ try {
 	// D1 未绑定时回退为空列表
 }
 
+const yearGroups: Array<{ year: string; items: ArchivePostCardRow[] }> = [];
+for (const post of posts) {
+	const lastGroup = yearGroups[yearGroups.length - 1];
+	if (lastGroup && lastGroup.year === post.yearLabel) {
+		lastGroup.items.push(post);
+	} else {
+		yearGroups.push({ year: post.yearLabel, items: [post] });
+	}
+}
+
 const totalPages = Math.ceil(totalPosts / limit);
 ---
 
-<Base title="归档" description="按时间顺序浏览全部已发布文章">
+<Base title="归档" description="按年代时间轴浏览全部已发布文章">
 	<section
 		class="archive-hero glass-panel"
 		data-tilt-card
-		data-tilt-scale="0.38"
-		data-tilt-shift-scale="0.65"
+		data-tilt-scale="0.36"
+		data-tilt-shift-scale="0.62"
 	>
 		<div class="archive-hero-copy">
-			<span class="section-kicker">归档目录</span>
-			<h1 class="page-title">全部文章</h1>
+			<span class="section-kicker">CHRONICLE LEDGER</span>
+			<h1 class="page-title">编年史归档</h1>
 			<p class="page-intro">
-				按发布时间倒序收录全部技术记录与复盘笔记。
+				以时间轴与索引号排列全部技术写作，悬停任意条目可聚焦速览核心摘要。
 			</p>
 		</div>
 		<div class="archive-hero-meta" aria-label="归档统计">
 			<div class="archive-stat">
-				<span>已发布篇目</span>
-				<strong>{totalPosts}</strong>
+				<span>已收录篇目</span>
+				<strong>{String(totalPosts).padStart(2, "0")}</strong>
 			</div>
 			<div class="archive-stat">
-				<span>当前页码</span>
+				<span>页码索引</span>
 				<strong>{page} / {Math.max(totalPages, 1)}</strong>
 			</div>
 		</div>
 	</section>
 
-	{posts.length > 0 ? (
-		<div class="archive-grid">
-			{posts.map((post, index) => (
-				<PostCard
-					title={post.title}
-					slug={post.slug}
-					excerpt={post.excerpt}
-					publishedAt={post.publishedAt}
-					authorName={post.authorName}
-					categoryName={post.categoryName}
-					featuredImageKey={post.featuredImageKey}
-					featuredImageAlt={post.featuredImageAlt}
-					cjkCharCount={post.cjkCharCount}
-					latinWordCount={post.latinWordCount}
-					estimatedReadingMinutes={post.estimatedReadingMinutes}
-					variant={page === 1 && index === 0 ? "featured" : "regular"}
-				/>
+	{yearGroups.length > 0 ? (
+		<div class="chronicle-ledger">
+			{yearGroups.map((group) => (
+				<section class="chronicle-year-block glass-panel" aria-label={`${group.year} 年文章`}>
+					<header class="chronicle-year-rail">
+						<strong class="chronicle-year-num">{group.year}</strong>
+						<span class="chronicle-year-count">{group.items.length} 篇记录</span>
+					</header>
+
+					<ol class="chronicle-list">
+						{group.items.map((post, idx) => (
+							<li class="chronicle-item" data-reading-minutes={post.estimatedReadingMinutes}>
+								<a
+									href={`/blog/${encodeRouteParam(post.slug)}`}
+									class="chronicle-row"
+									data-astro-prefetch="hover"
+								>
+									<span class="chronicle-date">{post.monthDayLabel}</span>
+									<div class="chronicle-main">
+										<div class="chronicle-title-line">
+											<span class="chronicle-serial">
+												#{String(offset + idx + 1).padStart(2, "0")}
+											</span>
+											<h2 class="chronicle-title" transition:name={`title-${post.slug}`}>
+												{post.title}
+											</h2>
+										</div>
+										{post.excerpt && (
+											<p class="chronicle-excerpt" transition:name={`summary-${post.slug}`}>
+												{post.excerpt}
+											</p>
+										)}
+									</div>
+									<div class="chronicle-aside">
+										{post.categoryName && (
+											<span class="chronicle-category">{post.categoryName}</span>
+										)}
+										<span class="chronicle-duration">
+											约 {post.estimatedReadingMinutes} 分钟
+										</span>
+										<span class="chronicle-arrow" aria-hidden="true">↗</span>
+									</div>
+								</a>
+							</li>
+						))}
+					</ol>
+				</section>
 			))}
 		</div>
 	) : (
@@ -167,6 +225,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 <style>
 	.archive-hero,
+	.chronicle-year-block,
 	.pagination {
 		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
 		--glass-panel-blur: var(--hero-card-blur, 18px);
@@ -177,7 +236,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 		grid-template-columns: minmax(0, 1.3fr) auto;
 		align-items: end;
 		gap: 1.5rem 2.5rem;
-		padding: clamp(1.5rem, 1.1rem + 2vw, 2.4rem);
+		padding: clamp(1.5rem, 1.1rem + 2vw, 2.35rem);
 		transform:
 			perspective(1200px)
 			rotateX(var(--tilt-rotate-x, 0deg))
@@ -187,13 +246,13 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 	.archive-hero-copy {
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.7rem;
 	}
 
 	.archive-hero-meta {
 		display: flex;
 		align-items: stretch;
-		gap: 1.5rem;
+		gap: 1.75rem;
 		padding-left: 2rem;
 		border-left: 1px solid var(--color-border);
 	}
@@ -201,12 +260,12 @@ const totalPages = Math.ceil(totalPosts / limit);
 	.archive-stat {
 		display: grid;
 		align-content: end;
-		gap: 0.25rem;
+		gap: 0.24rem;
 	}
 
 	.archive-stat span {
 		font-family: var(--font-mono);
-		font-size: 0.74rem;
+		font-size: 0.73rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--color-text-muted);
@@ -214,17 +273,197 @@ const totalPages = Math.ceil(totalPosts / limit);
 
 	.archive-stat strong {
 		font-family: var(--font-mono);
-		font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2.05rem);
-		font-weight: 700;
-		line-height: 1.1;
+		font-size: clamp(1.55rem, 1.3rem + 0.9vw, 2.15rem);
+		font-weight: 750;
+		line-height: 1.08;
 		color: var(--color-text);
 		letter-spacing: -0.03em;
 		font-variant-numeric: tabular-nums;
 	}
 
-	.archive-grid {
+	/* 编年史聚光灯账本 */
+	.chronicle-ledger {
 		display: grid;
-		gap: 1rem;
+		gap: 1.25rem;
+	}
+
+	.chronicle-year-block {
+		display: grid;
+		grid-template-columns: 11rem minmax(0, 1fr);
+		align-items: start;
+		gap: 1.5rem;
+		padding: clamp(1.25rem, 1rem + 1.4vw, 1.9rem);
+	}
+
+	.chronicle-year-rail {
+		position: sticky;
+		top: 5rem;
+		display: grid;
+		gap: 0.3rem;
+		padding-right: 1rem;
+	}
+
+	.chronicle-year-num {
+		font-family: var(--font-mono);
+		font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.04em;
+		color: var(--color-text);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.chronicle-year-count {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+	}
+
+	.chronicle-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		border-left: 1px solid var(--color-border);
+	}
+
+	.chronicle-item + .chronicle-item {
+		border-top: 1px solid var(--color-border);
+	}
+
+	.chronicle-row {
+		position: relative;
+		display: grid;
+		grid-template-columns: 3.8rem minmax(0, 1fr) auto;
+		align-items: baseline;
+		gap: 0.85rem 1.15rem;
+		padding: 1.05rem 0.95rem 1.05rem 1.35rem;
+		color: inherit;
+		transition:
+			opacity 200ms ease,
+			background-color var(--transition),
+			transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.chronicle-row::before {
+		content: "";
+		position: absolute;
+		left: -1px;
+		top: 0.9rem;
+		bottom: 0.9rem;
+		width: 2px;
+		background: var(--color-accent);
+		transform: scaleY(0);
+		transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	/* 聚光灯效应：指针进入列表时，非当前悬停行柔和退暗以突显焦点行 */
+	@media (hover: hover) and (pointer: fine) {
+		.chronicle-list:hover .chronicle-row {
+			opacity: 0.46;
+		}
+
+		.chronicle-list:hover .chronicle-row:hover {
+			opacity: 1;
+			color: inherit;
+			background: var(--color-accent-soft);
+			border-radius: 0 var(--radius-inner) var(--radius-inner) 0;
+		}
+
+		.chronicle-row:hover::before {
+			transform: scaleY(1);
+		}
+	}
+
+	.chronicle-date {
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.chronicle-main {
+		display: grid;
+		gap: 0.32rem;
+		min-width: 0;
+	}
+
+	.chronicle-title-line {
+		display: flex;
+		align-items: baseline;
+		gap: 0.55rem;
+		min-width: 0;
+	}
+
+	.chronicle-serial {
+		flex-shrink: 0;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--color-accent);
+		opacity: 0.85;
+	}
+
+	.chronicle-title {
+		font-family: var(--font-sans);
+		font-size: clamp(1.02rem, 0.96rem + 0.28vw, 1.18rem);
+		font-weight: 680;
+		line-height: 1.35;
+		letter-spacing: -0.018em;
+		color: var(--color-text);
+		transition: color var(--transition);
+	}
+
+	.chronicle-row:hover .chronicle-title {
+		color: var(--color-accent);
+	}
+
+	.chronicle-excerpt {
+		font-size: 0.86rem;
+		line-height: 1.6;
+		color: var(--color-text-secondary);
+		display: -webkit-box;
+		-webkit-line-clamp: 1;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.chronicle-aside {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		white-space: nowrap;
+	}
+
+	.chronicle-category {
+		padding: 0.16rem 0.5rem;
+		border-radius: 999px;
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border);
+		font-size: 0.74rem;
+		font-weight: 560;
+		color: var(--color-text-secondary);
+	}
+
+	.chronicle-duration {
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+		color: var(--color-text-muted);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.chronicle-arrow {
+		font-family: var(--font-mono);
+		font-size: 0.84rem;
+		color: var(--color-text-muted);
+		transition:
+			transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+			color var(--transition);
+	}
+
+	.chronicle-row:hover .chronicle-arrow {
+		color: var(--color-accent);
+		transform: translate(2px, -2px);
 	}
 
 	.pagination {
@@ -256,7 +495,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 		min-height: 1px;
 	}
 
-	@media (max-width: 840px) {
+	@media (max-width: 860px) {
 		.archive-hero {
 			grid-template-columns: 1fr;
 		}
@@ -269,6 +508,37 @@ const totalPages = Math.ceil(totalPosts / limit);
 			gap: 2rem;
 		}
 
+		.chronicle-year-block {
+			grid-template-columns: 1fr;
+			gap: 0.85rem;
+		}
+
+		.chronicle-year-rail {
+			position: static;
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			padding-right: 0;
+			padding-bottom: 0.65rem;
+			border-bottom: 1px solid var(--color-border);
+		}
+
+		.chronicle-list {
+			border-left: none;
+		}
+
+		.chronicle-row {
+			grid-template-columns: 1fr;
+			gap: 0.45rem;
+			padding-inline: 0.25rem;
+		}
+
+		.chronicle-row::before {
+			display: none;
+		}
+	}
+
+	@media (max-width: 640px) {
 		.pagination {
 			grid-template-columns: 1fr;
 		}

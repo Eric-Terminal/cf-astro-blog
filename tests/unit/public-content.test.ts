@@ -169,7 +169,7 @@ describe("源码回归保护", () => {
 		assert.ok(!postCardStyleSource.includes("clip-path: polygon"));
 	});
 
-	test("首页与归档会为文章卡片计算并传递阅读统计", async () => {
+	test("首页与归档会计算阅读统计并分别以杂志卡片与编年史账本呈现", async () => {
 		const [homeSource, archiveSource] = await Promise.all([
 			readFile("src/pages/index.astro", "utf8"),
 			readFile("src/pages/blog/index.astro", "utf8"),
@@ -181,19 +181,22 @@ describe("源码回归保护", () => {
 			homeSource,
 			/estimatedReadingMinutes=\{post\.estimatedReadingMinutes\}/u,
 		);
-		assert.match(
-			archiveSource,
-			/estimatedReadingMinutes=\{post\.estimatedReadingMinutes\}/u,
-		);
+		assert.match(archiveSource, /chronicle-ledger/u);
+		assert.match(archiveSource, /chronicle-year-rail/u);
+		assert.match(archiveSource, /\.chronicle-list:hover\s+\.chronicle-row/u);
+		assert.match(archiveSource, /约 \{post\.estimatedReadingMinutes\} 分钟/u);
 	});
 
-	test("友链页只保留申请入口卡片，申请表移到独立页面", async () => {
+	test("友链页采用独立 3D 通行证网格，仅保留申请入口并将申请表移到独立页面", async () => {
 		const [friendsSource, applyPageSource] = await Promise.all([
 			readFile("src/pages/friends.astro", "utf8"),
 			readFile("src/pages/friends/apply.astro", "utf8"),
 		]);
 
 		assert.ok(friendsSource.includes('href="/friends/apply"'));
+		assert.ok(friendsSource.includes('class="friend-pass-grid"'));
+		assert.ok(friendsSource.includes('class="friend-pass glass-panel"'));
+		assert.ok(friendsSource.includes("data-tilt-card"));
 		assert.ok(!friendsSource.includes('action="/api/friend-links/apply"'));
 		assert.ok(applyPageSource.includes('action="/api/friend-links/apply"'));
 		assert.ok(
@@ -308,6 +311,8 @@ describe("源码回归保护", () => {
 		assert.ok(postLayoutSource.includes("article-sidebar-with-toc"));
 		assert.ok(postLayoutSource.includes("article-profile-avatar"));
 		assert.ok(postLayoutSource.includes("article-toc"));
+		assert.ok(postLayoutSource.includes("toc-ruler-tick"));
+		assert.ok(postLayoutSource.includes("article-sheet glass-panel"));
 		assert.ok(postLayoutSource.includes("align-self: stretch;"));
 		assert.ok(postLayoutSource.includes("align-content: start;"));
 		assert.ok(postLayoutSource.includes("grid-auto-rows: max-content;"));

@@ -17,6 +17,7 @@ interface Props {
 	latinWordCount?: number;
 	estimatedReadingMinutes?: number;
 	variant?: "featured" | "regular";
+	indexNumber?: number;
 	tilt?: boolean;
 }
 
@@ -33,6 +34,7 @@ const {
 	latinWordCount,
 	estimatedReadingMinutes,
 	variant = "regular",
+	indexNumber,
 	tilt = true,
 } = Astro.props;
 
@@ -40,6 +42,10 @@ const formattedDate = publishedAt ? formatDate(publishedAt) : null;
 const coverImageUrl = featuredImageKey ? `/media/${featuredImageKey}` : null;
 const coverImageAlt = featuredImageAlt?.trim() || `${title} 的封面图`;
 const hasCover = Boolean(coverImageUrl);
+const displaySerial =
+	typeof indexNumber === "number" && indexNumber > 0
+		? String(indexNumber).padStart(2, "0")
+		: null;
 const cardClassName = [
 	"post-card",
 	"glass-panel",
@@ -78,8 +84,8 @@ const encodedSlug = encodeRouteParam(slug);
 <article
 	class={cardClassName}
 	data-tilt-card={tilt ? "" : undefined}
-	data-tilt-scale={tilt ? (variant === "featured" ? "0.45" : "0.35") : undefined}
-	data-tilt-shift-scale={tilt ? "0.6" : undefined}
+	data-tilt-scale={tilt ? (variant === "featured" ? "0.42" : "0.48") : undefined}
+	data-tilt-shift-scale={tilt ? "0.65" : undefined}
 >
 	{hasCover && (
 		<a
@@ -90,12 +96,16 @@ const encodedSlug = encodeRouteParam(slug);
 			data-astro-prefetch="hover"
 		>
 			<img src={coverImageUrl} alt={coverImageAlt} loading="lazy" decoding="async" />
+			{displaySerial && <span class="post-card-cover-serial">{displaySerial}</span>}
 		</a>
 	)}
 	<div class="post-card-content">
 		<div class="post-card-top">
 			<div class="post-card-eyebrow" transition:name={`meta-${slug}`}>
 				<div class="post-card-taxonomy">
+					{!hasCover && displaySerial && (
+						<span class="post-card-serial" aria-hidden="true">{displaySerial}</span>
+					)}
 					{categoryName && <span class="post-card-category">{categoryName}</span>}
 					{formattedDate && (
 						<time
@@ -124,9 +134,9 @@ const encodedSlug = encodeRouteParam(slug);
 		)}
 		<div class="post-card-meta">
 			<span class="post-card-author">{authorName || siteConfig.author}</span>
-			<span class="post-card-readmore" aria-hidden="true">
-				<span>阅读全文</span>
-				<span class="post-card-arrow">→</span>
+			<span class="post-card-orb" aria-hidden="true">
+				<span class="post-card-readmore-text">阅读</span>
+				<span class="post-card-arrow">↗</span>
 			</span>
 		</div>
 	</div>
