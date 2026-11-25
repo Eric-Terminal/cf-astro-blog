@@ -309,7 +309,7 @@ analytics.get("/", async (c) => {
 			<div class="table-actions analytics-actions">
 				<a href="/api/admin/analytics/export?format=jsonl" class="btn btn-sm">下载全部明细（JSONL）</a>
 				<a href="/api/admin/analytics/export?format=json" class="btn btn-sm">下载全部明细（JSON）</a>
-				<a href="/api/admin/analytics?cleanup=1" class="btn btn-sm">清理 ${ANALYTICS_RETENTION_DAYS} 天前数据</a>
+				<a href="/api/admin/analytics?cleanup=1" class="btn btn-sm btn-danger" data-confirm-message="${escapeAttribute(`确认立即清理 ${ANALYTICS_RETENTION_DAYS} 天前的历史统计与审计数据吗？`)}">清理 ${ANALYTICS_RETENTION_DAYS} 天前数据</a>
 			</div>
 		</div>
 		${
@@ -336,32 +336,38 @@ analytics.get("/", async (c) => {
 				</div>
 			</div>
 
-		<h2>热门页面</h2>
-		${
-			stats.topPages.length > 0
-				? `<div class="table-card"><table class="data-table">
-				<thead><tr><th>页面</th><th>浏览量</th></tr></thead>
-				<tbody>
-					${stats.topPages.map((p) => `<tr><td class="table-cell-break">${escapeHtml(p.pageUrl || "-")}</td><td>${p.views}</td></tr>`).join("")}
-				</tbody>
-			</table></div>`
-				: "<p class='empty-state'>当前还没有页面访问数据。</p>"
-		}
+		<div class="analytics-split-grid">
+			<div>
+				<h2>热门页面</h2>
+				${
+					stats.topPages.length > 0
+						? `<div class="table-card"><table class="data-table">
+						<thead><tr><th>页面</th><th>浏览量</th></tr></thead>
+						<tbody>
+							${stats.topPages.map((p) => `<tr><td class="table-cell-break">${escapeHtml(p.pageUrl || "-")}</td><td>${p.views}</td></tr>`).join("")}
+						</tbody>
+					</table></div>`
+						: "<p class='empty-state'>当前还没有页面访问数据。</p>"
+				}
+			</div>
 
-			<h2>来源站点</h2>
-			${
-				stats.topReferrers.length > 0
-					? `<div class="table-card"><table class="data-table">
-					<thead><tr><th>来源</th><th>次数</th></tr></thead>
-				<tbody>
-					${stats.topReferrers.map((r) => `<tr><td class="table-cell-break">${escapeHtml(r.referrer)}</td><td>${r.count}</td></tr>`).join("")}
-				</tbody>
-				</table></div>`
-					: "<p class='empty-state'>当前还没有来源统计数据。</p>"
-			}
+			<div>
+				<h2>来源站点</h2>
+				${
+					stats.topReferrers.length > 0
+						? `<div class="table-card"><table class="data-table">
+						<thead><tr><th>来源</th><th>次数</th></tr></thead>
+						<tbody>
+							${stats.topReferrers.map((r) => `<tr><td class="table-cell-break">${escapeHtml(r.referrer)}</td><td>${r.count}</td></tr>`).join("")}
+						</tbody>
+					</table></div>`
+						: "<p class='empty-state'>当前还没有来源统计数据。</p>"
+				}
+			</div>
+		</div>
 
 			<h2>MCP 审计专栏</h2>
-			<p class="form-help">会记录 MCP 全量请求，包括鉴权失败、扫描触发的 404、限流和工具调用详情。</p>
+			<p class="form-help" style="margin-bottom: 0.75rem;">会记录 MCP 全量请求，包括鉴权失败、扫描触发的 404、限流和工具调用详情。</p>
 			${
 				stats.recentMcpLogs.length > 0
 					? `<div class="table-card"><table class="data-table">
@@ -380,7 +386,13 @@ analytics.get("/", async (c) => {
 								const requestLabel = escapeHtml(
 									`${log.requestMethod} ${log.requestPath}`,
 								);
-								const statusLabel = escapeHtml(String(log.responseStatus));
+								const statusTone =
+									log.responseStatus >= 200 && log.responseStatus < 300
+										? "badge-http-ok"
+										: log.responseStatus >= 500
+											? "badge-http-err"
+											: "badge-http-warn";
+								const statusLabel = `<span class="badge ${statusTone}">${escapeHtml(String(log.responseStatus))}</span>`;
 								const note = [
 									log.requestId ? `requestId=${log.requestId}` : "",
 									log.sessionId ? `session=${log.sessionId}` : "",

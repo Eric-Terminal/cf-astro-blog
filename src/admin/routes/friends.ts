@@ -653,7 +653,16 @@ function renderFriendsPage(options: {
 				</div>
 			</div>
 			${alert ? `<div class="alert alert-${escapeAttribute(alert.type)}">${escapeHtml(alert.message)}</div>` : ""}
-			${renderFilterTabs(counts, filter)}
+			<div class="admin-filter-bar">
+				${renderFilterTabs(counts, filter)}
+				${
+					rows.length > 0
+						? `<div class="admin-filter-controls">
+							<input type="search" class="admin-search-input" data-friend-search-input placeholder="搜索友链名称、网址或联系方式…" aria-label="搜索友链" />
+						</div>`
+						: ""
+				}
+			</div>
 			<section style="margin-bottom: 1.25rem;">
 				${renderFriendRows(filteredRows, csrfToken, filter)}
 			</section>

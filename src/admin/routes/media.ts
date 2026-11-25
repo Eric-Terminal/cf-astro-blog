@@ -118,7 +118,7 @@ function getMediaDisplayName(key: string) {
 
 function getMediaDirectoryLabel(key: string) {
 	const normalized = String(key ?? "").trim();
-	if (!normalized || !normalized.includes("/")) {
+	if (!normalized?.includes("/")) {
 		return "根目录";
 	}
 
@@ -128,6 +128,18 @@ function getMediaDirectoryLabel(key: string) {
 	}
 
 	return segments.slice(0, -1).join("/");
+}
+
+function resolveMediaScopeBucket(
+	key: string,
+): "posts" | "appearance" | "uploads" {
+	if (key.startsWith("posts/")) {
+		return "posts";
+	}
+	if (key.startsWith("appearance/")) {
+		return "appearance";
+	}
+	return "uploads";
 }
 
 async function saveUploadFile(
@@ -182,19 +194,34 @@ media.get("/", async (c) => {
 		// R2 未绑定时回退为空列表
 	}
 
+	const totalBytes = objects.reduce((sum, item) => sum + item.size, 0);
+	const scopeCounts = {
+		all: objects.length,
+		posts: objects.filter((o) => resolveMediaScopeBucket(o.key) === "posts")
+			.length,
+		appearance: objects.filter(
+			(o) => resolveMediaScopeBucket(o.key) === "appearance",
+		).length,
+		uploads: objects.filter((o) => resolveMediaScopeBucket(o.key) === "uploads")
+			.length,
+	};
+
 	const content = `
 		<div class="page-header">
 			<div class="page-header-copy">
 				<span class="page-kicker">Assets</span>
 				<h1 style="margin-bottom: 0;">媒体库</h1>
-				<p class="form-help" style="margin: 0;">上传图片并复制键名，供文章封面与内容引用。</p>
+				<p class="form-help" style="margin: 0;">自动按 SHA-256 哈希去重存储，支持一键复制访问链接、Markdown 语法或原始键名。</p>
+			</div>
+			<div class="page-actions">
+				<span class="dashboard-status-pill">共 ${objects.length} 个文件 · ${formatBytes(totalBytes)}</span>
 			</div>
 		</div>
 		<form
 			method="post"
 			action="/api/admin/media/upload"
 			enctype="multipart/form-data"
-			class="upload-form media-upload-form"
+			class="upload-form media-upload-form media-upload-compact"
 			data-media-upload-form="true"
 		>
 			<input type="hidden" name="_csrf" value="${escapeAttribute(session.csrfToken)}" />
@@ -214,14 +241,29 @@ media.get("/", async (c) => {
 				tabindex="0"
 			>
 				<span class="media-upload-copy">
-					<strong>拖拽图片到这里，或点击选择文件</strong>
+					<strong>拖拽图片到这里，或点击选择文件自动上传</strong>
 					<span data-media-upload-filename="true">支持 JPG、PNG、WEBP、AVIF、GIF，单个文件不超过 50 MB</span>
 				</span>
+				<span class="btn btn-primary btn-sm" style="pointer-events: none; flex-shrink: 0;">选择图片上传</span>
 			</label>
-			<div class="media-upload-actions">
-				<button type="submit" class="btn btn-primary">上传</button>
-			</div>
 		</form>
+
+		${
+			objects.length > 0
+				? `<div class="admin-filter-bar" data-media-filter-root>
+					<div class="filter-tabs" role="tablist" aria-label="媒体目录筛选">
+						<button type="button" class="filter-tab is-active" data-media-scope-tab="all">全部<span class="filter-tab-count">${scopeCounts.all}</span></button>
+						<button type="button" class="filter-tab" data-media-scope-tab="posts">文章资源<span class="filter-tab-count">${scopeCounts.posts}</span></button>
+						<button type="button" class="filter-tab" data-media-scope-tab="appearance">站点外观<span class="filter-tab-count">${scopeCounts.appearance}</span></button>
+						<button type="button" class="filter-tab" data-media-scope-tab="uploads">通用上传<span class="filter-tab-count">${scopeCounts.uploads}</span></button>
+					</div>
+					<div class="admin-filter-controls">
+						<input type="search" class="admin-search-input" data-media-search-input placeholder="按文件名或目录搜索…" aria-label="搜索媒体文件" />
+					</div>
+				</div>`
+				: ""
+		}
+
 		<div class="media-grid">
 			${
 				objects.length > 0
@@ -229,30 +271,77 @@ media.get("/", async (c) => {
 							.map((obj) => {
 								const displayName = getMediaDisplayName(obj.key);
 								const directory = getMediaDirectoryLabel(obj.key);
+								const scopeBucket = resolveMediaScopeBucket(obj.key);
+								const publicUrl = `/media/${obj.key}`;
+								const altBase = displayName.replace(/\.[^.]+$/u, "") || "图片";
+								const mdSnippet = `![${altBase}](${publicUrl})`;
+								const adminPreviewSrc = `/api/admin/media/file/${encodeRouteParam(obj.key)}`;
+								const formattedSize = formatBytes(obj.size);
+
 								return `
-				<div class="media-item">
+				<div
+					class="media-item"
+					data-media-card
+					data-media-scope="${escapeAttribute(scopeBucket)}"
+					data-media-key="${escapeAttribute(obj.key)}"
+				>
 					<div class="media-preview">
 						${
 							isImageMediaKey(obj.key)
-								? `<img src="/api/admin/media/file/${encodeRouteParam(obj.key)}" alt="${escapeAttribute(obj.key)}" loading="lazy" />`
+								? `<button
+										type="button"
+										class="media-preview-trigger"
+										data-media-zoom-trigger
+										data-media-src="${escapeAttribute(adminPreviewSrc)}"
+										data-media-key="${escapeAttribute(obj.key)}"
+										data-media-size="${escapeAttribute(formattedSize)}"
+										aria-label="放大预览 ${escapeAttribute(displayName)}"
+									>
+										<img src="${escapeAttribute(adminPreviewSrc)}" alt="${escapeAttribute(obj.key)}" loading="lazy" />
+									</button>`
 								: `<span class="file-icon">${escapeHtml(obj.key.split(".").pop()?.toUpperCase() || "文件")}</span>`
 						}
 					</div>
 					<div class="media-info">
 						<span class="media-name" title="${escapeAttribute(obj.key)}">${escapeHtml(displayName)}</span>
 						<span class="media-directory" title="${escapeAttribute(directory)}">目录：${escapeHtml(directory)}</span>
-						<span class="media-size">${formatBytes(obj.size)}</span>
+						<span class="media-size">${formattedSize}</span>
 					</div>
 					<form method="post" action="/api/admin/media/delete/${encodeRouteParam(obj.key)}" class="media-actions" data-confirm-message="${escapeAttribute("确认删除这个媒体文件吗？")}">
 						<input type="hidden" name="_csrf" value="${escapeAttribute(session.csrfToken)}" />
-						<button type="button" class="btn btn-sm" data-copy-value="${escapeAttribute(obj.key)}">复制键名</button>
-						<button type="submit" class="btn btn-sm btn-danger">删除</button>
+						<div class="media-copy-group">
+							<button type="button" class="btn btn-xs" data-copy-value="${escapeAttribute(publicUrl)}" data-copy-toast="已复制图片访问路径">复制 URL</button>
+							<button type="button" class="btn btn-xs" data-copy-value="${escapeAttribute(mdSnippet)}" data-copy-toast="已复制 Markdown 图片语法">复制 MD</button>
+							<button type="button" class="btn btn-xs" data-copy-value="${escapeAttribute(obj.key)}" data-copy-toast="已复制 R2 媒体键名">复制键名</button>
+						</div>
+						<button type="submit" class="btn btn-xs btn-danger">删除</button>
 					</form>
 				</div>`;
 							})
 							.join("")
 					: "<p class='empty-state'>当前还没有上传任何媒体文件。</p>"
 			}
+		</div>
+		<p class="empty-state" data-media-filter-empty hidden style="margin-top: 1rem;">没有匹配当前目录或关键词的媒体文件。</p>
+
+		<div class="media-lightbox" data-media-lightbox hidden role="dialog" aria-modal="true" aria-label="图片放大预览">
+			<div class="media-lightbox-card">
+				<div class="media-lightbox-stage">
+					<img src="" alt="" data-lightbox-img />
+				</div>
+				<div class="media-lightbox-bar">
+					<div class="media-lightbox-meta">
+						<span class="media-lightbox-key" data-lightbox-key></span>
+						<span class="media-size" data-lightbox-size></span>
+					</div>
+					<div class="media-copy-group">
+						<button type="button" class="btn btn-sm" data-lightbox-copy-url data-copy-value="" data-copy-toast="已复制图片访问路径">复制 URL</button>
+						<button type="button" class="btn btn-sm" data-lightbox-copy-md data-copy-value="" data-copy-toast="已复制 Markdown 语法">复制 Markdown</button>
+						<button type="button" class="btn btn-sm" data-lightbox-copy-key data-copy-value="" data-copy-toast="已复制媒体键名">复制键名</button>
+						<button type="button" class="btn btn-sm" data-lightbox-close>关闭</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	`;
 

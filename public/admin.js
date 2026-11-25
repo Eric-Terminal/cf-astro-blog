@@ -1000,7 +1000,9 @@ function applyGeneratedSeoFieldsToEditor(fields) {
 		appliedCount += 1;
 	}
 
-	const seoDetails = document.querySelector(".editor-panel details");
+	const seoDetails =
+		document.querySelector("[data-seo-details='true']") ||
+		document.querySelector(".editor-panel details");
 	if (seoDetails instanceof HTMLDetailsElement && appliedCount > 0) {
 		seoDetails.open = true;
 	}
@@ -2167,16 +2169,7 @@ if (slugInput instanceof HTMLInputElement && !slugInput.value) {
 	updateSlugFromTitle();
 }
 
-for (const button of document.querySelectorAll("button[data-copy-value]")) {
-	button.addEventListener("click", async () => {
-		const value = button.getAttribute("data-copy-value") ?? "";
-		if (!value) {
-			return;
-		}
-
-		await navigator.clipboard.writeText(value);
-	});
-}
+// 复制按钮交互由 admin-studio.js 统一提供状态提示与剪贴板写入
 
 for (const form of document.querySelectorAll("form[data-confirm-message]")) {
 	form.addEventListener("submit", (event) => {
