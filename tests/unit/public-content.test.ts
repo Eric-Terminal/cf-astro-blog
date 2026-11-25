@@ -183,6 +183,8 @@ describe("源码回归保护", () => {
 		);
 		assert.match(archiveSource, /chronicle-ledger/u);
 		assert.match(archiveSource, /chronicle-year-rail/u);
+		assert.match(archiveSource, /chronicle-rail-year/u);
+		assert.match(archiveSource, /issueNumber/u);
 		assert.match(archiveSource, /\.chronicle-list:hover\s+\.chronicle-row/u);
 		assert.match(archiveSource, /约 \{post\.estimatedReadingMinutes\} 分钟/u);
 	});

@@ -32,8 +32,12 @@ interface ArchivePostCardRow {
 	slug: string;
 	excerpt: string | null;
 	publishedAt: string | null;
+	groupKey: string;
 	yearLabel: string;
+	monthLabel: string;
 	monthDayLabel: string;
+	isUndated: boolean;
+	issueNumber: number;
 	authorName: string | null;
 	categoryName: string | null;
 	cjkCharCount: number;
@@ -41,21 +45,56 @@ interface ArchivePostCardRow {
 	estimatedReadingMinutes: number;
 }
 
+const shanghaiDateFormatter = new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Asia/Shanghai",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+
 function resolveChronicleDates(publishedAt: string | null): {
+	groupKey: string;
 	yearLabel: string;
+	monthLabel: string;
 	monthDayLabel: string;
+	isUndated: boolean;
 } {
 	if (!publishedAt) {
-		return { yearLabel: "未归档", monthDayLabel: "--.--" };
+		return {
+			groupKey: "undated",
+			yearLabel: "ARCHIVE",
+			monthLabel: "未归档",
+			monthDayLabel: "--.--",
+			isUndated: true,
+		};
 	}
 	const d = new Date(publishedAt);
 	if (Number.isNaN(d.getTime())) {
-		return { yearLabel: "未归档", monthDayLabel: "--.--" };
+		return {
+			groupKey: "undated",
+			yearLabel: "ARCHIVE",
+			monthLabel: "未归档",
+			monthDayLabel: "--.--",
+			isUndated: true,
+		};
 	}
-	const yearLabel = String(d.getUTCFullYear());
-	const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-	const day = String(d.getUTCDate()).padStart(2, "0");
-	return { yearLabel, monthDayLabel: `${month}.${day}` };
+	const parts = shanghaiDateFormatter.formatToParts(d);
+	const year =
+		parts.find((p) => p.type === "year")?.value ?? String(d.getUTCFullYear());
+	const month =
+		parts.find((p) => p.type === "month")?.value ??
+		String(d.getUTCMonth() + 1).padStart(2, "0");
+	const day =
+		parts.find((p) => p.type === "day")?.value ??
+		String(d.getUTCDate()).padStart(2, "0");
+
+	return {
+		groupKey: `${year}-${month}`,
+		yearLabel: year,
+		monthLabel: month,
+		monthDayLabel: `${month}.${day}`,
+		isUndated: false,
+	};
 }
 
 let posts: ArchivePostCardRow[] = [];
@@ -90,7 +129,7 @@ try {
 	]);
 	totalPosts = countResult[0]?.count ?? 0;
 
-	posts = (rows as ArchivePostSourceRow[]).map((row) => {
+	posts = (rows as ArchivePostSourceRow[]).map((row, idx) => {
 		const readingStats = estimateArticleReadStats(row.content);
 		const dates = resolveChronicleDates(row.publishedAt);
 
@@ -99,8 +138,12 @@ try {
 			slug: row.slug,
 			excerpt: row.excerpt,
 			publishedAt: row.publishedAt,
+			groupKey: dates.groupKey,
 			yearLabel: dates.yearLabel,
+			monthLabel: dates.monthLabel,
 			monthDayLabel: dates.monthDayLabel,
+			isUndated: dates.isUndated,
+			issueNumber: Math.max(1, totalPosts - (offset + idx)),
 			authorName: row.authorName,
 			categoryName: row.categoryName,
 			cjkCharCount: readingStats.cjkCharCount,
@@ -112,20 +155,32 @@ try {
 	// D1 未绑定时回退为空列表
 }
 
-const yearGroups: Array<{ year: string; items: ArchivePostCardRow[] }> = [];
+const monthGroups: Array<{
+	key: string;
+	year: string;
+	month: string;
+	isUndated: boolean;
+	items: ArchivePostCardRow[];
+}> = [];
 for (const post of posts) {
-	const lastGroup = yearGroups[yearGroups.length - 1];
-	if (lastGroup && lastGroup.year === post.yearLabel) {
+	const lastGroup = monthGroups[monthGroups.length - 1];
+	if (lastGroup && lastGroup.key === post.groupKey) {
 		lastGroup.items.push(post);
 	} else {
-		yearGroups.push({ year: post.yearLabel, items: [post] });
+		monthGroups.push({
+			key: post.groupKey,
+			year: post.yearLabel,
+			month: post.monthLabel,
+			isUndated: post.isUndated,
+			items: [post],
+		});
 	}
 }
 
 const totalPages = Math.ceil(totalPosts / limit);
 ---
 
-<Base title="归档" description="按年代时间轴浏览全部已发布文章">
+<Base title="归档" description="按年月时间轴浏览全部已发布文章">
 	<section
 		class="archive-hero glass-panel"
 		data-tilt-card
@@ -136,7 +191,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 			<span class="section-kicker">CHRONICLE LEDGER</span>
 			<h1 class="page-title">编年史归档</h1>
 			<p class="page-intro">
-				以时间轴与索引号排列全部技术写作，悬停任意条目可聚焦速览核心摘要。
+				按月度刻度与永久刊号索引全部写作记录，悬停任意条目即可聚焦速览摘要。
 			</p>
 		</div>
 		<div class="archive-hero-meta" aria-label="归档统计">
@@ -151,17 +206,24 @@ const totalPages = Math.ceil(totalPosts / limit);
 		</div>
 	</section>
 
-	{yearGroups.length > 0 ? (
+	{monthGroups.length > 0 ? (
 		<div class="chronicle-ledger">
-			{yearGroups.map((group) => (
-				<section class="chronicle-year-block glass-panel" aria-label={`${group.year} 年文章`}>
+			{monthGroups.map((group) => (
+				<section
+					class="chronicle-year-block glass-panel"
+					aria-label={group.isUndated ? "未归档文章" : `${group.year} 年 ${group.month} 月文章`}
+				>
 					<header class="chronicle-year-rail">
-						<strong class="chronicle-year-num">{group.year}</strong>
+						<span class="chronicle-rail-year">{group.year}</span>
+						<strong class="chronicle-year-num">
+							{group.month}
+							{!group.isUndated && <small>月</small>}
+						</strong>
 						<span class="chronicle-year-count">{group.items.length} 篇记录</span>
 					</header>
 
 					<ol class="chronicle-list">
-						{group.items.map((post, idx) => (
+						{group.items.map((post) => (
 							<li class="chronicle-item" data-reading-minutes={post.estimatedReadingMinutes}>
 								<a
 									href={`/blog/${encodeRouteParam(post.slug)}`}
@@ -172,7 +234,7 @@ const totalPages = Math.ceil(totalPosts / limit);
 									<div class="chronicle-main">
 										<div class="chronicle-title-line">
 											<span class="chronicle-serial">
-												#{String(offset + idx + 1).padStart(2, "0")}
+												#{String(post.issueNumber).padStart(2, "0")}
 											</span>
 											<h2 class="chronicle-title" transition:name={`title-${post.slug}`}>
 												{post.title}
@@ -299,18 +361,38 @@ const totalPages = Math.ceil(totalPosts / limit);
 		position: sticky;
 		top: 5rem;
 		display: grid;
-		gap: 0.3rem;
+		gap: 0.24rem;
 		padding-right: 1rem;
 	}
 
-	.chronicle-year-num {
+	.chronicle-rail-year {
 		font-family: var(--font-mono);
-		font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+		font-size: 0.74rem;
+		font-weight: 650;
+		letter-spacing: 0.1em;
+		color: var(--color-accent);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.chronicle-year-num {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.22rem;
+		font-family: var(--font-mono);
+		font-size: clamp(2rem, 1.65rem + 1.35vw, 2.7rem);
 		font-weight: 800;
 		line-height: 1;
 		letter-spacing: -0.04em;
 		color: var(--color-text);
 		font-variant-numeric: tabular-nums;
+	}
+
+	.chronicle-year-num small {
+		font-family: var(--font-sans);
+		font-size: 0.95rem;
+		font-weight: 680;
+		letter-spacing: 0;
+		color: var(--color-text-secondary);
 	}
 
 	.chronicle-year-count {
@@ -517,10 +599,14 @@ const totalPages = Math.ceil(totalPosts / limit);
 			position: static;
 			display: flex;
 			align-items: baseline;
-			justify-content: space-between;
+			gap: 0.5rem;
 			padding-right: 0;
 			padding-bottom: 0.65rem;
 			border-bottom: 1px solid var(--color-border);
+		}
+
+		.chronicle-year-count {
+			margin-left: auto;
 		}
 
 		.chronicle-list {
