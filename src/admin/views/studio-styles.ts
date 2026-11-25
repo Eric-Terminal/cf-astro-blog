@@ -626,28 +626,52 @@ export const adminStudioStyles = `
 			font-weight: 650;
 		}
 
-		/* 媒体库紧凑上传条、复制按钮组与预览灯箱 */
+		/* 媒体库紧凑上传条、引用状态徽标、复制按钮组与预览灯箱 */
 		.media-upload-compact {
+			padding: 0.45rem;
+			margin-bottom: 1.05rem;
+		}
+
+		.media-upload-compact .media-upload-dropzone {
+			width: 100%;
+			aspect-ratio: auto;
+			min-height: 68px;
+			padding: 0.7rem 0.95rem;
 			display: flex;
 			flex-wrap: wrap;
 			align-items: center;
 			justify-content: space-between;
-			gap: 0.85rem 1.2rem;
-			padding: 0.95rem 1.15rem;
-			margin-bottom: 1.1rem;
+			gap: 0.75rem 1rem;
+			text-align: left;
 		}
 
-		.media-upload-compact .media-upload-dropzone {
-			flex: 1;
-			min-width: min(320px, 100%);
-			aspect-ratio: auto;
-			min-height: 76px;
-			padding: 0.75rem 1rem;
+		.media-ref-row {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			gap: 1rem;
-			text-align: left;
+			gap: 0.4rem;
+		}
+
+		.media-ref-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 0.12rem 0.48rem;
+			border-radius: 999px;
+			font-size: 0.7rem;
+			font-weight: 680;
+			white-space: nowrap;
+		}
+
+		.media-ref-badge.is-used {
+			background: rgba(22, 163, 74, 0.12);
+			color: var(--success);
+			border: 1px solid rgba(22, 163, 74, 0.2);
+		}
+
+		.media-ref-badge.is-unused {
+			background: var(--bg-tertiary);
+			color: var(--text-muted);
+			border: 1px solid var(--border);
 		}
 
 		.media-preview-trigger {

@@ -458,7 +458,9 @@ describe("后台界面风格保护", () => {
 		assert.match(appearanceSource, /data-appearance-live-stage/u);
 		assert.match(appearanceSource, /data-avatar-image-uploader="true"/u);
 
-		// 媒体库目录筛选、三合一复制与大图灯箱
+		// 媒体库引用状态分析、目录筛选、三合一复制与大图灯箱
+		assert.match(mediaSource, /collectMediaUsageLabels/u);
+		assert.match(mediaSource, /闲置未引用/u);
 		assert.match(mediaSource, /data-media-filter-root/u);
 		assert.match(mediaSource, /复制 URL/u);
 		assert.match(mediaSource, /复制 MD/u);

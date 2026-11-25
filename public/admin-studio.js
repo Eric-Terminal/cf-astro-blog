@@ -543,13 +543,16 @@
 
 				const show = statusMatch && categoryMatch && queryMatch;
 				row.hidden = !show;
+				row.classList.toggle("is-hidden", !show);
 				if (show) {
 					visibleCount += 1;
 				}
 			}
 
 			if (emptyHint instanceof HTMLElement) {
-				emptyHint.hidden = visibleCount > 0 || postRows.length === 0;
+				const hideEmpty = visibleCount > 0 || postRows.length === 0;
+				emptyHint.hidden = hideEmpty;
+				emptyHint.classList.toggle("is-hidden", hideEmpty);
 			}
 		};
 
@@ -920,17 +923,26 @@
 					continue;
 				}
 				const cardScope = card.dataset.mediaScope || "other";
+				const cardUsed = card.dataset.mediaUsed || "unused";
 				const cardKey = (card.dataset.mediaKey || "").toLowerCase();
-				const scopeMatch = activeScope === "all" || cardScope === activeScope;
+				const scopeMatch =
+					activeScope === "all"
+						? true
+						: activeScope === "used" || activeScope === "unused"
+							? cardUsed === activeScope
+							: cardScope === activeScope;
 				const queryMatch = !query || cardKey.includes(query);
 				const show = scopeMatch && queryMatch;
 				card.hidden = !show;
+				card.classList.toggle("is-hidden", !show);
 				if (show) {
 					visible += 1;
 				}
 			}
 			if (emptyHint instanceof HTMLElement) {
-				emptyHint.hidden = visible > 0;
+				const hideEmpty = visible > 0;
+				emptyHint.hidden = hideEmpty;
+				emptyHint.classList.toggle("is-hidden", hideEmpty);
 			}
 		};
 
@@ -1014,7 +1026,9 @@
 					continue;
 				}
 				const text = (card.textContent || "").toLowerCase();
-				card.hidden = Boolean(query && !text.includes(query));
+				const hide = Boolean(query && !text.includes(query));
+				card.hidden = hide;
+				card.classList.toggle("is-hidden", hide);
 			}
 		});
 	}

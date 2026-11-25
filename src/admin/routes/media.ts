@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { blogPosts } from "@/db/schema";
+import { getDb } from "@/lib/db";
 import {
 	deleteMediaObjectAndIndex,
 	getAllowedMediaAcceptValue,
@@ -17,6 +19,7 @@ import {
 	escapeHtml,
 	sanitizeMediaKey,
 } from "@/lib/security";
+import { getSiteAppearance } from "@/lib/site-appearance";
 import {
 	type AdminAppEnv,
 	assertCsrfToken,
@@ -142,6 +145,90 @@ function resolveMediaScopeBucket(
 	return "uploads";
 }
 
+async function collectMediaUsageLabels(
+	dbBinding: D1Database | undefined,
+	keys: string[],
+): Promise<Map<string, string[]>> {
+	const usageMap = new Map<string, string[]>();
+	if (!dbBinding || keys.length === 0) {
+		return usageMap;
+	}
+
+	const addRef = (key: string, label: string) => {
+		const list = usageMap.get(key) ?? [];
+		if (!list.includes(label)) {
+			list.push(label);
+			usageMap.set(key, list);
+		}
+	};
+
+	const matchesPathOrKey = (
+		candidate: string | null | undefined,
+		key: string,
+	) => {
+		const raw = String(candidate ?? "").trim();
+		if (!raw) {
+			return false;
+		}
+		return (
+			raw === key ||
+			raw === `/media/${key}` ||
+			raw.endsWith(`/media/${key}`) ||
+			raw.endsWith(`/media/${encodeRouteParam(key)}`)
+		);
+	};
+
+	try {
+		const db = getDb(dbBinding);
+		const [appearance, posts] = await Promise.all([
+			getSiteAppearance(db).catch(() => null),
+			db
+				.select({
+					title: blogPosts.title,
+					content: blogPosts.content,
+					featuredImageKey: blogPosts.featuredImageKey,
+					backgroundImageKey: blogPosts.backgroundImageKey,
+				})
+				.from(blogPosts)
+				.catch(() => []),
+		]);
+
+		for (const key of keys) {
+			if (appearance) {
+				if (matchesPathOrKey(appearance.backgroundImageKey, key)) {
+					addRef(key, "全局壁纸");
+				}
+				if (matchesPathOrKey(appearance.heroMainImagePath, key)) {
+					addRef(key, "首屏主图");
+				}
+				if (matchesPathOrKey(appearance.heroSignalImagePath, key)) {
+					addRef(key, "右侧名片");
+				}
+				if (matchesPathOrKey(appearance.articleSidebarAvatarPath, key)) {
+					addRef(key, "侧栏头像");
+				}
+			}
+
+			const encodedKey = encodeRouteParam(key);
+			for (const post of posts) {
+				if (
+					post.featuredImageKey === key ||
+					post.backgroundImageKey === key ||
+					post.content.includes(key) ||
+					post.content.includes(encodedKey)
+				) {
+					addRef(key, "文章引用");
+					break;
+				}
+			}
+		}
+	} catch {
+		// 数据库不可用时降级为不展示引用标签
+	}
+
+	return usageMap;
+}
+
 async function saveUploadFile(
 	c: { env: AdminAppEnv["Bindings"] },
 	file: File,
@@ -194,9 +281,19 @@ media.get("/", async (c) => {
 		// R2 未绑定时回退为空列表
 	}
 
+	const usageMap = await collectMediaUsageLabels(
+		c.env.DB,
+		objects.map((o) => o.key),
+	);
 	const totalBytes = objects.reduce((sum, item) => sum + item.size, 0);
+	const usedCount = objects.filter(
+		(o) => (usageMap.get(o.key)?.length ?? 0) > 0,
+	).length;
+	const unusedCount = objects.length - usedCount;
 	const scopeCounts = {
 		all: objects.length,
+		used: usedCount,
+		unused: unusedCount,
 		posts: objects.filter((o) => resolveMediaScopeBucket(o.key) === "posts")
 			.length,
 		appearance: objects.filter(
@@ -211,7 +308,7 @@ media.get("/", async (c) => {
 			<div class="page-header-copy">
 				<span class="page-kicker">Assets</span>
 				<h1 style="margin-bottom: 0;">媒体库</h1>
-				<p class="form-help" style="margin: 0;">自动按 SHA-256 哈希去重存储，支持一键复制访问链接、Markdown 语法或原始键名。</p>
+				<p class="form-help" style="margin: 0;">自动按 SHA-256 哈希去重存储，并实时扫描外观与文章引用状态，方便一键筛出闲置旧图清理。</p>
 			</div>
 			<div class="page-actions">
 				<span class="dashboard-status-pill">共 ${objects.length} 个文件 · ${formatBytes(totalBytes)}</span>
@@ -251,14 +348,16 @@ media.get("/", async (c) => {
 		${
 			objects.length > 0
 				? `<div class="admin-filter-bar" data-media-filter-root>
-					<div class="filter-tabs" role="tablist" aria-label="媒体目录筛选">
+					<div class="filter-tabs" role="tablist" aria-label="媒体引用与目录筛选">
 						<button type="button" class="filter-tab is-active" data-media-scope-tab="all">全部<span class="filter-tab-count">${scopeCounts.all}</span></button>
-						<button type="button" class="filter-tab" data-media-scope-tab="posts">文章资源<span class="filter-tab-count">${scopeCounts.posts}</span></button>
-						<button type="button" class="filter-tab" data-media-scope-tab="appearance">站点外观<span class="filter-tab-count">${scopeCounts.appearance}</span></button>
-						<button type="button" class="filter-tab" data-media-scope-tab="uploads">通用上传<span class="filter-tab-count">${scopeCounts.uploads}</span></button>
+						<button type="button" class="filter-tab" data-media-scope-tab="used">使用中<span class="filter-tab-count">${scopeCounts.used}</span></button>
+						<button type="button" class="filter-tab" data-media-scope-tab="unused">闲置未引用<span class="filter-tab-count">${scopeCounts.unused}</span></button>
+						${scopeCounts.posts > 0 ? `<button type="button" class="filter-tab" data-media-scope-tab="posts">文章配图<span class="filter-tab-count">${scopeCounts.posts}</span></button>` : ""}
+						${scopeCounts.appearance > 0 ? `<button type="button" class="filter-tab" data-media-scope-tab="appearance">壁纸目录<span class="filter-tab-count">${scopeCounts.appearance}</span></button>` : ""}
+						${scopeCounts.uploads > 0 ? `<button type="button" class="filter-tab" data-media-scope-tab="uploads">通用目录<span class="filter-tab-count">${scopeCounts.uploads}</span></button>` : ""}
 					</div>
 					<div class="admin-filter-controls">
-						<input type="search" class="admin-search-input" data-media-search-input placeholder="按文件名或目录搜索…" aria-label="搜索媒体文件" />
+						<input type="search" class="admin-search-input" data-media-search-input placeholder="按文件名、目录或用途搜索…" aria-label="搜索媒体文件" />
 					</div>
 				</div>`
 				: ""
@@ -272,18 +371,25 @@ media.get("/", async (c) => {
 								const displayName = getMediaDisplayName(obj.key);
 								const directory = getMediaDirectoryLabel(obj.key);
 								const scopeBucket = resolveMediaScopeBucket(obj.key);
+								const refs = usageMap.get(obj.key) ?? [];
+								const isUsed = refs.length > 0;
+								const refSummary = isUsed ? refs.join(" / ") : "未引用";
 								const publicUrl = `/media/${obj.key}`;
 								const altBase = displayName.replace(/\.[^.]+$/u, "") || "图片";
 								const mdSnippet = `![${altBase}](${publicUrl})`;
 								const adminPreviewSrc = `/api/admin/media/file/${encodeRouteParam(obj.key)}`;
 								const formattedSize = formatBytes(obj.size);
+								const confirmMsg = isUsed
+									? `该图片正被「${refSummary}」引用，删除后前台对应位置可能无法显示，确认仍要删除吗？`
+									: "确认删除这个闲置未引用的媒体文件吗？";
 
 								return `
 				<div
 					class="media-item"
 					data-media-card
 					data-media-scope="${escapeAttribute(scopeBucket)}"
-					data-media-key="${escapeAttribute(obj.key)}"
+					data-media-used="${isUsed ? "used" : "unused"}"
+					data-media-key="${escapeAttribute(`${obj.key} ${refSummary}`)}"
 				>
 					<div class="media-preview">
 						${
@@ -294,7 +400,7 @@ media.get("/", async (c) => {
 										data-media-zoom-trigger
 										data-media-src="${escapeAttribute(adminPreviewSrc)}"
 										data-media-key="${escapeAttribute(obj.key)}"
-										data-media-size="${escapeAttribute(formattedSize)}"
+										data-media-size="${escapeAttribute(`${formattedSize} · ${refSummary}`)}"
 										aria-label="放大预览 ${escapeAttribute(displayName)}"
 									>
 										<img src="${escapeAttribute(adminPreviewSrc)}" alt="${escapeAttribute(obj.key)}" loading="lazy" />
@@ -305,9 +411,12 @@ media.get("/", async (c) => {
 					<div class="media-info">
 						<span class="media-name" title="${escapeAttribute(obj.key)}">${escapeHtml(displayName)}</span>
 						<span class="media-directory" title="${escapeAttribute(directory)}">目录：${escapeHtml(directory)}</span>
-						<span class="media-size">${formattedSize}</span>
+						<div class="media-ref-row">
+							<span class="media-size">${formattedSize}</span>
+							<span class="media-ref-badge ${isUsed ? "is-used" : "is-unused"}">${escapeHtml(refSummary)}</span>
+						</div>
 					</div>
-					<form method="post" action="/api/admin/media/delete/${encodeRouteParam(obj.key)}" class="media-actions" data-confirm-message="${escapeAttribute("确认删除这个媒体文件吗？")}">
+					<form method="post" action="/api/admin/media/delete/${encodeRouteParam(obj.key)}" class="media-actions" data-confirm-message="${escapeAttribute(confirmMsg)}">
 						<input type="hidden" name="_csrf" value="${escapeAttribute(session.csrfToken)}" />
 						<div class="media-copy-group">
 							<button type="button" class="btn btn-xs" data-copy-value="${escapeAttribute(publicUrl)}" data-copy-toast="已复制图片访问路径">复制 URL</button>

@@ -813,7 +813,8 @@ export const adminSharedStyles = `
 			opacity: 0.72;
 		}
 
-		.is-hidden {
+		.is-hidden,
+		[hidden] {
 			display: none !important;
 		}
 
