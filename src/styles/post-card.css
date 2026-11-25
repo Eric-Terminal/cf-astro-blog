@@ -219,25 +219,25 @@ body.site-shell-has-background-image .post-card.glass-panel {
 }
 
 .post-card-title {
-	font-family: var(--font-sans);
+	font-family: var(--font-serif-body);
 	font-size: clamp(1.16rem, 1.05rem + 0.38vw, 1.38rem);
-	font-weight: 720;
+	font-weight: 700;
 	color: var(--color-text);
-	line-height: 1.32;
-	letter-spacing: -0.022em;
+	line-height: 1.34;
+	letter-spacing: -0.018em;
 	overflow-wrap: anywhere;
 	transition: color var(--transition);
 }
 
 .post-card-featured .post-card-title {
 	font-size: clamp(1.48rem, 1.24rem + 0.95vw, 2.08rem);
-	line-height: 1.22;
-	letter-spacing: -0.03em;
+	line-height: 1.24;
+	letter-spacing: -0.025em;
 	max-width: 30ch;
 }
 
 .post-card-excerpt {
-	font-family: var(--font-sans);
+	font-family: var(--font-serif-body);
 	color: var(--color-text-secondary);
 	font-size: 0.92rem;
 	line-height: 1.7;

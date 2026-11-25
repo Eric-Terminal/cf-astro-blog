@@ -458,6 +458,10 @@ describe("源码回归保护", () => {
 			/--font-strong:\s*"Space Grotesk",\s*"LXGW WenKai",\s*"Shippori Mincho",\s*sans-serif;/u,
 		);
 		assert.ok(globalStyleSource.includes("body {"));
+		assert.match(
+			globalStyleSource,
+			/body\s*\{[\s\S]*?font-family:\s*var\(--font-serif-body\);/u,
+		);
 		assert.ok(globalStyleSource.includes(".prose p {"));
 		assert.ok(globalStyleSource.includes(".prose blockquote {"));
 		assert.ok(globalStyleSource.includes(".prose blockquote > :first-child {"));
