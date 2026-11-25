@@ -312,6 +312,11 @@ describe("源码回归保护", () => {
 		assert.ok(postLayoutSource.includes("article-sidebar"));
 		assert.ok(postLayoutSource.includes("article-sidebar-with-toc"));
 		assert.ok(postLayoutSource.includes("article-profile-avatar"));
+		assert.match(postLayoutSource, /aspect-ratio:\s*1\s*\/\s*1/u);
+		assert.match(
+			postLayoutSource,
+			/\.article-sidebar:not\(\.article-sidebar-with-toc\)\s+\.article-profile\s*\{[^}]*position:\s*sticky/u,
+		);
 		assert.ok(postLayoutSource.includes("article-toc"));
 		assert.ok(postLayoutSource.includes("toc-ruler-tick"));
 		assert.ok(postLayoutSource.includes("article-sheet glass-panel"));

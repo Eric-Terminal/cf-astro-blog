@@ -103,31 +103,59 @@ const hasToc = tocEntries.length > 0;
 	backgroundOverride={backgroundOverride}
 >
 	<article class="article-shell">
-		<!-- 左侧悬浮辅助轨：顶部紧凑作者名片 + 下方光学刻度目录尺（TOC Minimap Ruler） -->
+		<!-- 左侧悬浮辅助轨：满宽方形画框作者名片（有目录时随滚动上推让位，无目录时吸顶常驻陪伴阅读） + 下方光学刻度目录尺 -->
 		<aside class:list={["article-sidebar", { "article-sidebar-with-toc": hasToc }]}>
 			<section class="article-profile glass-panel">
-				<div class="article-profile-head">
-					<div class="article-profile-avatar-frame">
-						{articleSidebarAvatarPath ? (
-							<img
-								src={articleSidebarAvatarPath}
-								alt={`${sidebarName} 的头像`}
-								class="article-profile-avatar"
-								loading="lazy"
-								decoding="async"
-							/>
-						) : (
-							<span class="article-profile-avatar-fallback" aria-hidden="true">
-								{sidebarAvatarInitial}
-							</span>
-						)}
-					</div>
-					<div class="article-profile-identity">
-						<span class="article-profile-badge">{sidebarBadge}</span>
-						<strong class="article-profile-name">{sidebarName}</strong>
-					</div>
+				<div class="article-profile-avatar-frame">
+					{articleSidebarAvatarPath ? (
+						<img
+							src={articleSidebarAvatarPath}
+							alt={`${sidebarName} 的头像`}
+							class="article-profile-avatar"
+							loading="eager"
+							decoding="async"
+						/>
+					) : (
+						<span class="article-profile-avatar-fallback" aria-hidden="true">
+							{sidebarAvatarInitial}
+						</span>
+					)}
 				</div>
-				<p class="article-profile-bio">{sidebarBio}</p>
+
+				<div class="article-profile-identity">
+					<span class="article-profile-badge">{sidebarBadge}</span>
+					<strong class="article-profile-name">{sidebarName}</strong>
+					<p class="article-profile-bio">{sidebarBio}</p>
+				</div>
+
+				<div class="article-profile-meta">
+					{formattedDate && (
+						<div class="article-profile-item">
+							<span>发布于</span>
+							<strong>
+								<time
+									class="local-time-pending"
+									datetime={publishedAt}
+									data-local-time="date"
+								>
+									{formattedDate}
+								</time>
+							</strong>
+						</div>
+					)}
+					{categoryName && (
+						<div class="article-profile-item">
+							<span>所属分类</span>
+							<strong>{categoryName}</strong>
+						</div>
+					)}
+					{!hasToc && (
+						<div class="article-profile-item">
+							<span>篇幅统计</span>
+							<strong>{articleLengthLabel} · {articleReadingTimeLabel}</strong>
+						</div>
+					)}
+				</div>
 			</section>
 
 			{hasToc && (
@@ -240,7 +268,7 @@ const hasToc = tocEntries.length > 0;
 <style>
 	.article-shell {
 		display: grid;
-		grid-template-columns: minmax(13.5rem, 15.8rem) minmax(0, 1fr);
+		grid-template-columns: minmax(14.2rem, 16.5rem) minmax(0, 1fr);
 		gap: clamp(1.35rem, 2.2vw, 2rem);
 		align-items: start;
 	}
@@ -262,11 +290,20 @@ const hasToc = tocEntries.length > 0;
 	}
 
 	.article-profile {
+		--glass-panel-opacity: calc(var(--article-panel-opacity, 14) / 100);
+		--glass-panel-blur: var(--article-panel-blur, 18px);
 		display: grid;
-		gap: 0.72rem;
-		padding: 1rem 1.05rem;
+		gap: 0.85rem;
+		padding: 1.05rem;
 	}
 
+	/* 无目录文章：左侧大头像名片直接吸顶常驻，随正文滚动全程陪伴不留空洞 */
+	.article-sidebar:not(.article-sidebar-with-toc) .article-profile {
+		position: sticky;
+		top: var(--article-sidebar-sticky-top);
+	}
+
+	/* 有目录文章：顶部展示完整大头像，向下滚动时平滑上推将置顶位让给目录尺 */
 	.article-sidebar-with-toc .article-profile {
 		position: sticky;
 		top: calc(
@@ -277,20 +314,21 @@ const hasToc = tocEntries.length > 0;
 		transform: translateY(var(--article-profile-shift));
 	}
 
-	.article-profile-head {
-		display: flex;
-		align-items: center;
-		gap: 0.7rem;
-	}
-
 	.article-profile-avatar-frame {
-		width: 2.75rem;
-		height: 2.75rem;
-		flex-shrink: 0;
-		border-radius: 50%;
+		position: relative;
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		border-radius: var(--radius-inner);
 		overflow: hidden;
-		background: var(--color-accent-soft);
+		background:
+			linear-gradient(
+				145deg,
+				rgba(var(--color-accent-rgb), 0.18),
+				rgba(var(--color-accent-rgb), 0.04)
+			),
+			var(--color-bg-tertiary);
 		border: 1px solid var(--color-border-strong);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 		display: grid;
 		place-items: center;
 	}
@@ -303,30 +341,35 @@ const hasToc = tocEntries.length > 0;
 	}
 
 	.article-profile-avatar-fallback {
-		font-size: 1.08rem;
+		font-size: clamp(2.1rem, 1.7rem + 1.6vw, 2.85rem);
 		font-weight: 700;
 		color: var(--color-accent);
 	}
 
 	.article-profile-identity {
 		display: grid;
-		gap: 0.12rem;
+		gap: 0.36rem;
 		min-width: 0;
 	}
 
 	.article-profile-badge {
+		width: fit-content;
+		padding: 0.22rem 0.56rem;
+		border-radius: var(--radius-pill);
+		background: var(--color-accent-soft);
+		border: 1px solid rgba(var(--color-accent-rgb), 0.24);
 		font-family: var(--font-mono);
 		font-size: 0.68rem;
-		font-weight: 600;
+		font-weight: 650;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--color-accent);
 	}
 
 	.article-profile-name {
-		font-size: 0.94rem;
-		font-weight: 680;
-		line-height: 1.25;
+		font-size: 1.06rem;
+		font-weight: 720;
+		line-height: 1.28;
 		color: var(--color-text);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -334,13 +377,43 @@ const hasToc = tocEntries.length > 0;
 	}
 
 	.article-profile-bio {
-		font-size: 0.83rem;
+		font-size: 0.86rem;
 		line-height: 1.65;
 		color: var(--color-text-secondary);
+		overflow-wrap: anywhere;
+	}
+
+	.article-profile-meta {
+		display: grid;
+		gap: 0.48rem;
+		padding-top: 0.72rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.article-profile-item {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.6rem;
+		font-size: 0.78rem;
+	}
+
+	.article-profile-item > span {
+		flex-shrink: 0;
+		color: var(--color-text-muted);
+	}
+
+	.article-profile-item > strong {
+		font-weight: 600;
+		color: var(--color-text-secondary);
+		text-align: right;
+		font-variant-numeric: tabular-nums;
 	}
 
 	/* 光学刻度目录尺（TOC Minimap Ruler） */
 	.article-toc {
+		--glass-panel-opacity: calc(var(--article-panel-opacity, 14) / 100);
+		--glass-panel-blur: var(--article-panel-blur, 18px);
 		display: flex;
 		flex-direction: column;
 		gap: 0;
@@ -460,6 +533,8 @@ const hasToc = tocEntries.length > 0;
 
 	/* 一体式连贯数字书卷 */
 	.article-sheet {
+		--glass-panel-opacity: calc(var(--article-panel-opacity, 14) / 100);
+		--glass-panel-blur: var(--article-panel-blur, 18px);
 		display: grid;
 		gap: 0;
 	}
@@ -678,11 +753,22 @@ const hasToc = tocEntries.length > 0;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 
+		.article-sidebar:not(.article-sidebar-with-toc) {
+			grid-template-columns: 1fr;
+		}
+
 		.article-profile,
+		.article-sidebar:not(.article-sidebar-with-toc) .article-profile,
+		.article-sidebar-with-toc .article-profile,
 		.article-toc {
 			position: static;
 			top: auto;
 			max-height: none;
+			transform: none;
+		}
+
+		.article-profile-avatar-frame {
+			max-width: 5.5rem;
 		}
 
 		.article-toc-body {
