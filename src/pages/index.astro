@@ -141,8 +141,14 @@ const latestUpdate = latestUpdateAt
 const recentSectionSubheading =
 	pinnedPosts.length > 0 ? "" : "按时间倒序收录近期工程思考与调试手记。";
 const heroActions = buildHeroActionLinks(homepageAppearance);
-const primaryAction = heroActions[0] ?? { label: "浏览归档", href: "/blog" };
-const extraActions = heroActions.slice(2);
+const signalChips = [
+	homepageAppearance.heroSignalChip1,
+	homepageAppearance.heroSignalChip2,
+	homepageAppearance.heroSignalChip3,
+]
+	.map((chip) => chip?.trim())
+	.filter(Boolean);
+const hasSignalImage = Boolean(homepageAppearance.heroSignalImagePath);
 const homepageMetaDescription = resolveSiteDescriptionFromAppearance(
 	homepageAppearance,
 	siteConfig.description,
@@ -154,103 +160,14 @@ function isInternalHref(href: string) {
 ---
 
 <Base title={siteConfig.name} description={homepageMetaDescription}>
-	<!-- 非对称双舱 Bento 舞台：左舱主刊头 + 即时 Spotlight 检索条，右舱独立当期特写封面卡 -->
+	<!-- 非对称双舱 Bento 首屏：左舱「画廊插画视窗 + 个人刊头宣言 + 全部自定义动作」，右舱「画集级立绘人设名片 + 实时最近更新直达条」 -->
 	<section class="home-bento-stage" data-hero-depth>
 		<div
 			class="hero-masthead-deck home-hero-copy glass-panel"
 			data-tilt-card
-			data-tilt-scale="0.48"
-			data-tilt-shift-scale="0.78"
+			data-tilt-scale="0.44"
+			data-tilt-shift-scale="0.76"
 		>
-			<div class="masthead-topline">
-				<span class="masthead-live-badge">
-					<span class="masthead-live-dot" aria-hidden="true"></span>
-					<span>{homepageAppearance.heroKicker}</span>
-				</span>
-				<span class="masthead-telemetry">
-					ISSUE.{String(Math.max(totalPublishedPosts, 1)).padStart(2, "0")} · {totalPublishedPosts} 篇公开记录
-				</span>
-			</div>
-
-			<div class="masthead-body">
-				<h1 class="page-title">{homepageAppearance.heroTitle}</h1>
-				<p class="page-intro">{homepageAppearance.heroIntro}</p>
-			</div>
-
-			<div class="masthead-controls">
-				<a
-					href={primaryAction.href}
-					class="button masthead-primary-btn"
-					target={isInternalHref(primaryAction.href) ? undefined : "_blank"}
-					rel={isInternalHref(primaryAction.href) ? undefined : "noopener noreferrer"}
-				>
-					<span>{primaryAction.label}</span>
-					<span aria-hidden="true">→</span>
-				</a>
-
-				<span class="hero-search-bridge" transition:name="search-entry">
-					<a
-						href="/search"
-						class="masthead-spotlight-bar"
-						data-command-trigger
-						aria-label="打开全站即时检索命令舱"
-					>
-						<svg
-							width="15"
-							height="15"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							aria-hidden="true"
-						>
-							<circle cx="11" cy="11" r="8"></circle>
-							<path d="m21 21-4.3-4.3"></path>
-						</svg>
-						<span class="masthead-spotlight-placeholder">检索文章或输入指令...</span>
-						<kbd>⌘K</kbd>
-					</a>
-				</span>
-
-				{extraActions.map((action) => (
-					<a
-						href={action.href}
-						class="button button-secondary"
-						target={isInternalHref(action.href) ? undefined : "_blank"}
-						rel={isInternalHref(action.href) ? undefined : "noopener noreferrer"}
-					>
-						{action.label}
-					</a>
-				))}
-			</div>
-		</div>
-
-		<aside
-			class="hero-dispatch glass-panel"
-			data-tilt-card
-			data-tilt-scale="0.56"
-			data-tilt-shift-scale="0.88"
-			aria-label="当期最新特写"
-		>
-			<div class="dispatch-ribbon">
-				<span class="dispatch-stamp">LATEST DISPATCH</span>
-				{
-					latestUpdateAt ? (
-						<time
-							class="dispatch-date local-time-pending"
-							datetime={latestUpdateAt}
-							data-local-time="date"
-						>
-							{latestUpdate}
-						</time>
-					) : (
-						<span class="dispatch-date">{latestUpdate}</span>
-					)
-				}
-			</div>
-
 			{
 				homepageAppearance.heroMainImagePath && (
 					<div class="hero-main-media">
@@ -264,37 +181,176 @@ function isInternalHref(href: string) {
 				)
 			}
 
-			{
-				latestPost ? (
-					<a
-						href={`/blog/${encodeRouteParam(latestPost.slug)}`}
-						class="dispatch-story"
-						data-astro-prefetch="hover"
+			<div class="masthead-content">
+				<div class="masthead-topline">
+					<span class="masthead-live-badge">
+						<span class="masthead-live-dot" aria-hidden="true"></span>
+						<span>{homepageAppearance.heroKicker}</span>
+					</span>
+					<span class="masthead-telemetry">
+						ISSUE.{String(Math.max(totalPublishedPosts, 1)).padStart(2, "0")} · {totalPublishedPosts} 篇公开记录
+					</span>
+				</div>
+
+				<div class="masthead-body">
+					<h1 class="page-title">{homepageAppearance.heroTitle}</h1>
+					<p class="page-intro">{homepageAppearance.heroIntro}</p>
+				</div>
+
+				<div class="masthead-controls">
+					{
+						heroActions.map((action, index) => {
+							const btn = (
+								<a
+									href={action.href}
+									class:list={[
+										"button",
+										index === 0 ? "masthead-primary-btn" : "button-secondary",
+									]}
+									target={isInternalHref(action.href) ? undefined : "_blank"}
+									rel={
+										isInternalHref(action.href)
+											? undefined
+											: "noopener noreferrer"
+									}
+								>
+									<span>{action.label}</span>
+									{index === 0 && <span aria-hidden="true">→</span>}
+								</a>
+							);
+
+							return index === 1 ? (
+								<span class="hero-search-bridge" transition:name="search-entry">
+									{btn}
+								</span>
+							) : (
+								btn
+							);
+						})
+					}
+
+					<button
+						type="button"
+						class="masthead-spotlight-bar"
+						data-command-trigger
+						aria-label="打开全站即时检索命令舱"
 					>
-						<div class="dispatch-story-body">
-							{latestPost.categoryName && (
-								<span class="dispatch-category">{latestPost.categoryName}</span>
-							)}
-							<h2 class="dispatch-title">{latestPost.title}</h2>
-							{latestPost.excerpt && (
-								<p class="dispatch-excerpt">{latestPost.excerpt}</p>
-							)}
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<circle cx="11" cy="11" r="8"></circle>
+							<path d="m21 21-4.3-4.3"></path>
+						</svg>
+						<span class="masthead-spotlight-placeholder">快速检索...</span>
+						<kbd>⌘K</kbd>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="home-hero-side">
+			<article
+				class:list={[
+					"hero-signal-card",
+					"glass-panel",
+					{ "hero-signal-card-has-image": hasSignalImage },
+				]}
+				data-tilt-card
+				data-tilt-scale="0.56"
+				data-tilt-shift-scale="0.9"
+			>
+				{
+					homepageAppearance.heroSignalImagePath && (
+						<div class="hero-signal-media" aria-hidden="true">
+							<img
+								src={homepageAppearance.heroSignalImagePath}
+								alt=""
+								loading="eager"
+								decoding="async"
+							/>
 						</div>
-						<div class="dispatch-footer">
-							<span class="dispatch-readtime">
-								约 {latestPost.estimatedReadingMinutes} 分钟 · 立即阅读
+					)
+				}
+
+				<div class="hero-signal-content">
+					{
+						homepageAppearance.heroSignalLabel && (
+							<span class="hero-signal-label">
+								<span class="hero-signal-spark" aria-hidden="true">✦</span>
+								<span>{homepageAppearance.heroSignalLabel}</span>
 							</span>
+						)
+					}
+					<strong class="hero-signal-heading">
+						{homepageAppearance.heroSignalHeading}
+					</strong>
+					{
+						homepageAppearance.heroSignalCopy && (
+							<p class="hero-signal-copy">{homepageAppearance.heroSignalCopy}</p>
+						)
+					}
+					{
+						signalChips.length > 0 && (
+							<div class="hero-signal-row">
+								{signalChips.map((chip) => (
+									<span class="hero-signal-chip">{chip}</span>
+								))}
+							</div>
+						)
+					}
+				</div>
+			</article>
+
+			<aside
+				class="hero-dispatch glass-panel"
+				data-tilt-card
+				data-tilt-scale="0.42"
+				data-tilt-shift-scale="0.68"
+				aria-label="最近更新"
+			>
+				{
+					latestPost ? (
+						<a
+							href={`/blog/${encodeRouteParam(latestPost.slug)}`}
+							class="dispatch-compact-link"
+							data-astro-prefetch="hover"
+						>
+							<div class="dispatch-compact-main">
+								<div class="dispatch-compact-meta">
+									<span class="dispatch-stamp">最近更新</span>
+									{latestUpdateAt ? (
+										<time
+											class="dispatch-date local-time-pending"
+											datetime={latestUpdateAt}
+											data-local-time="date"
+										>
+											{latestUpdate}
+										</time>
+									) : (
+										<span class="dispatch-date">{latestUpdate}</span>
+									)}
+								</div>
+								<strong class="dispatch-compact-title">{latestPost.title}</strong>
+							</div>
 							<span class="dispatch-orb" aria-hidden="true">↗</span>
+						</a>
+					) : (
+						<div class="dispatch-compact-empty">
+							<span class="dispatch-stamp">最近更新</span>
+							<strong>{latestUpdate}</strong>
 						</div>
-					</a>
-				) : (
-					<div class="dispatch-empty">
-						<strong>等待第一篇刊发</strong>
-						<p>围绕 Cloudflare、边缘计算、前端动效与系统架构的技术手帐已就绪。</p>
-					</div>
-				)
-			}
-		</aside>
+					)
+				}
+			</aside>
+		</div>
 	</section>
 
 	{
@@ -363,7 +419,9 @@ function isInternalHref(href: string) {
 						cjkCharCount={post.cjkCharCount}
 						latinWordCount={post.latinWordCount}
 						estimatedReadingMinutes={post.estimatedReadingMinutes}
-						variant={pinnedPosts.length === 0 && index === 0 ? "featured" : "regular"}
+						variant={
+							pinnedPosts.length === 0 && index === 0 ? "featured" : "regular"
+						}
 						indexNumber={pinnedPosts.length + index + 1}
 					/>
 				))}
@@ -382,19 +440,18 @@ function isInternalHref(href: string) {
 		--hero-pointer-y: 0;
 		--hero-scroll-shift: 0px;
 		display: grid;
-		grid-template-columns: minmax(0, 1.38fr) minmax(19rem, 0.92fr);
+		grid-template-columns: minmax(0, 1.38fr) minmax(19.5rem, 0.92fr);
 		align-items: stretch;
 		gap: 1.15rem;
 		animation: stage-enter 540ms cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
 
 	.hero-masthead-deck,
+	.hero-signal-card,
 	.hero-dispatch {
 		--glass-panel-opacity: calc(var(--hero-card-opacity, 14) / 100);
 		--glass-panel-blur: var(--hero-card-blur, 18px);
-		transform:
-			perspective(1280px)
-			rotateX(var(--tilt-rotate-x, 0deg))
+		transform: perspective(1280px) rotateX(var(--tilt-rotate-x, 0deg))
 			rotateY(var(--tilt-rotate-y, 0deg));
 		transition:
 			transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -402,12 +459,59 @@ function isInternalHref(href: string) {
 			box-shadow var(--transition);
 	}
 
+	/* 左舱：画廊主图视窗 + 刊头宣言 */
 	.hero-masthead-deck {
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		gap: 1.8rem;
-		padding: clamp(1.65rem, 1.25rem + 2.2vw, 2.75rem);
+		gap: 1.45rem;
+		padding: clamp(1.35rem, 1.05rem + 1.6vw, 2rem);
+	}
+
+	.hero-main-media {
+		position: relative;
+		overflow: hidden;
+		border-radius: var(--radius-card);
+		border: 1px solid var(--color-border-strong);
+		min-height: clamp(11.5rem, 23vh, 15.8rem);
+		aspect-ratio: 16 / 8.2;
+		background: var(--color-bg-tertiary);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.24),
+			0 16px 36px -24px var(--color-shadow-strong);
+	}
+
+	.hero-main-media::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+		pointer-events: none;
+	}
+
+	.hero-main-media img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center;
+		transform: translate3d(
+				calc(var(--tilt-shift-x, 0) * 6px),
+				calc(var(--tilt-shift-y, 0) * 6px),
+				0
+			)
+			scale(1.035);
+		transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.masthead-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 1.35rem;
+		padding-inline: 0.2rem;
 	}
 
 	.masthead-topline {
@@ -416,25 +520,24 @@ function isInternalHref(href: string) {
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.65rem 1rem;
-		padding-bottom: 0.95rem;
+		padding-bottom: 0.85rem;
 		border-bottom: 1px solid var(--color-border);
 	}
 
 	.masthead-live-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.48rem;
-		font-family: var(--font-mono);
-		font-size: 0.75rem;
-		font-weight: 650;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		gap: 0.5rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
 		color: var(--color-accent);
 	}
 
 	.masthead-live-dot {
 		width: 7px;
 		height: 7px;
+		flex-shrink: 0;
 		border-radius: 50%;
 		background: #10b981;
 		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
@@ -442,34 +545,40 @@ function isInternalHref(href: string) {
 	}
 
 	@keyframes live-pulse {
-		0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16); }
-		50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.04); }
+		0%,
+		100% {
+			box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+		}
+		50% {
+			box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.04);
+		}
 	}
 
 	.masthead-telemetry {
 		font-family: var(--font-mono);
-		font-size: 0.73rem;
+		font-size: 0.72rem;
 		color: var(--color-text-muted);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.masthead-body {
 		display: grid;
-		gap: 1.05rem;
+		gap: 0.95rem;
 	}
 
 	.home-hero-copy .page-title {
-		max-width: 15.5ch;
-		font-size: clamp(2.15rem, 1.65rem + 2.2vw, 3.4rem);
+		max-width: 16ch;
+		font-size: clamp(2.15rem, 1.65rem + 2.15vw, 3.35rem);
 		font-weight: 780;
-		line-height: 1.13;
-		letter-spacing: -0.034em;
+		line-height: 1.14;
+		letter-spacing: -0.032em;
 	}
 
 	.home-hero-copy .page-intro {
 		white-space: pre-line;
-		max-width: 38rem;
-		font-size: clamp(0.96rem, 0.92rem + 0.2vw, 1.06rem);
+		max-width: 40rem;
+		font-size: clamp(0.95rem, 0.91rem + 0.18vw, 1.04rem);
+		line-height: 1.78;
 		color: var(--color-text-secondary);
 	}
 
@@ -477,34 +586,38 @@ function isInternalHref(href: string) {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.7rem;
+		gap: 0.65rem;
+		padding-top: 0.2rem;
 	}
 
 	.masthead-primary-btn {
-		height: 2.75rem;
-		padding-inline: 1.25rem;
+		height: 2.68rem;
+		padding-inline: 1.2rem;
+	}
+
+	.masthead-controls .button-secondary {
+		height: 2.68rem;
+		padding-inline: 1.05rem;
 	}
 
 	.hero-search-bridge {
-		flex: 1 1 13.5rem;
-		max-width: 20rem;
-		display: flex;
+		display: inline-flex;
 	}
 
-	/* 仿真 Spotlight 搜索条：一键呼出全站实时命令面板 */
 	.masthead-spotlight-bar {
-		width: 100%;
-		height: 2.75rem;
+		margin-left: auto;
+		height: 2.68rem;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.55rem;
-		padding: 0 0.65rem 0 0.9rem;
+		gap: 0.5rem;
+		padding: 0 0.62rem 0 0.85rem;
 		border-radius: var(--radius-pill);
 		background: var(--color-bg-tertiary);
 		border: 1px solid var(--color-border-strong);
 		color: var(--color-text-muted);
-		font-size: 0.86rem;
+		font-size: 0.84rem;
 		box-shadow: inset 0 1px 0 var(--glass-highlight);
+		cursor: pointer;
 		transition:
 			border-color var(--transition),
 			background-color var(--transition),
@@ -523,16 +636,12 @@ function isInternalHref(href: string) {
 	}
 
 	.masthead-spotlight-placeholder {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.masthead-spotlight-bar kbd {
 		flex-shrink: 0;
-		padding: 0.16rem 0.44rem;
+		padding: 0.15rem 0.42rem;
 		border-radius: 999px;
 		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
@@ -542,168 +651,229 @@ function isInternalHref(href: string) {
 		color: var(--color-text-secondary);
 	}
 
-	/* 右舱：独立杂志当期封面卡 */
-	.hero-dispatch {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: clamp(1.35rem, 1.05rem + 1.4vw, 1.85rem);
+	/* 右舱：立绘人设名片舱 + 底部最近更新直达条 */
+	.home-hero-side {
+		display: grid;
+		grid-template-rows: minmax(0, 1fr) auto;
+		gap: 1.05rem;
+		min-width: 0;
 	}
 
-	.dispatch-ribbon {
+	.hero-signal-card {
+		position: relative;
+		min-height: 24.5rem;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+	}
+
+	.hero-signal-media {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		overflow: hidden;
+		border-radius: inherit;
+	}
+
+	/* 主题自适应底部羽化层：既保留透明通道立绘背后的通透毛玻璃，又柔化裙摆与下方悬浮铭牌的交界 */
+	.hero-signal-media::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			180deg,
+			rgba(var(--card-surface-rgb), 0) 0%,
+			rgba(var(--card-surface-rgb), 0.04) 48%,
+			rgba(var(--card-surface-rgb), 0.56) 82%,
+			rgba(var(--card-surface-rgb), 0.82) 100%
+		);
+		pointer-events: none;
+	}
+
+	.hero-signal-media img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center 6%;
+		transform: translate3d(
+				calc(var(--tilt-shift-x, 0) * -5px),
+				calc(var(--tilt-shift-y, 0) * -5px),
+				0
+			)
+			scale(1.02);
+		transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.hero-signal-content {
+		position: relative;
+		z-index: 3;
+		display: grid;
+		gap: 0.65rem;
+		padding: 1.35rem 1.4rem;
+	}
+
+	.hero-signal-card-has-image .hero-signal-content {
+		margin: 0.65rem;
+		padding: 1.05rem 1.15rem;
+		border-radius: var(--radius-card);
+		border: 1px solid var(--glass-border);
+		background: rgba(var(--card-surface-rgb), 0.68);
+		box-shadow:
+			inset 0 1px 0 var(--glass-highlight),
+			0 12px 28px -18px var(--color-shadow-strong);
+		backdrop-filter: blur(min(calc(var(--hero-card-blur, 18px) * 1.25), 36px))
+			saturate(150%);
+		-webkit-backdrop-filter: blur(
+				min(calc(var(--hero-card-blur, 18px) * 1.25), 36px)
+			)
+			saturate(150%);
+	}
+
+	.hero-signal-label {
+		width: fit-content;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.36rem;
+		padding: 0.24rem 0.62rem;
+		border-radius: var(--radius-pill);
+		background: var(--color-accent-soft);
+		border: 1px solid rgba(var(--color-accent-rgb), 0.26);
+		font-size: 0.74rem;
+		font-weight: 620;
+		letter-spacing: 0.04em;
+		color: var(--color-accent);
+	}
+
+	.hero-signal-spark {
+		font-size: 0.66rem;
+	}
+
+	.hero-signal-heading {
+		font-size: clamp(1.18rem, 1.04rem + 0.45vw, 1.45rem);
+		font-weight: 750;
+		line-height: 1.25;
+		letter-spacing: -0.024em;
+		color: var(--color-text);
+	}
+
+	.hero-signal-copy {
+		font-size: 0.87rem;
+		line-height: 1.68;
+		white-space: pre-line;
+		overflow-wrap: anywhere;
+		color: var(--color-text-secondary);
+	}
+
+	.hero-signal-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		padding-top: 0.15rem;
+	}
+
+	.hero-signal-chip {
+		padding: 0.24rem 0.58rem;
+		border-radius: 7px;
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-strong);
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		font-weight: 620;
+		letter-spacing: 0.04em;
+		color: var(--color-text-secondary);
+	}
+
+	/* 右下舱：最近更新直达微舱 */
+	.hero-dispatch {
+		padding: 0.95rem 1.15rem;
+	}
+
+	.dispatch-compact-link {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.65rem;
-		padding-bottom: 0.8rem;
-		border-bottom: 1px solid var(--color-border);
+		gap: 0.85rem;
+		color: inherit;
+	}
+
+	.dispatch-compact-link:hover {
+		color: inherit;
+	}
+
+	.dispatch-compact-main {
+		min-width: 0;
+		display: grid;
+		gap: 0.32rem;
+	}
+
+	.dispatch-compact-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
 		font-family: var(--font-mono);
 		font-size: 0.72rem;
 		font-variant-numeric: tabular-nums;
 	}
 
 	.dispatch-stamp {
-		padding: 0.16rem 0.48rem;
+		padding: 0.12rem 0.44rem;
 		border-radius: 5px;
 		background: var(--color-accent-soft);
 		border: 1px solid rgba(var(--color-accent-rgb), 0.24);
 		color: var(--color-accent);
-		font-weight: 700;
-		letter-spacing: 0.06em;
+		font-weight: 680;
+		letter-spacing: 0.04em;
 	}
 
 	.dispatch-date {
 		color: var(--color-text-muted);
 	}
 
-	.hero-main-media {
-		position: relative;
-		overflow: hidden;
-		border-radius: var(--radius-inner);
-		border: 1px solid var(--color-border);
-		aspect-ratio: 16 / 9;
-		background: var(--color-bg-tertiary);
-	}
-
-	.hero-main-media img {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.dispatch-story {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		gap: 1.15rem;
-		padding-top: 0.2rem;
-		color: inherit;
-	}
-
-	.dispatch-story:hover {
-		color: inherit;
-	}
-
-	.dispatch-story-body {
-		display: grid;
-		gap: 0.6rem;
-	}
-
-	.dispatch-category {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		font-size: 0.78rem;
-		font-weight: 620;
-		color: var(--color-accent);
-	}
-
-	.dispatch-category::before {
-		content: "";
-		width: 5px;
-		height: 5px;
-		border-radius: 50%;
-		background: currentColor;
-	}
-
-	.dispatch-title {
-		font-family: var(--font-sans);
-		font-size: clamp(1.28rem, 1.12rem + 0.55vw, 1.62rem);
-		font-weight: 740;
-		line-height: 1.28;
-		letter-spacing: -0.025em;
+	.dispatch-compact-title {
+		font-size: 0.94rem;
+		font-weight: 680;
+		line-height: 1.35;
 		color: var(--color-text);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		transition: color var(--transition);
 	}
 
-	.dispatch-story:hover .dispatch-title {
+	.dispatch-compact-link:hover .dispatch-compact-title {
 		color: var(--color-accent);
 	}
 
-	.dispatch-excerpt {
-		font-size: 0.9rem;
-		line-height: 1.68;
-		color: var(--color-text-secondary);
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	.dispatch-footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding-top: 0.85rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.dispatch-readtime {
-		font-family: var(--font-mono);
-		font-size: 0.75rem;
-		color: var(--color-text-muted);
-	}
-
 	.dispatch-orb {
-		width: 2.1rem;
-		height: 2.1rem;
+		width: 2rem;
+		height: 2rem;
+		flex-shrink: 0;
 		border-radius: 50%;
 		display: grid;
 		place-items: center;
 		background: var(--color-text);
 		color: var(--color-bg);
 		font-family: var(--font-mono);
-		font-size: 0.9rem;
+		font-size: 0.86rem;
 		transition:
 			background-color var(--transition),
 			transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
-	.dispatch-story:hover .dispatch-orb {
+	.dispatch-compact-link:hover .dispatch-orb {
 		background: var(--color-accent);
 		color: #ffffff;
 		transform: translate(2px, -2px);
 	}
 
-	.dispatch-empty {
-		display: grid;
-		gap: 0.45rem;
-		margin-block: auto;
-	}
-
-	.dispatch-empty strong {
-		font-size: 1.05rem;
-		color: var(--color-text);
-	}
-
-	.dispatch-empty p {
+	.dispatch-compact-empty {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
 		font-size: 0.88rem;
-		line-height: 1.68;
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary);
 	}
 
 	.home-section {
@@ -770,9 +940,13 @@ function isInternalHref(href: string) {
 		}
 	}
 
-	@media (max-width: 920px) {
+	@media (max-width: 960px) {
 		.home-bento-stage {
 			grid-template-columns: 1fr;
+		}
+
+		.hero-signal-card {
+			min-height: 22rem;
 		}
 
 		.home-grid {
@@ -781,14 +955,14 @@ function isInternalHref(href: string) {
 	}
 
 	@media (max-width: 640px) {
-		.hero-masthead-deck,
-		.hero-dispatch {
-			padding: 1.25rem;
+		.hero-masthead-deck {
+			padding: 1.15rem;
 		}
 
-		.hero-search-bridge {
-			max-width: none;
-			width: 100%;
+		.masthead-spotlight-bar {
+			margin-left: 0;
+			flex: 1 1 12rem;
+			justify-content: space-between;
 		}
 
 		.section-head {
@@ -799,19 +973,14 @@ function isInternalHref(href: string) {
 
 	@media (hover: none), (pointer: coarse) {
 		.hero-masthead-deck,
+		.hero-signal-card,
 		.hero-dispatch {
 			transform: none;
 		}
-	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.home-bento-stage,
-		.hero-masthead-deck,
-		.hero-dispatch,
-		.masthead-live-dot {
-			animation: none;
-			transition: none;
-			transform: none;
+		.hero-main-media img,
+		.hero-signal-media img {
+			transform: scale(1.02);
 		}
 	}
 </style>
