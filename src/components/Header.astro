@@ -325,7 +325,8 @@ function isLinkActive(href: string) {
 		gap: 0.52rem;
 		flex: 1 1 auto;
 		min-width: 0;
-		max-width: 30rem;
+		max-width: 38rem;
+		padding-right: 0.5rem;
 		margin-right: auto;
 		animation: hud-slot-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
@@ -399,11 +400,13 @@ function isLinkActive(href: string) {
 		animation: hud-roll-exit-down 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
 
-	/* 离屏自然宽度探针：置于常驻可见父层，避免在 HUD 尚未切换 display 时 offsetWidth 返回 0 */
+	/* 离屏自然宽度探针：置于常驻可见父层并强制 max-content，避免受 transform 包含块宽度约束 */
 	.nav-hud-measure {
 		position: fixed;
 		top: -9999px;
-		left: -9999px;
+		left: 0;
+		width: max-content;
+		max-width: none;
 		display: inline-block;
 		visibility: hidden;
 		pointer-events: none;

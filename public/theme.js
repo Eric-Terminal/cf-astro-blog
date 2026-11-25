@@ -150,13 +150,33 @@
 			const brand = shell.querySelector(".site-brand");
 			const measureEl = shell.querySelector("[data-nav-reading-measure]");
 			const actions = shell.querySelector(".nav-actions");
-			const brandW = brand instanceof HTMLElement ? brand.offsetWidth : 32;
+			const brandW =
+				brand instanceof HTMLElement
+					? Math.ceil(brand.getBoundingClientRect().width || brand.offsetWidth)
+					: 34;
 			const rawChapterW =
-				measureEl instanceof HTMLElement ? measureEl.offsetWidth : 120;
-			const hudW = 6 + 9 + Math.min(rawChapterW, 460);
+				measureEl instanceof HTMLElement
+					? Math.ceil(
+							Math.max(
+								measureEl.scrollWidth,
+								measureEl.getBoundingClientRect().width,
+								measureEl.offsetWidth,
+							),
+						)
+					: 140;
+			const maxChapterW = Math.max(160, window.innerWidth - 320);
+			const hudW = 6 + 9 + Math.min(rawChapterW, Math.min(600, maxChapterW));
 			const actionsW =
-				actions instanceof HTMLElement ? actions.scrollWidth : 168;
-			return Math.ceil(pl + pr + brandW + hudW + actionsW + gap * 2 + 26);
+				actions instanceof HTMLElement
+					? Math.ceil(
+							Math.max(
+								actions.scrollWidth,
+								actions.getBoundingClientRect().width,
+							),
+						)
+					: 180;
+			// 预留 48px 舒适呼吸间距，杜绝亚像素取整或两位数/三位数百分比切换触发误省略
+			return Math.ceil(pl + pr + brandW + hudW + actionsW + gap * 2 + 48);
 		}
 
 		const visibleChildren = Array.from(shell.children).filter(
@@ -193,8 +213,8 @@
 		const vw = window.innerWidth;
 		const maxAllowed = vw - MIN_INSET_PX * 2;
 		const NAV_MAX_W = isReadingHudCompact
-			? Math.min(760, maxAllowed)
-			: Math.min(820, maxAllowed);
+			? Math.min(880, maxAllowed)
+			: Math.min(860, maxAllowed);
 		const contentW = measureNavContentWidth(isReadingHudCompact);
 		if (contentW === 0) {
 			return;
@@ -442,6 +462,19 @@
 		};
 		scrollShell.addEventListener("pointerenter", resync);
 		scrollShell.addEventListener("pointerleave", resync);
+
+		// 监听离屏章节探针与右侧操作区尺寸变化（如霞鹜文楷 WebFont 子集异步加载完成、9%->99%->100% 宽度跳变）
+		if ("ResizeObserver" in window) {
+			const ro = new ResizeObserver(() => {
+				if (isNavCondensed) {
+					syncCondensedNavWidth();
+				}
+			});
+			const measureEl = scrollShell.querySelector("[data-nav-reading-measure]");
+			const actionsEl = scrollShell.querySelector(".nav-actions");
+			if (measureEl instanceof HTMLElement) ro.observe(measureEl);
+			if (actionsEl instanceof HTMLElement) ro.observe(actionsEl);
+		}
 	};
 
 	const focusSearchInputIfRequested = () => {
