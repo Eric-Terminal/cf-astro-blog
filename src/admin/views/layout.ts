@@ -1,4 +1,5 @@
 import { escapeAttribute, escapeHtml } from "@/lib/security";
+import { adminStudioStyles } from "./studio-styles";
 
 interface AdminLayoutOptions {
 	csrfToken?: string;
@@ -15,51 +16,59 @@ type AdminNavKey =
 
 const navItems: Array<{
 	key: AdminNavKey;
+	group: string;
 	label: string;
 	href: string;
 	icon: string;
 }> = [
 	{
 		key: "dashboard",
+		group: "内容工作台",
 		label: "控制台",
 		href: "/api/admin",
 		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v5h-7V4zM4 13h7v7H4v-7zm9 3h7v4h-7v-4z"/></svg>',
 	},
 	{
-		key: "appearance",
-		label: "外观",
-		href: "/api/admin/appearance",
-		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.5-.04-1-.12-1.5a4 4 0 0 1-5.38-5.38A9 9 0 0 0 12 3zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>',
-	},
-	{
 		key: "posts",
+		group: "内容工作台",
 		label: "文章",
 		href: "/api/admin/posts",
 		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6V3zm8 1.5V7h2.5L14 4.5zM8 10h8v1.5H8V10zm0 3.5h8V15H8v-1.5zm0 3.5h5V18H8v-1z"/></svg>',
 	},
 	{
+		key: "media",
+		group: "内容工作台",
+		label: "媒体",
+		href: "/api/admin/media",
+		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.5 10.2 3.2-4.1 2.6 3.2 2.3-2.8 4.4 5.5H5.5v-1.8zM8.2 9.2a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8z"/></svg>',
+	},
+	{
 		key: "friends",
+		group: "互动与洞察",
 		label: "友链",
 		href: "/api/admin/friends",
 		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm-6.2 6.2c.5-2.7 2.8-4.7 6.2-4.7s5.7 2 6.2 4.7H4.3zM16.2 11.4l1.3-1.3 1.8 1.8 3.2-3.2 1.3 1.3-4.5 4.5-3.1-3.1z"/></svg>',
 	},
 	{
 		key: "mentions",
+		group: "互动与洞察",
 		label: "提及",
 		href: "/api/admin/mentions",
 		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8 8 0 0 0-1.2 15.9V21l3.4-2.1A8 8 0 1 0 12 3zm0 3.2a3.4 3.4 0 0 1 3.4 3.4v.7c0 1.5-.9 2.7-2.1 3.2-.3.1-.6.2-.9.2h-.8c-1.9 0-3.4-1.5-3.4-3.4v-.7A3.4 3.4 0 0 1 12 6.2z"/></svg>',
 	},
 	{
-		key: "media",
-		label: "媒体",
-		href: "/api/admin/media",
-		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.5 10.2 3.2-4.1 2.6 3.2 2.3-2.8 4.4 5.5H5.5v-1.8zM8.2 9.2a1.4 1.4 0 1 0 0-2.8 1.4 1.4 0 0 0 0 2.8z"/></svg>',
-	},
-	{
 		key: "analytics",
+		group: "互动与洞察",
 		label: "统计",
 		href: "/api/admin/analytics",
 		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v1.5H4V19zm2.2-2.2V11h2.3v5.8H6.2zm4.6 0V7h2.3v9.8h-2.3zm4.6 0V9.5H18v7.3h-2.6z"/></svg>',
+	},
+	{
+		key: "appearance",
+		group: "系统与品牌",
+		label: "外观",
+		href: "/api/admin/appearance",
+		icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.5-.04-1-.12-1.5a4 4 0 0 1-5.38-5.38A9 9 0 0 0 12 3zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>',
 	},
 ];
 
@@ -1315,13 +1324,13 @@ export const adminSharedStyles = `
 
 		.markdown-editor-shell {
 			display: grid;
-			grid-template-columns: minmax(0, 1.08fr) minmax(280px, 1fr);
+			grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
 			gap: 0.85rem;
 			align-items: stretch;
 		}
 
 		.markdown-editor-shell .form-textarea {
-			min-height: 420px;
+			min-height: 480px;
 		}
 
 		.markdown-preview-panel {
@@ -1345,8 +1354,8 @@ export const adminSharedStyles = `
 		}
 
 		.markdown-preview-body {
-			min-height: 420px;
-			max-height: 620px;
+			min-height: 480px;
+			max-height: 760px;
 			overflow: auto;
 			padding: 0.95rem 1rem 1.05rem;
 			color: var(--text);
@@ -1600,8 +1609,9 @@ export const adminSharedStyles = `
 
 		.editor-grid {
 			display: grid;
-			grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
-			gap: 1.5rem;
+			grid-template-columns: minmax(0, 2.25fr) minmax(292px, 0.95fr);
+			gap: 1.2rem;
+			align-items: start;
 		}
 
 		.editor-panel {
@@ -1994,7 +2004,7 @@ export const adminSharedStyles = `
 			.stat-card,
 			.media-item,
 			.upload-form {
-				border-radius: 26px;
+				border-radius: var(--radius);
 			}
 
 			.sidebar-nav {
@@ -2028,6 +2038,7 @@ export const adminSharedStyles = `
 				grid-template-columns: 1fr;
 			}
 		}
+${adminStudioStyles}
 `;
 
 function resolveActiveNav(title: string): AdminNavKey {
@@ -2048,11 +2059,17 @@ function resolveActiveNav(title: string): AdminNavKey {
 
 function renderNav(title: string): string {
 	const activeNav = resolveActiveNav(title);
+	let lastGroup = "";
 
 	return navItems
 		.map((item) => {
+			const groupHeader =
+				item.group !== lastGroup
+					? `<span class="sidebar-nav-group-label">${escapeHtml(item.group)}</span>`
+					: "";
+			lastGroup = item.group;
 			const activeClass = item.key === activeNav ? ' class="active"' : "";
-			return `<a href="${item.href}"${activeClass}>
+			return `${groupHeader}<a href="${item.href}"${activeClass}>
 				<span class="sidebar-nav-icon">${item.icon}</span>
 				<span class="sidebar-nav-label">${item.label}</span>
 			</a>`;
@@ -2081,6 +2098,7 @@ export function adminLayout(
 	<meta name="robots" content="noindex, nofollow" />
 	<script src="/theme.js"></script>
 	<script src="/admin.js" defer></script>
+	<script src="/admin-studio.js" defer></script>
 	<style>
 ${adminSharedStyles}
 	</style>
@@ -2095,6 +2113,10 @@ ${adminSharedStyles}
 						<span class="sidebar-brand-title">站点管理</span>
 						<span class="sidebar-brand-subtitle">Control Center</span>
 					</div>
+				</div>
+				<div class="sidebar-quick-actions">
+					<a href="/api/admin/posts/new" class="sidebar-compose-btn">+ 写新文章</a>
+					<button type="button" class="sidebar-cmd-trigger" data-admin-cmd-open aria-label="打开快捷跳转" title="快捷导航 (⌘K / Ctrl+K)">⌘K</button>
 				</div>
 				<nav class="sidebar-nav" aria-label="后台导航">
 					${renderNav(title)}
@@ -2118,6 +2140,16 @@ ${adminSharedStyles}
 			</div>
 		</main>
 	</div>
+	<div class="admin-cmd-backdrop" data-admin-cmd-backdrop hidden>
+		<div class="admin-cmd-dialog" role="dialog" aria-modal="true" aria-label="后台快捷导航">
+			<div class="admin-cmd-head">
+				<input type="text" class="admin-cmd-input" data-admin-cmd-input placeholder="跳转到后台页面或执行操作…" autocomplete="off" />
+				<span class="admin-kbd">ESC</span>
+			</div>
+			<div class="admin-cmd-list" data-admin-cmd-list></div>
+		</div>
+	</div>
+	<div class="admin-toast-stack" data-admin-toast-root aria-live="polite"></div>
 </body>
 </html>`;
 }
