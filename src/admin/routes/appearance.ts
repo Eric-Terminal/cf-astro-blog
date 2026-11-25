@@ -26,6 +26,7 @@ import {
 	getAuthenticatedSession,
 	requireAuth,
 } from "../middleware/auth";
+import { appearanceStudioStyles } from "../views/appearance-styles";
 import { adminLayout } from "../views/layout";
 
 const appearance = new Hono<AdminAppEnv>();
@@ -149,7 +150,7 @@ function renderLinkRow(options: {
 					placeholder="${escapeAttribute(options.hrefPlaceholder)}"
 				/>
 			</div>
-			<button type="button" class="btn appearance-link-remove" data-link-remove>
+			<button type="button" class="btn btn-sm appearance-link-remove" data-link-remove>
 				${escapeHtml(options.removeLabel)}
 			</button>
 		</div>
@@ -243,804 +244,679 @@ function renderAppearancePage(options: {
 	const publicApiDisabled = publicManagedBySecret ? "disabled" : "";
 
 	return `
-		<style>
-			.appearance-grid {
-				display: grid;
-				grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-				gap: 1.5rem;
-			}
-
-			.appearance-form-grid {
-				align-items: start;
-				margin-bottom: 1.5rem;
-			}
-
-			.appearance-panel {
-				background: var(--bg-secondary);
-				border: 1px solid var(--border);
-				border-radius: var(--radius);
-				padding: 1.25rem;
-				margin-bottom: 1.5rem;
-			}
-
-			.appearance-panel h2 {
-				margin-top: 0;
-			}
-
-			.appearance-copy {
-				color: var(--text-muted);
-				margin-top: -0.75rem;
-				margin-bottom: 1rem;
-			}
-
-			.appearance-stack {
-				display: grid;
-				gap: 1rem;
-			}
-
-			.appearance-upload-dropzone {
-				position: relative;
-				width: 100%;
-				aspect-ratio: 5 / 2;
-				border: 1px dashed rgba(var(--accent-rgb), 0.34);
-				border-radius: 0.95rem;
-				background:
-					linear-gradient(140deg, rgba(var(--accent-rgb), 0.08), rgba(var(--accent-rgb), 0.02)),
-					rgba(255, 255, 255, 0.02);
-				display: grid;
-				place-items: center;
-				padding: 1rem;
-				text-align: center;
-				overflow: hidden;
-				cursor: pointer;
-				transition:
-					border-color var(--transition),
-					background-color var(--transition),
-					transform var(--transition);
-			}
-
-			.appearance-upload-dropzone[data-appearance-background-dropzone="true"] {
-				aspect-ratio: auto;
-				min-height: 180px;
-			}
-
-			.appearance-upload-dropzone[data-appearance-background-dropzone="true"] .cover-preview-image[data-appearance-background-preview="true"] {
-				display: block;
-				width: 100%;
-				height: auto;
-			}
-
-			.appearance-upload-dropzone:hover,
-			.appearance-upload-dropzone.is-dragover {
-				border-color: rgba(var(--accent-rgb), 0.65);
-				background:
-					linear-gradient(140deg, rgba(var(--accent-rgb), 0.16), rgba(var(--accent-rgb), 0.06)),
-					rgba(255, 255, 255, 0.03);
-				transform: translateY(-1px);
-			}
-
-			.appearance-upload-dropzone:focus-visible {
-				outline: 2px solid rgba(var(--accent-rgb), 0.6);
-				outline-offset: 2px;
-			}
-
-			.appearance-upload-copy {
-				display: grid;
-				gap: 0.4rem;
-				color: var(--text-secondary);
-			}
-
-			.appearance-upload-copy strong {
-				font-size: 1rem;
-				color: var(--text-primary);
-			}
-
-			.appearance-upload-copy span {
-				font-size: 0.86rem;
-			}
-
-			.appearance-upload-input {
-				display: none;
-			}
-
-			.appearance-hero-uploader {
-				display: grid;
-				gap: 0.65rem;
-				margin-top: 0.75rem;
-			}
-
-			.appearance-hero-dropzone {
-				aspect-ratio: auto;
-				min-height: 170px;
-			}
-
-			.appearance-background-actions {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.75rem;
-				margin-top: 0.85rem;
-			}
-
-			.appearance-controls {
-				display: grid;
-				gap: 1rem;
-			}
-
-				.appearance-inline-grid {
-					display: grid;
-					grid-template-columns: repeat(2, minmax(0, 1fr));
-					gap: 0.85rem;
-				}
-
-				.appearance-chip-grid {
-					display: grid;
-					grid-template-columns: repeat(3, minmax(0, 1fr));
-					gap: 0.85rem;
-				}
-
-			.appearance-list-head {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				flex-wrap: wrap;
-				gap: 0.75rem;
-				margin-bottom: 0.8rem;
-			}
-
-			.appearance-list-head h3,
-			.appearance-list-head h4 {
-				margin: 0;
-			}
-
-			.appearance-note {
-				margin: 0 0 0.8rem;
-				color: var(--text-muted);
-				font-size: 0.85rem;
-			}
-
-			.appearance-link-list {
-				display: grid;
-				gap: 0.75rem;
-			}
-
-			.appearance-link-row {
-				display: grid;
-				grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-				gap: 0.75rem;
-				align-items: end;
-				padding: 0.8rem;
-				border: 1px solid var(--border);
-				border-radius: 0.8rem;
-				background: rgba(255, 255, 255, 0.02);
-			}
-
-			.appearance-link-field {
-				display: grid;
-				gap: 0.4rem;
-			}
-
-			.appearance-link-field label {
-				font-size: 0.82rem;
-				color: var(--text-secondary);
-			}
-
-			.appearance-link-remove {
-				align-self: center;
-			}
-
-			.appearance-content-fieldset {
-				margin-top: 1.25rem;
-				border-top: 1px solid var(--border);
-				padding-top: 1.25rem;
-			}
-
-			.appearance-content-fieldset h3 {
-				margin-bottom: 0.8rem;
-			}
-
-			.appearance-range {
-				display: grid;
-				gap: 0.5rem;
-			}
-
-			.appearance-range-meta {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				color: var(--text-secondary);
-				font-size: 0.85rem;
-			}
-
-			.appearance-range input[type="range"] {
-				width: 100%;
-			}
-
-			.appearance-actions {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.75rem;
-				margin-top: 1.5rem;
-			}
-
-			.appearance-key-input {
-				font-family: var(--font-mono);
-				font-size: 0.82rem;
-			}
-
-			.appearance-panel .form-textarea {
-				min-height: 120px;
-			}
-
-				@media (max-width: 980px) {
-					.appearance-grid {
-						grid-template-columns: 1fr;
-					}
-
-					.appearance-inline-grid {
-						grid-template-columns: 1fr;
-					}
-
-					.appearance-chip-grid {
-						grid-template-columns: 1fr;
-					}
-
-				.appearance-link-row {
-					grid-template-columns: 1fr;
-				}
-
-				.appearance-link-remove {
-					justify-self: start;
-				}
-			}
-
-		</style>
+		${appearanceStudioStyles}
 		${alertHtml}
 		<div class="page-header">
 			<div class="page-header-copy">
-				<span class="page-kicker">Appearance</span>
+				<span class="page-kicker">Appearance Studio</span>
 				<h1 style="margin-bottom: 0;">站点外观</h1>
-				<p class="appearance-copy" style="margin: 0;">控制前台背景、导航、首页首屏与文章侧栏等信息。</p>
+				<p class="form-help" style="margin: 0;">分区调节全局壁纸、光学毛玻璃、首屏名片、文章侧栏与 AI / MCP 接口，右侧可实时预览材质与文案。</p>
+			</div>
+			<div class="page-actions">
+				<a href="/" target="_blank" rel="noopener noreferrer" class="btn btn-sm">打开前台预览</a>
+				<a href="/api/admin/media" class="btn btn-sm">打开媒体库</a>
 			</div>
 		</div>
-		<form method="post" action="/api/admin/appearance" class="appearance-grid appearance-form-grid" data-appearance-form="true">
+
+		<form method="post" action="/api/admin/appearance" data-appearance-form="true">
 			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
-			<div class="appearance-stack">
-				<section class="appearance-panel">
-					<h2>背景图管理</h2>
-					<div class="appearance-stack">
-						<div
-							class="appearance-upload-dropzone"
-							data-appearance-upload-dropzone
-							data-appearance-background-dropzone="true"
-							role="button"
-							tabindex="0"
-							aria-label="拖拽文件或点击上传背景图"
-						>
+
+			<div class="appearance-save-bar" data-appearance-save-bar>
+				<div class="appearance-save-state">
+					<span class="appearance-dirty-dot" aria-hidden="true"></span>
+					<span data-appearance-save-state>当前与已保存配置同步（支持 ⌘S / Ctrl+S 保存）</span>
+				</div>
+				<div class="appearance-actions">
+					<div class="filter-tabs appearance-studio-tabs" role="tablist" aria-label="外观设置分区">
+						<button type="button" class="filter-tab is-active" data-appearance-tab-btn="optics">背景与材质</button>
+						<button type="button" class="filter-tab" data-appearance-tab-btn="hero">导航与首屏</button>
+						<button type="button" class="filter-tab" data-appearance-tab-btn="sidebar">文章侧栏</button>
+						<button type="button" class="filter-tab" data-appearance-tab-btn="integrations">AI 与 MCP</button>
+						<button type="button" class="filter-tab" data-appearance-tab-btn="all">展开全部</button>
+					</div>
+					<span class="admin-kbd" title="快捷键保存">⌘S</span>
+					<button type="submit" class="btn btn-primary btn-sm">保存外观设置</button>
+				</div>
+			</div>
+
+			<div class="appearance-grid appearance-form-grid">
+				<div class="appearance-stack">
+					<section class="appearance-panel" data-appearance-section="optics">
+						<div class="appearance-list-head">
+							<h2>全局背景图</h2>
 							${
 								settings.backgroundImageKey
-									? `<img src="/media/${escapeAttribute(settings.backgroundImageKey)}" alt="背景图预览" class="cover-preview-image" data-appearance-background-preview="true" />`
-									: `<div class="appearance-upload-copy" data-appearance-background-empty="true">
-											<strong>拖拽图片到这里</strong>
-											<span>或点击选择文件，自动上传并设为当前背景</span>
-										</div>`
-							}
-						</div>
-						<input
-							type="file"
-							name="file"
-							accept="${escapeAttribute(getAllowedMediaAcceptValue())}"
-							class="appearance-upload-input"
-							data-appearance-upload-input
-						/>
-					</div>
-					<div class="form-group">
-						<label for="backgroundImageKey">背景图键名</label>
-						<input
-							id="backgroundImageKey"
-							name="backgroundImageKey"
-							class="form-input appearance-key-input"
-							value="${escapeAttribute(settings.backgroundImageKey ?? "")}"
-							placeholder="appearance/background/2026-03-07/xxxx.webp"
-							data-appearance-background-key-input="true"
-						/>
-					</div>
-					<p class="appearance-copy">上传和移除只影响“当前引用”，不会删除媒体库里的原始文件。</p>
-					${
-						settings.backgroundImageKey
-							? `<div class="appearance-background-actions">
-									<button
+									? `<button
 										type="submit"
-										class="btn"
+										class="btn btn-sm btn-danger"
 										formaction="/api/admin/appearance/background/clear"
 										formmethod="post"
 										data-confirm-message="${escapeAttribute("确认移除当前背景图引用吗？")}"
 										formnovalidate
 									>
 										移除当前引用
-									</button>
-								</div>`
-							: ""
-					}
-				</section>
-				<section class="appearance-panel">
-					<div class="appearance-list-head">
-						<h2>顶部状态栏与导航索引</h2>
-						<button type="button" class="btn" data-link-add="nav">+ 新增导航</button>
-					</div>
-					<div class="form-group">
-						<label for="headerSubtitle">顶部状态栏文案</label>
-						<input
-							id="headerSubtitle"
-							name="headerSubtitle"
-							class="form-input"
-							value="${escapeAttribute(settings.headerSubtitle)}"
-							maxlength="120"
-						/>
-					</div>
-					<p class="appearance-note">导航支持无限新增，前台会自动换行适配。</p>
-					<div class="appearance-link-list" data-link-list="nav">
-						${renderLinkRows(settings.navLinks, {
-							labelName: "navLinkLabel",
-							hrefName: "navLinkHref",
-							labelText: "导航文案",
-							hrefText: "导航链接",
-							hrefPlaceholder: "/blog",
-							removeLabel: "移除",
-						})}
-					</div>
-					<template data-link-template="nav">
-						${renderLinkRow({
-							labelName: "navLinkLabel",
-							hrefName: "navLinkHref",
-							labelText: "导航文案",
-							hrefText: "导航链接",
-							labelValue: "",
-							hrefValue: "",
-							hrefPlaceholder: "/blog",
-							removeLabel: "移除",
-						})}
-					</template>
-				</section>
-				<section class="appearance-panel">
-					<h2>首页首屏文案</h2>
-					<div class="form-group">
-						<label for="heroKicker">顶部标签</label>
-						<input
-							id="heroKicker"
-							name="heroKicker"
-							class="form-input"
-							value="${escapeAttribute(settings.heroKicker)}"
-							maxlength="24"
-						/>
-					</div>
-					<div class="form-group">
-						<label for="heroTitle">主标题</label>
-						<input
-							id="heroTitle"
-							name="heroTitle"
-							class="form-input"
-							value="${escapeAttribute(settings.heroTitle)}"
-							maxlength="120"
-						/>
-					</div>
-					<div class="form-group">
-						<label for="heroIntro">简介</label>
-						<textarea id="heroIntro" name="heroIntro" class="form-textarea" maxlength="600">${escapeHtml(settings.heroIntro)}</textarea>
-					</div>
-					<div class="form-group">
-						<label for="heroMainImagePath">首屏主视觉图片路径（可选，留空不占位）</label>
-						<input
-							id="heroMainImagePath"
-							name="heroMainImagePath"
-							class="form-input appearance-key-input"
-							value="${escapeAttribute(settings.heroMainImagePath ?? "")}"
-							maxlength="320"
-							placeholder="/media/appearance/home/hero-main.webp"
-							data-hero-image-path-input="true"
-						/>
-						<div
-							class="appearance-hero-uploader"
-							data-hero-image-uploader="true"
-							data-upload-url="/api/admin/media/upload-async"
-							data-csrf-token="${escapeAttribute(csrfToken)}"
-						>
-							<input
-								type="file"
-								accept="${escapeAttribute(getAllowedMediaAcceptValue())}"
-								class="appearance-upload-input"
-								data-hero-image-file-input="true"
-							/>
+									</button>`
+									: ""
+							}
+						</div>
+						<p class="appearance-note">拖拽图片即可自动去重上传并设为全局背景；移除引用不会删除媒体库原图。</p>
+						<div class="appearance-stack">
 							<div
-								class="appearance-upload-dropzone appearance-hero-dropzone"
-								data-hero-image-dropzone="true"
+								class="appearance-upload-dropzone"
+								data-appearance-upload-dropzone
+								data-appearance-background-dropzone="true"
 								role="button"
 								tabindex="0"
-								aria-label="拖拽文件或点击上传首屏图片"
+								aria-label="拖拽文件或点击上传背景图"
 							>
 								${
-									settings.heroMainImagePath
-										? `<img src="${escapeAttribute(settings.heroMainImagePath)}" alt="首屏图片预览" class="cover-preview-image" data-hero-image-preview="true" />`
-										: `<div class="cover-empty" data-hero-image-empty="true">拖拽图片或点击上传首屏图片</div>`
+									settings.backgroundImageKey
+										? `<img src="/media/${escapeAttribute(settings.backgroundImageKey)}" alt="背景图预览" class="cover-preview-image" data-appearance-background-preview="true" />`
+										: `<div class="appearance-upload-copy" data-appearance-background-empty="true">
+												<strong>拖拽图片到这里</strong>
+												<span>或点击选择文件，自动上传并设为当前背景</span>
+											</div>`
 								}
 							</div>
-							<div class="appearance-background-actions">
-								<button type="button" class="btn btn-sm" data-hero-image-select="true">上传首屏图片</button>
-								<button type="button" class="btn btn-sm btn-danger" data-hero-image-clear="true">清空首屏引用</button>
-							</div>
-							<p class="form-help" data-hero-image-status></p>
-						</div>
-					</div>
-					<p class="appearance-note">支持拖拽上传自动回填，也支持手动输入 /media/...、站内绝对路径或 https:// 外链。</p>
-					<div class="appearance-list-head">
-						<h4>首页按钮</h4>
-						<button type="button" class="btn" data-link-add="hero">+ 新增按钮</button>
-					</div>
-					<p class="appearance-note">第一个按钮使用主样式，其余按钮会自动使用次级样式。</p>
-					<div class="appearance-link-list" data-link-list="hero">
-						${renderLinkRows(settings.heroActions, {
-							labelName: "heroActionLabel",
-							hrefName: "heroActionHref",
-							labelText: "按钮文案",
-							hrefText: "按钮链接",
-							hrefPlaceholder: "/search",
-							removeLabel: "移除",
-						})}
-					</div>
-					<template data-link-template="hero">
-						${renderLinkRow({
-							labelName: "heroActionLabel",
-							hrefName: "heroActionHref",
-							labelText: "按钮文案",
-							hrefText: "按钮链接",
-							labelValue: "",
-							hrefValue: "",
-							hrefPlaceholder: "/search",
-							removeLabel: "移除",
-						})}
-					</template>
-				</section>
-			</div>
-			<div class="appearance-stack">
-				<section class="appearance-panel">
-					<h2>背景与卡片视觉参数</h2>
-					<p class="appearance-note">透明度 0% 表示完全不透明，100% 表示完全透明；缩放 0% 表示原始比例；横向/纵向焦点 0% 表示画面居中。</p>
-					<div class="appearance-controls">
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="backgroundTransparency">背景透明度</label>
-								<span data-appearance-display="backgroundTransparency">${escapeHtml(String(backgroundTransparency))}%</span>
-							</div>
-							<input id="backgroundTransparency" name="backgroundTransparency" type="range" min="0" max="100" value="${escapeAttribute(String(backgroundTransparency))}" data-appearance-control="backgroundTransparency" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="heroCardTransparency">首页卡片透明度</label>
-								<span data-appearance-display="heroCardTransparency">${escapeHtml(String(heroCardTransparency))}%</span>
-							</div>
-							<input id="heroCardTransparency" name="heroCardTransparency" type="range" min="0" max="100" value="${escapeAttribute(String(heroCardTransparency))}" data-appearance-control="heroCardTransparency" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="articlePanelTransparency">文章页卡片透明度</label>
-								<span data-appearance-display="articlePanelTransparency">${escapeHtml(String(articlePanelTransparency))}%</span>
-							</div>
-							<input id="articlePanelTransparency" name="articlePanelTransparency" type="range" min="0" max="100" value="${escapeAttribute(String(articlePanelTransparency))}" data-appearance-control="articlePanelTransparency" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="backgroundScale">缩放</label>
-								<span data-appearance-display="backgroundScale">${escapeHtml(String(backgroundScaleOffset))}%</span>
-							</div>
-							<input id="backgroundScale" name="backgroundScale" type="range" min="0" max="80" value="${escapeAttribute(String(backgroundScaleOffset))}" data-appearance-control="backgroundScale" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="backgroundBlur">高斯模糊</label>
-								<span data-appearance-display="backgroundBlur">${escapeHtml(String(settings.backgroundBlur))} px</span>
-							</div>
-							<input id="backgroundBlur" name="backgroundBlur" type="range" min="0" max="60" value="${escapeAttribute(String(settings.backgroundBlur))}" data-appearance-control="backgroundBlur" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="heroCardBlur">首页卡片高斯模糊</label>
-								<span data-appearance-display="heroCardBlur">${escapeHtml(String(settings.heroCardBlur))} px</span>
-							</div>
-							<input id="heroCardBlur" name="heroCardBlur" type="range" min="0" max="48" value="${escapeAttribute(String(settings.heroCardBlur))}" data-appearance-control="heroCardBlur" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="articlePanelBlur">文章页卡片高斯模糊</label>
-								<span data-appearance-display="articlePanelBlur">${escapeHtml(String(settings.articlePanelBlur))} px</span>
-							</div>
-							<input id="articlePanelBlur" name="articlePanelBlur" type="range" min="0" max="48" value="${escapeAttribute(String(settings.articlePanelBlur))}" data-appearance-control="articlePanelBlur" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="backgroundPositionX">横向焦点</label>
-								<span data-appearance-display="backgroundPositionX">${escapeHtml(String(backgroundPositionXOffset))}%</span>
-							</div>
-							<input id="backgroundPositionX" name="backgroundPositionX" type="range" min="-50" max="50" value="${escapeAttribute(String(backgroundPositionXOffset))}" data-appearance-control="backgroundPositionX" />
-						</div>
-						<div class="appearance-range">
-							<div class="appearance-range-meta">
-								<label for="backgroundPositionY">纵向焦点</label>
-								<span data-appearance-display="backgroundPositionY">${escapeHtml(String(backgroundPositionYOffset))}%</span>
-							</div>
-							<input id="backgroundPositionY" name="backgroundPositionY" type="range" min="-50" max="50" value="${escapeAttribute(String(backgroundPositionYOffset))}" data-appearance-control="backgroundPositionY" />
-						</div>
-					</div>
-				</section>
-				<section class="appearance-panel">
-					<h2>首屏右侧展示名片</h2>
-					<p class="appearance-note">配置首页首屏右侧的角色/个人展示名片，支持立绘背景图、多行签名与三枚个性铭牌。</p>
-					<div class="form-group">
-						<label for="heroSignalLabel">右侧卡片标签</label>
-						<input
-							id="heroSignalLabel"
-							name="heroSignalLabel"
-							class="form-input"
-							value="${escapeAttribute(settings.heroSignalLabel)}"
-							maxlength="30"
-						/>
-					</div>
-					<div class="form-group">
-						<label for="heroSignalHeading">右侧卡片标题</label>
-						<input
-							id="heroSignalHeading"
-							name="heroSignalHeading"
-							class="form-input"
-							value="${escapeAttribute(settings.heroSignalHeading)}"
-							maxlength="120"
-						/>
-					</div>
-					<div class="form-group">
-						<label for="heroSignalCopy">右侧卡片描述</label>
-						<textarea id="heroSignalCopy" name="heroSignalCopy" class="form-textarea form-textarea-sm" maxlength="300">${escapeHtml(settings.heroSignalCopy)}</textarea>
-					</div>
-					<div class="form-group">
-						<label for="heroSignalImagePath">右侧卡片图片路径（可选）</label>
-						<input
-							id="heroSignalImagePath"
-							name="heroSignalImagePath"
-							class="form-input appearance-key-input"
-							value="${escapeAttribute(settings.heroSignalImagePath ?? "")}"
-							maxlength="320"
-							placeholder="/media/appearance/home/hero-signal.webp"
-							data-signal-image-path-input="true"
-						/>
-						<div
-							class="appearance-hero-uploader"
-							data-signal-image-uploader="true"
-							data-upload-url="/api/admin/media/upload-async"
-							data-csrf-token="${escapeAttribute(csrfToken)}"
-						>
 							<input
 								type="file"
+								name="file"
 								accept="${escapeAttribute(getAllowedMediaAcceptValue())}"
 								class="appearance-upload-input"
-								data-signal-image-file-input="true"
+								data-appearance-upload-input
 							/>
-							<div
-								class="appearance-upload-dropzone appearance-hero-dropzone"
-								data-signal-image-dropzone="true"
-								role="button"
-								tabindex="0"
-								aria-label="拖拽文件或点击上传右侧卡片图片"
-							>
-								${
-									settings.heroSignalImagePath
-										? `<img src="${escapeAttribute(settings.heroSignalImagePath)}" alt="右侧卡片图片预览" class="cover-preview-image" data-signal-image-preview="true" />`
-										: `<div class="cover-empty" data-signal-image-empty="true">拖拽图片或点击上传右侧卡片图片</div>`
-								}
+						</div>
+						<div class="form-group form-group-tight" style="margin-top: 0.8rem;">
+							<label for="backgroundImageKey">背景图键名或路径</label>
+							<input
+								id="backgroundImageKey"
+								name="backgroundImageKey"
+								class="form-input appearance-key-input"
+								value="${escapeAttribute(settings.backgroundImageKey ?? "")}"
+								placeholder="appearance/background/2026-03-07/xxxx.webp"
+								data-appearance-background-key-input="true"
+							/>
+						</div>
+					</section>
+
+					<section class="appearance-panel" data-appearance-section="optics">
+						<div class="appearance-list-head">
+							<h2>光学毛玻璃与焦点参数</h2>
+							<button type="button" class="btn btn-xs" data-appearance-reset-focus>重置缩放与居中焦点</button>
+						</div>
+						<p class="appearance-note">透明度 0% 表示完全不透明，100% 表示完全透明；调节滑块可在右侧预览窗即时查看层次变化。</p>
+						<div class="appearance-controls">
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="backgroundTransparency">背景透明度</label>
+									<span data-appearance-display="backgroundTransparency">${escapeHtml(String(backgroundTransparency))}%</span>
+								</div>
+								<input id="backgroundTransparency" name="backgroundTransparency" type="range" min="0" max="100" value="${escapeAttribute(String(backgroundTransparency))}" data-appearance-control="backgroundTransparency" />
 							</div>
-							<div class="appearance-background-actions">
-								<button type="button" class="btn btn-sm" data-signal-image-select="true">上传卡片图片</button>
-								<button type="button" class="btn btn-sm btn-danger" data-signal-image-clear="true">清空卡片图片</button>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="backgroundBlur">高斯模糊</label>
+									<span data-appearance-display="backgroundBlur">${escapeHtml(String(settings.backgroundBlur))} px</span>
+								</div>
+								<input id="backgroundBlur" name="backgroundBlur" type="range" min="0" max="60" value="${escapeAttribute(String(settings.backgroundBlur))}" data-appearance-control="backgroundBlur" />
 							</div>
-							<p class="form-help" data-signal-image-status></p>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="heroCardTransparency">首页卡片透明度</label>
+									<span data-appearance-display="heroCardTransparency">${escapeHtml(String(heroCardTransparency))}%</span>
+								</div>
+								<input id="heroCardTransparency" name="heroCardTransparency" type="range" min="0" max="100" value="${escapeAttribute(String(heroCardTransparency))}" data-appearance-control="heroCardTransparency" />
+							</div>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="heroCardBlur">首页卡片高斯模糊</label>
+									<span data-appearance-display="heroCardBlur">${escapeHtml(String(settings.heroCardBlur))} px</span>
+								</div>
+								<input id="heroCardBlur" name="heroCardBlur" type="range" min="0" max="48" value="${escapeAttribute(String(settings.heroCardBlur))}" data-appearance-control="heroCardBlur" />
+							</div>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="articlePanelTransparency">文章页卡片透明度</label>
+									<span data-appearance-display="articlePanelTransparency">${escapeHtml(String(articlePanelTransparency))}%</span>
+								</div>
+								<input id="articlePanelTransparency" name="articlePanelTransparency" type="range" min="0" max="100" value="${escapeAttribute(String(articlePanelTransparency))}" data-appearance-control="articlePanelTransparency" />
+							</div>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="articlePanelBlur">文章页卡片高斯模糊</label>
+									<span data-appearance-display="articlePanelBlur">${escapeHtml(String(settings.articlePanelBlur))} px</span>
+								</div>
+								<input id="articlePanelBlur" name="articlePanelBlur" type="range" min="0" max="48" value="${escapeAttribute(String(settings.articlePanelBlur))}" data-appearance-control="articlePanelBlur" />
+							</div>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="backgroundScale">缩放</label>
+									<span data-appearance-display="backgroundScale">${escapeHtml(String(backgroundScaleOffset))}%</span>
+								</div>
+								<input id="backgroundScale" name="backgroundScale" type="range" min="0" max="80" value="${escapeAttribute(String(backgroundScaleOffset))}" data-appearance-control="backgroundScale" />
+							</div>
+							<div class="appearance-range">
+								<div class="appearance-range-meta">
+									<label for="backgroundPositionX">横向焦点</label>
+									<span data-appearance-display="backgroundPositionX">${escapeHtml(String(backgroundPositionXOffset))}%</span>
+								</div>
+								<input id="backgroundPositionX" name="backgroundPositionX" type="range" min="-50" max="50" value="${escapeAttribute(String(backgroundPositionXOffset))}" data-appearance-control="backgroundPositionX" />
+							</div>
+							<div class="appearance-range" style="grid-column: 1 / -1;">
+								<div class="appearance-range-meta">
+									<label for="backgroundPositionY">纵向焦点</label>
+									<span data-appearance-display="backgroundPositionY">${escapeHtml(String(backgroundPositionYOffset))}%</span>
+								</div>
+								<input id="backgroundPositionY" name="backgroundPositionY" type="range" min="-50" max="50" value="${escapeAttribute(String(backgroundPositionYOffset))}" data-appearance-control="backgroundPositionY" />
+							</div>
 						</div>
-					</div>
-					<div class="appearance-chip-grid">
+					</section>
+
+					<section class="appearance-panel" data-appearance-section="hero">
+						<div class="appearance-list-head">
+							<h2>顶部状态栏与导航索引</h2>
+							<button type="button" class="btn btn-sm" data-link-add="nav">+ 新增导航</button>
+						</div>
 						<div class="form-group">
-							<label for="heroSignalChip1">卡片标签 1</label>
+							<label for="headerSubtitle">顶部状态栏文案</label>
 							<input
-								id="heroSignalChip1"
-								name="heroSignalChip1"
+								id="headerSubtitle"
+								name="headerSubtitle"
 								class="form-input"
-								value="${escapeAttribute(settings.heroSignalChip1)}"
-								maxlength="24"
+								value="${escapeAttribute(settings.headerSubtitle)}"
+								maxlength="120"
 							/>
 						</div>
-						<div class="form-group">
-							<label for="heroSignalChip2">卡片标签 2</label>
-							<input
-								id="heroSignalChip2"
-								name="heroSignalChip2"
-								class="form-input"
-								value="${escapeAttribute(settings.heroSignalChip2)}"
-								maxlength="24"
-							/>
+						<p class="appearance-note">导航支持自由增删，前台胶囊导航栏会自动适配宽度。</p>
+						<div class="appearance-link-list" data-link-list="nav">
+							${renderLinkRows(settings.navLinks, {
+								labelName: "navLinkLabel",
+								hrefName: "navLinkHref",
+								labelText: "导航文案",
+								hrefText: "导航链接",
+								hrefPlaceholder: "/blog",
+								removeLabel: "移除",
+							})}
 						</div>
-						<div class="form-group">
-							<label for="heroSignalChip3">卡片标签 3</label>
-							<input
-								id="heroSignalChip3"
-								name="heroSignalChip3"
-								class="form-input"
-								value="${escapeAttribute(settings.heroSignalChip3)}"
-								maxlength="24"
-							/>
-						</div>
-					</div>
-				</section>
-				<section class="appearance-panel">
-					<h2>文章页左侧信息栏</h2>
-					<div class="form-group">
-						<label for="articleSidebarAvatarPath">头像路径（可选）</label>
-						<input
-							id="articleSidebarAvatarPath"
-							name="articleSidebarAvatarPath"
-							class="form-input appearance-key-input"
-							value="${escapeAttribute(settings.articleSidebarAvatarPath ?? "")}"
-							maxlength="320"
-							placeholder="/media/appearance/profile/avatar.webp"
-						/>
-						<p class="appearance-note">支持 /media/...、站内绝对路径或 https:// 外链。</p>
-					</div>
-					<div class="form-group">
-						<label for="articleSidebarName">侧栏名称</label>
-						<input
-							id="articleSidebarName"
-							name="articleSidebarName"
-							class="form-input"
-							value="${escapeAttribute(settings.articleSidebarName)}"
-							maxlength="36"
-						/>
-					</div>
-					<div class="form-group">
-						<label for="articleSidebarBadge">侧栏徽标文案</label>
-						<input
-							id="articleSidebarBadge"
-							name="articleSidebarBadge"
-							class="form-input"
-							value="${escapeAttribute(settings.articleSidebarBadge)}"
-							maxlength="24"
-						/>
-					</div>
-					<div class="form-group">
-						<label for="articleSidebarBio">侧栏简介</label>
-						<textarea id="articleSidebarBio" name="articleSidebarBio" class="form-textarea" maxlength="320">${escapeHtml(settings.articleSidebarBio)}</textarea>
-					</div>
-				</section>
-				<section class="appearance-panel">
-					<h2>AI 模型接口（OpenAI 兼容）</h2>
-					<p class="appearance-note">内部接口用于自动摘要与 SEO 生成；公开接口用于访客对话，默认叠加限流、配额与 Turnstile 校验防刷。</p>
-					<div class="appearance-content-fieldset">
-						<h3>内部接口（自动摘要与 SEO）</h3>
-						<div class="form-group">
-							<label>
+						<template data-link-template="nav">
+							${renderLinkRow({
+								labelName: "navLinkLabel",
+								hrefName: "navLinkHref",
+								labelText: "导航文案",
+								hrefText: "导航链接",
+								labelValue: "",
+								hrefValue: "",
+								hrefPlaceholder: "/blog",
+								removeLabel: "移除",
+							})}
+						</template>
+					</section>
+
+					<section class="appearance-panel" data-appearance-section="hero">
+						<h2>首页首屏左侧主卡</h2>
+						<div class="appearance-inline-grid">
+							<div class="form-group">
+								<label for="heroKicker">顶部标签</label>
 								<input
-									type="checkbox"
-									name="aiInternalEnabled"
-									value="1"
-									${aiSettings.internal.enabled ? "checked" : ""}
+									id="heroKicker"
+									name="heroKicker"
+									class="form-input"
+									value="${escapeAttribute(settings.heroKicker)}"
+									maxlength="24"
 								/>
-								启用内部 AI 自动生成
-							</label>
+							</div>
+							<div class="form-group">
+								<label for="heroTitle">主标题</label>
+								<input
+									id="heroTitle"
+									name="heroTitle"
+									class="form-input"
+									value="${escapeAttribute(settings.heroTitle)}"
+									maxlength="120"
+								/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="heroIntro">简介</label>
+							<textarea id="heroIntro" name="heroIntro" class="form-textarea" maxlength="600">${escapeHtml(settings.heroIntro)}</textarea>
+						</div>
+						<div class="form-group">
+							<label for="heroMainImagePath">首屏主视觉图片路径（可选，留空不占位）</label>
+							<input
+								id="heroMainImagePath"
+								name="heroMainImagePath"
+								class="form-input appearance-key-input"
+								value="${escapeAttribute(settings.heroMainImagePath ?? "")}"
+								maxlength="320"
+								placeholder="/media/appearance/home/hero-main.webp"
+								data-hero-image-path-input="true"
+							/>
+							<div
+								class="appearance-hero-uploader"
+								data-hero-image-uploader="true"
+								data-upload-url="/api/admin/media/upload-async"
+								data-csrf-token="${escapeAttribute(csrfToken)}"
+							>
+								<input
+									type="file"
+									accept="${escapeAttribute(getAllowedMediaAcceptValue())}"
+									class="appearance-upload-input"
+									data-hero-image-file-input="true"
+								/>
+								<div
+									class="appearance-upload-dropzone appearance-hero-dropzone"
+									data-hero-image-dropzone="true"
+									role="button"
+									tabindex="0"
+									aria-label="拖拽文件或点击上传首屏图片"
+								>
+									${
+										settings.heroMainImagePath
+											? `<img src="${escapeAttribute(settings.heroMainImagePath)}" alt="首屏图片预览" class="cover-preview-image" data-hero-image-preview="true" />`
+											: `<div class="cover-empty" data-hero-image-empty="true">拖拽图片或点击上传首屏图片</div>`
+									}
+								</div>
+								<div class="appearance-background-actions">
+									<button type="button" class="btn btn-sm" data-hero-image-select="true">上传首屏图片</button>
+									<button type="button" class="btn btn-sm btn-danger" data-hero-image-clear="true">清空首屏引用</button>
+								</div>
+								<p class="form-help" data-hero-image-status></p>
+							</div>
+						</div>
+						<div class="appearance-list-head" style="margin-top: 1rem;">
+							<h4>首页按钮</h4>
+							<button type="button" class="btn btn-sm" data-link-add="hero">+ 新增按钮</button>
+						</div>
+						<p class="appearance-note">第一个按钮使用主强调色样式，其余按钮使用次级胶囊样式。</p>
+						<div class="appearance-link-list" data-link-list="hero">
+							${renderLinkRows(settings.heroActions, {
+								labelName: "heroActionLabel",
+								hrefName: "heroActionHref",
+								labelText: "按钮文案",
+								hrefText: "按钮链接",
+								hrefPlaceholder: "/search",
+								removeLabel: "移除",
+							})}
+						</div>
+						<template data-link-template="hero">
+							${renderLinkRow({
+								labelName: "heroActionLabel",
+								hrefName: "heroActionHref",
+								labelText: "按钮文案",
+								hrefText: "按钮链接",
+								labelValue: "",
+								hrefValue: "",
+								hrefPlaceholder: "/search",
+								removeLabel: "移除",
+							})}
+						</template>
+					</section>
+
+					<section class="appearance-panel" data-appearance-section="hero">
+						<h2>首屏右侧展示名片</h2>
+						<p class="appearance-note">支持透明通道角色立绘、状态签名与三枚个性铭牌。</p>
+						<div class="appearance-inline-grid">
+							<div class="form-group">
+								<label for="heroSignalLabel">右侧卡片标签</label>
+								<input
+									id="heroSignalLabel"
+									name="heroSignalLabel"
+									class="form-input"
+									value="${escapeAttribute(settings.heroSignalLabel)}"
+									maxlength="30"
+								/>
+							</div>
+							<div class="form-group">
+								<label for="heroSignalHeading">右侧卡片标题</label>
+								<input
+									id="heroSignalHeading"
+									name="heroSignalHeading"
+									class="form-input"
+									value="${escapeAttribute(settings.heroSignalHeading)}"
+									maxlength="120"
+								/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="heroSignalCopy">右侧卡片描述</label>
+							<textarea id="heroSignalCopy" name="heroSignalCopy" class="form-textarea form-textarea-sm" maxlength="300">${escapeHtml(settings.heroSignalCopy)}</textarea>
+						</div>
+						<div class="form-group">
+							<label for="heroSignalImagePath">右侧卡片图片路径（可选）</label>
+							<input
+								id="heroSignalImagePath"
+								name="heroSignalImagePath"
+								class="form-input appearance-key-input"
+								value="${escapeAttribute(settings.heroSignalImagePath ?? "")}"
+								maxlength="320"
+								placeholder="/media/appearance/home/hero-signal.webp"
+								data-signal-image-path-input="true"
+							/>
+							<div
+								class="appearance-hero-uploader"
+								data-signal-image-uploader="true"
+								data-upload-url="/api/admin/media/upload-async"
+								data-csrf-token="${escapeAttribute(csrfToken)}"
+							>
+								<input
+									type="file"
+									accept="${escapeAttribute(getAllowedMediaAcceptValue())}"
+									class="appearance-upload-input"
+									data-signal-image-file-input="true"
+								/>
+								<div
+									class="appearance-upload-dropzone appearance-hero-dropzone"
+									data-signal-image-dropzone="true"
+									role="button"
+									tabindex="0"
+									aria-label="拖拽文件或点击上传右侧卡片图片"
+								>
+									${
+										settings.heroSignalImagePath
+											? `<img src="${escapeAttribute(settings.heroSignalImagePath)}" alt="右侧卡片图片预览" class="cover-preview-image" data-signal-image-preview="true" />`
+											: `<div class="cover-empty" data-signal-image-empty="true">拖拽图片或点击上传右侧卡片图片</div>`
+									}
+								</div>
+								<div class="appearance-background-actions">
+									<button type="button" class="btn btn-sm" data-signal-image-select="true">上传卡片图片</button>
+									<button type="button" class="btn btn-sm btn-danger" data-signal-image-clear="true">清空卡片图片</button>
+								</div>
+								<p class="form-help" data-signal-image-status></p>
+							</div>
+						</div>
+						<div class="appearance-chip-grid">
+							<div class="form-group form-group-tight">
+								<label for="heroSignalChip1">卡片标签 1</label>
+								<input
+									id="heroSignalChip1"
+									name="heroSignalChip1"
+									class="form-input"
+									value="${escapeAttribute(settings.heroSignalChip1)}"
+									maxlength="24"
+								/>
+							</div>
+							<div class="form-group form-group-tight">
+								<label for="heroSignalChip2">卡片标签 2</label>
+								<input
+									id="heroSignalChip2"
+									name="heroSignalChip2"
+									class="form-input"
+									value="${escapeAttribute(settings.heroSignalChip2)}"
+									maxlength="24"
+								/>
+							</div>
+							<div class="form-group form-group-tight">
+								<label for="heroSignalChip3">卡片标签 3</label>
+								<input
+									id="heroSignalChip3"
+									name="heroSignalChip3"
+									class="form-input"
+									value="${escapeAttribute(settings.heroSignalChip3)}"
+									maxlength="24"
+								/>
+							</div>
+						</div>
+					</section>
+
+					<section class="appearance-panel" data-appearance-section="sidebar">
+						<h2>文章页左侧作者栏</h2>
+						<p class="appearance-note">用于文章阅读页左侧个人画廊名片，以及新建文章时的默认作者名。</p>
+						<div class="form-group">
+							<label for="articleSidebarAvatarPath">头像路径（可选）</label>
+							<input
+								id="articleSidebarAvatarPath"
+								name="articleSidebarAvatarPath"
+								class="form-input appearance-key-input"
+								value="${escapeAttribute(settings.articleSidebarAvatarPath ?? "")}"
+								maxlength="320"
+								placeholder="/media/appearance/profile/avatar.webp"
+							/>
+							<div
+								class="appearance-hero-uploader"
+								data-avatar-image-uploader="true"
+								data-upload-url="/api/admin/media/upload-async"
+								data-csrf-token="${escapeAttribute(csrfToken)}"
+							>
+								<input
+									type="file"
+									accept="${escapeAttribute(getAllowedMediaAcceptValue())}"
+									class="appearance-upload-input"
+									data-avatar-image-file-input="true"
+								/>
+								<div
+									class="appearance-upload-dropzone appearance-hero-dropzone"
+									data-avatar-image-dropzone="true"
+									role="button"
+									tabindex="0"
+									aria-label="拖拽或点击上传侧栏头像"
+								>
+									${
+										settings.articleSidebarAvatarPath
+											? `<img src="${escapeAttribute(settings.articleSidebarAvatarPath)}" alt="侧栏头像预览" class="cover-preview-image" />`
+											: `<div class="cover-empty">拖拽图片或点击上传侧栏头像</div>`
+									}
+								</div>
+								<div class="appearance-background-actions">
+									<button type="button" class="btn btn-sm" data-avatar-image-select="true">上传侧栏头像</button>
+									<button type="button" class="btn btn-sm btn-danger" data-avatar-image-clear="true">清空头像路径</button>
+								</div>
+								<p class="form-help" data-avatar-image-status></p>
+							</div>
 						</div>
 						<div class="appearance-inline-grid">
 							<div class="form-group">
-								<label for="aiInternalBaseUrl">接口基地址</label>
+								<label for="articleSidebarName">侧栏名称</label>
 								<input
-									id="aiInternalBaseUrl"
-									name="aiInternalBaseUrl"
+									id="articleSidebarName"
+									name="articleSidebarName"
 									class="form-input"
-									value="${escapeAttribute(aiSettings.internal.baseUrl)}"
-									maxlength="240"
-									placeholder="https://api.openai.com/v1"
+									value="${escapeAttribute(settings.articleSidebarName)}"
+									maxlength="36"
 								/>
 							</div>
 							<div class="form-group">
-								<label for="aiInternalModel">模型名称</label>
+								<label for="articleSidebarBadge">侧栏徽标文案</label>
 								<input
-									id="aiInternalModel"
-									name="aiInternalModel"
+									id="articleSidebarBadge"
+									name="articleSidebarBadge"
 									class="form-input"
-									value="${escapeAttribute(aiSettings.internal.model)}"
-									maxlength="120"
-									placeholder="gpt-4o-mini"
+									value="${escapeAttribute(settings.articleSidebarBadge)}"
+									maxlength="24"
 								/>
 							</div>
 						</div>
-						<div class="form-group">
-							<label for="aiInternalApiKey">API Key</label>
-							<input
-								id="aiInternalApiKey"
-								name="aiInternalApiKey"
-								type="password"
-								class="form-input"
-								maxlength="400"
-								autocomplete="off"
-								placeholder="${escapeAttribute(internalApiPlaceholder)}"
-								${internalApiDisabled}
-							/>
-							<p class="form-help">${escapeHtml(internalApiKeyHelp)}</p>
+						<div class="form-group form-group-tight">
+							<label for="articleSidebarBio">侧栏简介</label>
+							<textarea id="articleSidebarBio" name="articleSidebarBio" class="form-textarea form-textarea-sm" maxlength="320" rows="3">${escapeHtml(settings.articleSidebarBio)}</textarea>
 						</div>
-					</div>
-					<div class="appearance-content-fieldset">
-						<h3>公开接口（预留）</h3>
-						<div class="form-group">
-							<label>
-								<input
-									type="checkbox"
-									name="aiPublicEnabled"
-									value="1"
-									${aiSettings.public.enabled ? "checked" : ""}
-								/>
-								启用公开 AI 接口
-							</label>
-						</div>
-						<div class="appearance-inline-grid">
+					</section>
+
+					<section class="appearance-panel" data-appearance-section="integrations">
+						<h2>AI 模型接口与 MCP 端点</h2>
+						<p class="appearance-note">支持任意 OpenAI 兼容接口；生产环境推荐使用 Cloudflare Secret 托管密钥。</p>
+						<div class="appearance-content-fieldset">
+							<h3>内部接口（编辑器自动摘要与 SEO）</h3>
 							<div class="form-group">
-								<label for="aiPublicBaseUrl">接口基地址</label>
-								<input
-									id="aiPublicBaseUrl"
-									name="aiPublicBaseUrl"
-									class="form-input"
-									value="${escapeAttribute(aiSettings.public.baseUrl)}"
-									maxlength="240"
-									placeholder="https://api.openai.com/v1"
-								/>
+								<label class="checkbox-row-label">
+									<input
+										type="checkbox"
+										name="aiInternalEnabled"
+										value="1"
+										${aiSettings.internal.enabled ? "checked" : ""}
+									/>
+									启用内部 AI 自动生成
+								</label>
 							</div>
+							<div class="appearance-inline-grid">
+								<div class="form-group">
+									<label for="aiInternalBaseUrl">接口基地址</label>
+									<input
+										id="aiInternalBaseUrl"
+										name="aiInternalBaseUrl"
+										class="form-input"
+										value="${escapeAttribute(aiSettings.internal.baseUrl)}"
+										maxlength="240"
+										placeholder="https://api.openai.com/v1"
+									/>
+								</div>
+								<div class="form-group">
+									<label for="aiInternalModel">模型名称</label>
+									<input
+										id="aiInternalModel"
+										name="aiInternalModel"
+										class="form-input"
+										value="${escapeAttribute(aiSettings.internal.model)}"
+										maxlength="120"
+										placeholder="gpt-4o-mini"
+									/>
+								</div>
+							</div>
+							<div class="form-group form-group-tight">
+								<label for="aiInternalApiKey">API Key</label>
+								<input
+									id="aiInternalApiKey"
+									name="aiInternalApiKey"
+									type="password"
+									class="form-input"
+									maxlength="400"
+									autocomplete="off"
+									placeholder="${escapeAttribute(internalApiPlaceholder)}"
+									${internalApiDisabled}
+								/>
+								<p class="form-help">${escapeHtml(internalApiKeyHelp)}</p>
+							</div>
+						</div>
+						<div class="appearance-content-fieldset">
+							<h3>公开接口（访客能力预留）</h3>
 							<div class="form-group">
-								<label for="aiPublicModel">模型名称</label>
+								<label class="checkbox-row-label">
+									<input
+										type="checkbox"
+										name="aiPublicEnabled"
+										value="1"
+										${aiSettings.public.enabled ? "checked" : ""}
+									/>
+									启用公开 AI 接口
+								</label>
+							</div>
+							<div class="appearance-inline-grid">
+								<div class="form-group">
+									<label for="aiPublicBaseUrl">接口基地址</label>
+									<input
+										id="aiPublicBaseUrl"
+										name="aiPublicBaseUrl"
+										class="form-input"
+										value="${escapeAttribute(aiSettings.public.baseUrl)}"
+										maxlength="240"
+										placeholder="https://api.openai.com/v1"
+									/>
+								</div>
+								<div class="form-group">
+									<label for="aiPublicModel">模型名称</label>
+									<input
+										id="aiPublicModel"
+										name="aiPublicModel"
+										class="form-input"
+										value="${escapeAttribute(aiSettings.public.model)}"
+										maxlength="120"
+										placeholder="gpt-4o-mini"
+									/>
+								</div>
+							</div>
+							<div class="form-group form-group-tight">
+								<label for="aiPublicApiKey">API Key</label>
 								<input
-									id="aiPublicModel"
-									name="aiPublicModel"
+									id="aiPublicApiKey"
+									name="aiPublicApiKey"
+									type="password"
 									class="form-input"
-									value="${escapeAttribute(aiSettings.public.model)}"
-									maxlength="120"
-									placeholder="gpt-4o-mini"
+									maxlength="400"
+									autocomplete="off"
+									placeholder="${escapeAttribute(publicApiPlaceholder)}"
+									${publicApiDisabled}
 								/>
+								<p class="form-help">${escapeHtml(publicApiKeyHelp)}</p>
 							</div>
 						</div>
-						<div class="form-group">
-							<label for="aiPublicApiKey">API Key</label>
-							<input
-								id="aiPublicApiKey"
-								name="aiPublicApiKey"
-								type="password"
-								class="form-input"
-								maxlength="400"
-								autocomplete="off"
-								placeholder="${escapeAttribute(publicApiPlaceholder)}"
-								${publicApiDisabled}
-							/>
-							<p class="form-help">${escapeHtml(publicApiKeyHelp)}</p>
+						<div class="appearance-content-fieldset">
+							<h3>MCP 远程写作端点</h3>
+							<div class="form-group form-group-tight">
+								<label class="checkbox-row-label">
+									<input
+										type="checkbox"
+										name="mcpEnabled"
+										value="1"
+										${settings.mcpEnabled ? "checked" : ""}
+									/>
+									启用 MCP 接口（/api/mcp）
+								</label>
+								<p class="form-help">关闭后即使携带正确 Bearer，MCP 端点也会直接返回 404。</p>
+							</div>
+						</div>
+					</section>
+				</div>
+
+				<aside class="appearance-preview-rail" aria-label="实时视觉预览">
+					<div class="appearance-live-stage" data-appearance-live-stage>
+						<div class="appearance-stage-bar">
+							<span class="appearance-stage-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+							<span>实时材质与文案预览</span>
+							<span>Live</span>
+						</div>
+						<div class="appearance-stage-viewport">
+							<div class="appearance-stage-wallpaper" data-stage-wallpaper></div>
+							<div class="appearance-stage-scrim"></div>
+							<div class="appearance-stage-nav">
+								<span class="appearance-stage-subtitle" data-stage-subtitle>${escapeHtml(settings.headerSubtitle)}</span>
+								<span class="appearance-stage-links" data-stage-nav-links>${escapeHtml(
+									settings.navLinks
+										.slice(0, 3)
+										.map((l) => l.label)
+										.join(" · "),
+								)}</span>
+							</div>
+							<div class="appearance-stage-deck">
+								<div class="appearance-stage-card">
+									<span class="appearance-stage-kicker" data-stage-kicker>${escapeHtml(settings.heroKicker)}</span>
+									<strong class="appearance-stage-title" data-stage-title>${escapeHtml(settings.heroTitle)}</strong>
+									<p class="appearance-stage-intro" data-stage-intro>${escapeHtml(settings.heroIntro)}</p>
+								</div>
+								<div class="appearance-stage-card">
+									<span class="appearance-stage-kicker" data-stage-signal-label>${escapeHtml(settings.heroSignalLabel)}</span>
+									<strong class="appearance-stage-title" data-stage-signal-heading>${escapeHtml(settings.heroSignalHeading)}</strong>
+									<div class="appearance-stage-chips" data-stage-chips>
+										<span>${escapeHtml(settings.heroSignalChip1)}</span>
+										<span>${escapeHtml(settings.heroSignalChip2)}</span>
+										<span>${escapeHtml(settings.heroSignalChip3)}</span>
+									</div>
+								</div>
+							</div>
+							<div class="appearance-stage-article">
+								<div class="appearance-stage-avatar" data-stage-avatar>
+									${
+										settings.articleSidebarAvatarPath
+											? `<img src="${escapeAttribute(settings.articleSidebarAvatarPath)}" alt="" />`
+											: escapeHtml(
+													Array.from(settings.articleSidebarName || "A")[0] ||
+														"A",
+												)
+									}
+								</div>
+								<div style="min-width: 0; display: grid; gap: 0.1rem;">
+									<span class="appearance-stage-kicker" data-stage-sidebar-badge>${escapeHtml(settings.articleSidebarBadge)}</span>
+									<strong style="font-size: 0.82rem; color: #f8fafc;" data-stage-sidebar-name>${escapeHtml(settings.articleSidebarName)}</strong>
+									<span style="font-size: 0.7rem; color: rgba(203, 213, 225, 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-stage-sidebar-bio>${escapeHtml(settings.articleSidebarBio)}</span>
+								</div>
+							</div>
 						</div>
 					</div>
-					<div class="appearance-content-fieldset">
-						<h3>MCP 接口开关</h3>
-						<div class="form-group">
-							<label>
-								<input
-									type="checkbox"
-									name="mcpEnabled"
-									value="1"
-									${settings.mcpEnabled ? "checked" : ""}
-								/>
-								启用 MCP 接口（/api/mcp）
-							</label>
-							<p class="form-help">关闭后即使携带正确 Bearer，MCP 端点也会返回 404。</p>
+					<div class="appearance-panel" style="margin-bottom: 0; padding: 0.95rem 1.05rem;">
+						<div class="appearance-actions" style="justify-content: space-between;">
+							<span class="form-help" style="margin: 0;">所有分区的更改会一并提交保存。</span>
+							<button type="submit" class="btn btn-primary btn-sm">保存外观设置</button>
 						</div>
 					</div>
-				</section>
-				<section class="appearance-panel">
-					<div class="appearance-actions">
-						<button type="submit" class="btn btn-primary">保存外观设置</button>
-						<a href="/api/admin/media" class="btn">打开媒体库</a>
-					</div>
-				</section>
+				</aside>
 			</div>
 		</form>
 	`;

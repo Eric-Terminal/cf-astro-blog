@@ -409,4 +409,63 @@ describe("后台界面风格保护", () => {
 		assert.match(layoutSource, /\.review-item-value/u);
 		assert.match(layoutSource, /\.appearance-inline-grid/u);
 	});
+
+	test("后台工作室增强提供快捷命令面板、沉浸式写作工具栏与外观实时预览", async () => {
+		const layoutHtml = adminLayout("控制台", "<h1>控制台</h1>", {
+			csrfToken: "csrf-token",
+		});
+		const [
+			editorSource,
+			listSource,
+			appearanceSource,
+			mediaSource,
+			studioScriptSource,
+		] = await Promise.all([
+			readFile("src/admin/views/posts/editor.ts", "utf8"),
+			readFile("src/admin/views/posts/list.ts", "utf8"),
+			readFile("src/admin/routes/appearance.ts", "utf8"),
+			readFile("src/admin/routes/media.ts", "utf8"),
+			readFile("public/admin-studio.js", "utf8"),
+		]);
+
+		// 全局侧栏快捷写作、命令面板与 Toast 容器
+		assert.match(layoutHtml, /sidebar-compose-btn/u);
+		assert.match(layoutHtml, /data-admin-cmd-backdrop/u);
+		assert.match(layoutHtml, /data-admin-toast-root/u);
+		assert.match(layoutHtml, /\/admin-studio\.js/u);
+
+		// 文章编辑器吸顶操作栏、三态视图切换、Markdown 工具栏与专注模式
+		assert.match(editorSource, /editor-studio-bar/u);
+		assert.match(editorSource, /data-editor-view-btn="split"/u);
+		assert.match(editorSource, /data-editor-view-btn="write"/u);
+		assert.match(editorSource, /data-editor-view-btn="preview"/u);
+		assert.match(editorSource, /data-editor-inspector-toggle/u);
+		assert.match(editorSource, /data-editor-zen-toggle/u);
+		assert.match(editorSource, /data-md-action="codeblock"/u);
+		assert.match(editorSource, /data-md-action="image"/u);
+		assert.match(editorSource, /data-pinned-order-wrap/u);
+		assert.match(editorSource, /data-seo-details="true"/u);
+
+		// 文章列表即时筛选与折叠分类标签抽屉
+		assert.match(listSource, /data-posts-filter-root/u);
+		assert.match(listSource, /data-post-status-tab="published"/u);
+		assert.match(listSource, /data-post-search-input/u);
+
+		// 外观工作室分区标签、吸顶保存栏、实时预览舞台与侧栏头像上传器
+		assert.match(appearanceSource, /data-appearance-save-bar/u);
+		assert.match(appearanceSource, /data-appearance-tab-btn="optics"/u);
+		assert.match(appearanceSource, /data-appearance-tab-btn="hero"/u);
+		assert.match(appearanceSource, /data-appearance-live-stage/u);
+		assert.match(appearanceSource, /data-avatar-image-uploader="true"/u);
+
+		// 媒体库目录筛选、三合一复制与大图灯箱
+		assert.match(mediaSource, /data-media-filter-root/u);
+		assert.match(mediaSource, /复制 URL/u);
+		assert.match(mediaSource, /复制 MD/u);
+		assert.match(mediaSource, /data-media-lightbox/u);
+
+		// 客户端增强脚本核心能力
+		assert.match(studioScriptSource, /showAdminToast/u);
+		assert.match(studioScriptSource, /syncLiveStage/u);
+	});
 });
