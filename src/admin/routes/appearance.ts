@@ -262,19 +262,19 @@ function renderAppearancePage(options: {
 			<input type="hidden" name="_csrf" value="${escapeAttribute(csrfToken)}" />
 
 			<div class="appearance-save-bar" data-appearance-save-bar>
-				<div class="appearance-save-state">
-					<span class="appearance-dirty-dot" aria-hidden="true"></span>
-					<span data-appearance-save-state>当前与已保存配置同步（支持 ⌘S / Ctrl+S 保存）</span>
+				<div class="filter-tabs appearance-studio-tabs" role="tablist" aria-label="外观设置分区">
+					<button type="button" class="filter-tab is-active" data-appearance-tab-btn="optics">背景与材质</button>
+					<button type="button" class="filter-tab" data-appearance-tab-btn="hero">导航与首屏</button>
+					<button type="button" class="filter-tab" data-appearance-tab-btn="sidebar">文章侧栏</button>
+					<button type="button" class="filter-tab" data-appearance-tab-btn="integrations">AI 与 MCP</button>
+					<button type="button" class="filter-tab" data-appearance-tab-btn="all">展开全部</button>
 				</div>
 				<div class="appearance-actions">
-					<div class="filter-tabs appearance-studio-tabs" role="tablist" aria-label="外观设置分区">
-						<button type="button" class="filter-tab is-active" data-appearance-tab-btn="optics">背景与材质</button>
-						<button type="button" class="filter-tab" data-appearance-tab-btn="hero">导航与首屏</button>
-						<button type="button" class="filter-tab" data-appearance-tab-btn="sidebar">文章侧栏</button>
-						<button type="button" class="filter-tab" data-appearance-tab-btn="integrations">AI 与 MCP</button>
-						<button type="button" class="filter-tab" data-appearance-tab-btn="all">展开全部</button>
+					<div class="appearance-save-state">
+						<span class="appearance-dirty-dot" aria-hidden="true"></span>
+						<span data-appearance-save-state>已同步</span>
 					</div>
-					<span class="admin-kbd" title="快捷键保存">⌘S</span>
+					<span class="admin-kbd" title="快捷键 ⌘S / Ctrl+S 保存">⌘S</span>
 					<button type="submit" class="btn btn-primary btn-sm">保存外观设置</button>
 				</div>
 			</div>

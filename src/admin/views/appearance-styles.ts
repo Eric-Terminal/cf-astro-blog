@@ -12,6 +12,7 @@ export const appearanceStudioStyles = `
 
 			.appearance-studio-tabs {
 				margin-bottom: 0;
+				min-width: 0;
 			}
 
 			.appearance-save-bar {
@@ -22,12 +23,12 @@ export const appearanceStudioStyles = `
 				flex-wrap: wrap;
 				align-items: center;
 				justify-content: space-between;
-				gap: 0.65rem 1rem;
-				padding: 0.65rem 0.95rem;
+				gap: 0.6rem 0.85rem;
+				padding: 0.55rem 0.75rem;
 				margin-bottom: 1.15rem;
 				border-radius: 14px;
 				border: 1px solid var(--border-strong);
-				background: rgba(var(--card-surface-rgb), 0.86);
+				background: rgba(var(--card-surface-rgb), 0.88);
 				backdrop-filter: blur(22px) saturate(160%);
 				-webkit-backdrop-filter: blur(22px) saturate(160%);
 				box-shadow: var(--shadow-soft);
@@ -338,11 +339,16 @@ export const appearanceStudioStyles = `
 					transform var(--transition-fast);
 			}
 
+			.appearance-upload-dropzone[data-appearance-background-dropzone="true"] {
+				padding: 0.55rem;
+			}
+
 			.appearance-upload-dropzone[data-appearance-background-dropzone="true"] .cover-preview-image[data-appearance-background-preview="true"] {
 				display: block;
 				width: 100%;
-				max-height: 210px;
-				object-fit: cover;
+				height: auto;
+				max-height: none;
+				object-fit: contain;
 				border-radius: 10px;
 			}
 
@@ -388,11 +394,16 @@ export const appearanceStudioStyles = `
 
 			.appearance-hero-dropzone {
 				min-height: 136px;
+				padding: 0.65rem;
 			}
 
 			.appearance-hero-dropzone .cover-preview-image {
-				max-height: 180px;
+				width: auto;
+				max-width: 100%;
+				height: auto;
+				max-height: 360px;
 				object-fit: contain;
+				margin-inline: auto;
 			}
 
 			.appearance-background-actions {

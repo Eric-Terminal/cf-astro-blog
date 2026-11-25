@@ -469,6 +469,11 @@ export const adminSharedStyles = `
 		.admin-workspace {
 			min-width: 0;
 			width: 100%;
+			overflow: visible;
+		}
+
+		.admin-workspace::before {
+			border-radius: inherit;
 		}
 
 		.admin-page-content {
@@ -1513,7 +1518,8 @@ export const adminSharedStyles = `
 
 		.cover-dropzone {
 			position: relative;
-			min-height: 168px;
+			min-height: 148px;
+			padding: 0.5rem;
 			border-radius: var(--radius);
 			border: 1px dashed var(--border);
 			background:
@@ -1546,9 +1552,13 @@ export const adminSharedStyles = `
 		}
 
 		.cover-preview-image {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
+			display: block;
+			width: auto;
+			max-width: 100%;
+			height: auto;
+			max-height: 320px;
+			object-fit: contain;
+			border-radius: calc(var(--radius) - 4px);
 		}
 
 		.cover-actions {

@@ -630,7 +630,7 @@
 				saveBar.classList.add("is-dirty");
 			}
 			if (saveStateText instanceof HTMLElement) {
-				saveStateText.textContent = "有未保存的外观更改（按 ⌘S 立即保存）";
+				saveStateText.textContent = "未保存修改";
 			}
 		};
 
