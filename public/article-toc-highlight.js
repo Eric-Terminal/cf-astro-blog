@@ -61,6 +61,10 @@
 			if (linkRect.top < bodyRect.top || linkRect.bottom > bodyRect.bottom) {
 				activeLink.scrollIntoView({ block: "nearest", behavior: "smooth" });
 			}
+
+			window.dispatchEvent(
+				new CustomEvent("article:toc-change", { detail: { id } }),
+			);
 		};
 
 		/**

@@ -51,11 +51,14 @@ function isLinkActive(href: string) {
 					</a>
 				</div>
 
-				<!-- 文章阅读态专属灵动岛播报舱：下滑阅读时展示当前章节与进度环，悬停灵动岛时自动翻转回完整导航 -->
+				<!-- 文章阅读态专属灵动岛播报舱：下滑阅读或划过目录时，以滚轮翻牌动效播报章节并自适应岛宽 -->
 				<div class="nav-reading-hud" data-nav-reading-hud aria-hidden="true">
 					<span class="nav-hud-pulse"></span>
-					<span class="nav-hud-chapter" data-nav-reading-chapter>正在阅读</span>
+					<span class="nav-hud-reel" data-nav-reading-reel>
+						<span class="nav-hud-chapter" data-nav-reading-chapter>正在阅读</span>
+					</span>
 				</div>
+				<span class="nav-hud-measure" data-nav-reading-measure aria-hidden="true">正在阅读</span>
 
 				<ul class="nav-links" data-nav-links>
 					<span class="nav-glide-pill" data-nav-indicator aria-hidden="true"></span>
@@ -316,11 +319,13 @@ function isLinkActive(href: string) {
 
 	/* 多模态章节播报舱（仅在文章阅读成岛且鼠标未悬停展开时浮现） */
 	.nav-reading-hud {
+		position: relative;
 		display: none;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.52rem;
+		flex: 1 1 auto;
 		min-width: 0;
-		max-width: 22rem;
+		max-width: 30rem;
 		margin-right: auto;
 		animation: hud-slot-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
@@ -334,14 +339,130 @@ function isLinkActive(href: string) {
 		box-shadow: 0 0 0 3px var(--color-accent-soft);
 	}
 
-	.nav-hud-chapter {
-		font-size: 0.84rem;
-		font-weight: 600;
+	/* Apple Watch 心率计风格上下滚轮视窗：新旧章节沿阅读/划动方向平滑翻牌交替 */
+	.nav-hud-reel {
+		position: relative;
+		display: grid;
+		align-items: center;
+		flex: 1 1 auto;
+		min-width: 0;
+		height: 1.5rem;
+		overflow: hidden;
+		mask-image: linear-gradient(
+			180deg,
+			transparent 0%,
+			#000 14%,
+			#000 86%,
+			transparent 100%
+		);
+		-webkit-mask-image: linear-gradient(
+			180deg,
+			transparent 0%,
+			#000 14%,
+			#000 86%,
+			transparent 100%
+		);
+	}
+
+	.nav-hud-chapter,
+	:global(.nav-hud-chapter-ghost) {
+		grid-area: 1 / 1;
+		min-width: 0;
+		font-size: 0.85rem;
+		font-weight: 620;
+		line-height: 1.5rem;
 		color: var(--color-text);
 		letter-spacing: -0.01em;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		will-change: transform, opacity, filter;
+	}
+
+	:global(.nav-hud-chapter-ghost) {
+		pointer-events: none;
+	}
+
+	:global(.nav-hud-chapter.roll-enter-up) {
+		animation: hud-roll-enter-up 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	:global(.nav-hud-chapter.roll-enter-down) {
+		animation: hud-roll-enter-down 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	:global(.nav-hud-chapter-ghost.roll-exit-up) {
+		animation: hud-roll-exit-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	:global(.nav-hud-chapter-ghost.roll-exit-down) {
+		animation: hud-roll-exit-down 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	/* 离屏自然宽度探针：置于常驻可见父层，避免在 HUD 尚未切换 display 时 offsetWidth 返回 0 */
+	.nav-hud-measure {
+		position: fixed;
+		top: -9999px;
+		left: -9999px;
+		display: inline-block;
+		visibility: hidden;
+		pointer-events: none;
+		white-space: nowrap;
+		font-size: 0.85rem;
+		font-weight: 620;
+		letter-spacing: -0.01em;
+	}
+
+	@keyframes hud-roll-enter-up {
+		from {
+			opacity: 0;
+			filter: blur(2px);
+			transform: translate3d(0, 105%, 0) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: translate3d(0, 0, 0) scale(1);
+		}
+	}
+
+	@keyframes hud-roll-exit-up {
+		from {
+			opacity: 1;
+			filter: blur(0);
+			transform: translate3d(0, 0, 0) scale(1);
+		}
+		to {
+			opacity: 0;
+			filter: blur(2px);
+			transform: translate3d(0, -105%, 0) scale(0.97);
+		}
+	}
+
+	@keyframes hud-roll-enter-down {
+		from {
+			opacity: 0;
+			filter: blur(2px);
+			transform: translate3d(0, -105%, 0) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			filter: blur(0);
+			transform: translate3d(0, 0, 0) scale(1);
+		}
+	}
+
+	@keyframes hud-roll-exit-down {
+		from {
+			opacity: 1;
+			filter: blur(0);
+			transform: translate3d(0, 0, 0) scale(1);
+		}
+		to {
+			opacity: 0;
+			filter: blur(2px);
+			transform: translate3d(0, 105%, 0) scale(0.97);
+		}
 	}
 
 	@keyframes hud-slot-in {
@@ -527,6 +648,41 @@ function isLinkActive(href: string) {
 		transition: stroke-dashoffset 140ms linear;
 	}
 
+	.nav-reading-percent {
+		display: inline-block;
+		will-change: transform, opacity;
+	}
+
+	:global(.nav-reading-percent.percent-tick-up) {
+		animation: percent-tick-up 200ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	:global(.nav-reading-percent.percent-tick-down) {
+		animation: percent-tick-down 200ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	@keyframes percent-tick-up {
+		0% {
+			opacity: 0.45;
+			transform: translateY(38%);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes percent-tick-down {
+		0% {
+			opacity: 0.45;
+			transform: translateY(-38%);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
 	.nav-reading-up {
 		font-size: 0.76rem;
 		transition: transform var(--transition);
@@ -635,6 +791,17 @@ function isLinkActive(href: string) {
 
 	/* 文章阅读态灵动岛变形：平时折叠为「当前章节 + 进度环」迷你岛，指针移入时无缝展开回完整导航 */
 	@media (min-width: 769px) {
+		:global(html[data-nav-condensed][data-reading-active="true"])
+			.site-nav-shell-scroll:not(:hover):not(:focus-within) {
+			overflow-x: hidden;
+		}
+
+		:global(html[data-nav-condensed][data-reading-active="true"])
+			.site-nav-shell-scroll:not(:hover):not(:focus-within)
+			.site-nav-shell {
+			min-width: 0;
+		}
+
 		:global(html[data-nav-condensed][data-reading-active="true"])
 			.site-nav-shell-scroll:not(:hover):not(:focus-within)
 			.site-brand-copy-link,

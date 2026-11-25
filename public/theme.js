@@ -28,6 +28,11 @@
 	let syncFrame = 0;
 	let pendingForceSync = false;
 	let lastChapterText = "";
+	let lastChapterIndex = -1;
+	let hoveredTocChapter = "";
+	let hoveredTocIndex = -1;
+	let lastPercentValue = -1;
+	let lastScrollY = window.scrollY || 0;
 
 	const theme = localStorage.getItem("theme");
 	if (theme === "dark" || theme === "light") {
@@ -133,27 +138,46 @@
 		});
 	};
 
-	const measureNavContentWidth = () => {
+	const measureNavContentWidth = (isReadingHudCompact) => {
 		const shell = document.querySelector(".site-nav-shell");
-		if (!shell) return 0;
+		if (!(shell instanceof HTMLElement)) return 0;
 		const style = window.getComputedStyle(shell);
 		const gap = parseFloat(style.columnGap) || parseFloat(style.gap) || 0;
 		const pl = parseFloat(style.paddingLeft) || 0;
 		const pr = parseFloat(style.paddingRight) || 0;
+
+		if (isReadingHudCompact) {
+			const brand = shell.querySelector(".site-brand");
+			const measureEl = shell.querySelector("[data-nav-reading-measure]");
+			const actions = shell.querySelector(".nav-actions");
+			const brandW = brand instanceof HTMLElement ? brand.offsetWidth : 32;
+			const rawChapterW =
+				measureEl instanceof HTMLElement ? measureEl.offsetWidth : 120;
+			const hudW = 6 + 9 + Math.min(rawChapterW, 460);
+			const actionsW =
+				actions instanceof HTMLElement ? actions.scrollWidth : 168;
+			return Math.ceil(pl + pr + brandW + hudW + actionsW + gap * 2 + 26);
+		}
+
 		const visibleChildren = Array.from(shell.children).filter(
 			(child) =>
 				child instanceof HTMLElement &&
+				!child.hasAttribute("data-nav-reading-measure") &&
 				window.getComputedStyle(child).display !== "none",
 		);
 		if (visibleChildren.length === 0) return pl + pr;
 		let totalW = pl + pr + gap * Math.max(0, visibleChildren.length - 1);
 		for (const child of visibleChildren) {
-			totalW += child.getBoundingClientRect().width;
+			totalW += Math.max(
+				child.scrollWidth || 0,
+				child.getBoundingClientRect().width,
+			);
 		}
 		return Math.ceil(totalW);
 	};
 
 	const syncCondensedNavWidth = () => {
+		const scrollShell = document.querySelector(".site-nav-shell-scroll");
 		if (!isNavCondensed) {
 			root.style.removeProperty("--nav-shell-condensed-computed-inset");
 			return;
@@ -163,15 +187,21 @@
 			root.getAttribute("data-reading-active") === "true" &&
 			window.innerWidth >= 769 &&
 			!document.querySelector(".site-nav-shell-scroll:hover");
-		const NAV_MAX_W = isReadingHudCompact ? 560 : 760;
+		if (isReadingHudCompact && scrollShell instanceof HTMLElement) {
+			scrollShell.scrollLeft = 0;
+		}
 		const vw = window.innerWidth;
-		const contentW = measureNavContentWidth();
+		const maxAllowed = vw - MIN_INSET_PX * 2;
+		const NAV_MAX_W = isReadingHudCompact
+			? Math.min(760, maxAllowed)
+			: Math.min(820, maxAllowed);
+		const contentW = measureNavContentWidth(isReadingHudCompact);
 		if (contentW === 0) {
 			return;
 		}
 		const targetW = isReadingHudCompact
-			? Math.min(Math.max(contentW + 18, 340), NAV_MAX_W)
-			: Math.min(Math.max(contentW + 16, Math.min(NAV_MAX_W, vw - MIN_INSET_PX * 2)), vw - MIN_INSET_PX * 2);
+			? Math.min(Math.max(contentW, 320), NAV_MAX_W)
+			: Math.min(Math.max(contentW + 16, Math.min(520, NAV_MAX_W)), NAV_MAX_W);
 		const newInset = Math.max(MIN_INSET_PX, (vw - targetW) / 2);
 		root.style.setProperty(
 			"--nav-shell-condensed-computed-inset",
@@ -179,17 +209,82 @@
 		);
 	};
 
+	// Apple Watch 心率滚轮式方向感知章节翻牌动画
+	const animateChapterRoll = (nextText, nextIndex, scrollDir) => {
+		const chapterEl = document.querySelector("[data-nav-reading-chapter]");
+		const reelEl = document.querySelector("[data-nav-reading-reel]");
+		const measureEl = document.querySelector("[data-nav-reading-measure]");
+		if (!(chapterEl instanceof HTMLElement)) {
+			return;
+		}
+		if (measureEl instanceof HTMLElement) {
+			measureEl.textContent = nextText;
+		}
+		if (nextText === lastChapterText) {
+			return;
+		}
+
+		let rollDir = scrollDir === "up" ? "down" : "up";
+		if (
+			nextIndex >= 0 &&
+			lastChapterIndex >= 0 &&
+			nextIndex !== lastChapterIndex
+		) {
+			rollDir = nextIndex > lastChapterIndex ? "up" : "down";
+		}
+
+		const shouldAnimate =
+			Boolean(lastChapterText) &&
+			isNavCondensed &&
+			reelEl instanceof HTMLElement &&
+			!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+		if (shouldAnimate && reelEl instanceof HTMLElement) {
+			reelEl
+				.querySelectorAll(".nav-hud-chapter-ghost")
+				.forEach((node) => node.remove());
+			const ghost = document.createElement("span");
+			ghost.className = `nav-hud-chapter-ghost roll-exit-${rollDir}`;
+			ghost.setAttribute("aria-hidden", "true");
+			ghost.textContent = lastChapterText;
+			reelEl.appendChild(ghost);
+			const removeGhost = () => ghost.remove();
+			ghost.addEventListener("animationend", removeGhost, { once: true });
+			window.setTimeout(removeGhost, 360);
+
+			chapterEl.textContent = nextText;
+			chapterEl.classList.remove("roll-enter-up", "roll-enter-down");
+			void chapterEl.offsetWidth;
+			chapterEl.classList.add(`roll-enter-${rollDir}`);
+		} else {
+			chapterEl.textContent = nextText;
+		}
+
+		lastChapterText = nextText;
+		lastChapterIndex = nextIndex;
+
+		if (isNavCondensed) {
+			syncCondensedNavWidth();
+		}
+	};
+
 	// 同步文章阅读进度、当前章节播报舱与环形进度胶囊
 	const syncReadingProgress = () => {
 		const articleBody = document.querySelector(".article-body");
 		const backTopButton = document.querySelector("[data-nav-back-top]");
 		const percentEl = document.querySelector("[data-nav-reading-percent]");
-		const chapterEl = document.querySelector("[data-nav-reading-chapter]");
+		const currentScrollY = window.scrollY || 0;
+		const scrollDir = currentScrollY < lastScrollY ? "up" : "down";
+		lastScrollY = currentScrollY;
 
 		if (!(articleBody instanceof HTMLElement)) {
 			root.removeAttribute("data-reading-active");
 			root.style.removeProperty("--nav-reading-progress");
 			lastChapterText = "";
+			lastChapterIndex = -1;
+			hoveredTocChapter = "";
+			hoveredTocIndex = -1;
+			lastPercentValue = -1;
 			if (backTopButton instanceof HTMLElement) {
 				backTopButton.hidden = true;
 			}
@@ -197,7 +292,7 @@
 		}
 
 		const rect = articleBody.getBoundingClientRect();
-		const articleTop = rect.top + window.scrollY;
+		const articleTop = rect.top + currentScrollY;
 		const scrollable = Math.max(
 			1,
 			articleTop + rect.height - window.innerHeight * 0.75,
@@ -206,7 +301,7 @@
 			1,
 			Math.max(
 				0,
-				(window.scrollY - articleTop * 0.35) /
+				(currentScrollY - articleTop * 0.35) /
 					Math.max(1, scrollable - articleTop * 0.35),
 			),
 		);
@@ -215,29 +310,62 @@
 		root.setAttribute("data-reading-active", "true");
 		root.style.setProperty("--nav-reading-progress", rawProgress.toFixed(4));
 
-		const activeToc = document.querySelector(".article-toc-link.active");
+		const tocLinks = Array.from(
+			document.querySelectorAll(".article-toc-link[data-toc-id]"),
+		);
+		const activeTocIndex = tocLinks.findIndex((el) =>
+			el.classList.contains("active"),
+		);
+		const activeToc = activeTocIndex >= 0 ? tocLinks[activeTocIndex] : null;
 		const articleTitle = document.querySelector(".article-title");
-		const nextChapter =
-			(activeToc instanceof HTMLElement && activeToc.textContent?.trim()) ||
-			(articleTitle instanceof HTMLElement && articleTitle.textContent?.trim()) ||
-			"正在阅读";
+		const activeTocText =
+			activeToc instanceof HTMLElement
+				? (
+						activeToc.querySelector(".toc-link-label") || activeToc
+					).textContent?.trim()
+				: "";
 
-		if (chapterEl instanceof HTMLElement && nextChapter !== lastChapterText) {
-			lastChapterText = nextChapter;
-			chapterEl.textContent = nextChapter;
-		}
+		const nextChapter =
+			hoveredTocChapter ||
+			activeTocText ||
+			(articleTitle instanceof HTMLElement &&
+				articleTitle.textContent?.trim()) ||
+			"正在阅读";
+		const nextIndex = hoveredTocChapter ? hoveredTocIndex : activeTocIndex;
+
+		animateChapterRoll(nextChapter, nextIndex, scrollDir);
 
 		if (backTopButton instanceof HTMLElement) {
 			const wasHidden = backTopButton.hidden;
 			backTopButton.hidden = false;
 			backTopButton.title = `${nextChapter} · 点击回到顶部`;
 			if (wasHidden && isNavCondensed) {
-				window.requestAnimationFrame(syncCondensedNavWidth);
+				syncCondensedNavWidth();
 			}
 		}
 
-		if (percentEl instanceof HTMLElement) {
+		if (percentEl instanceof HTMLElement && percent !== lastPercentValue) {
+			const prevDigits =
+				lastPercentValue >= 0 ? String(lastPercentValue).length : 0;
+			const nextDigits = String(percent).length;
+			const tickClass =
+				lastPercentValue >= 0 && percent < lastPercentValue
+					? "percent-tick-down"
+					: "percent-tick-up";
 			percentEl.textContent = `${percent}%`;
+			if (
+				lastPercentValue >= 0 &&
+				isNavCondensed &&
+				!window.matchMedia("(prefers-reduced-motion: reduce)").matches
+			) {
+				percentEl.classList.remove("percent-tick-up", "percent-tick-down");
+				void percentEl.offsetWidth;
+				percentEl.classList.add(tickClass);
+			}
+			lastPercentValue = percent;
+			if (prevDigits !== nextDigits && isNavCondensed) {
+				syncCondensedNavWidth();
+			}
 		}
 	};
 
@@ -328,7 +456,51 @@
 		}
 	};
 
+	// 鼠标划过左侧 ToC 目录列表时，实时联动顶部灵动岛做方向感知滚轮预览
+	const bindTocHoverScrub = () => {
+		if (window.__tocScrubBound) {
+			return;
+		}
+		window.__tocScrubBound = true;
+
+		document.addEventListener("mouseover", (event) => {
+			if (!(event.target instanceof Element)) return;
+			const link = event.target.closest(".article-toc-link[data-toc-id]");
+			if (!(link instanceof HTMLElement)) return;
+			const tocLinks = Array.from(
+				document.querySelectorAll(".article-toc-link[data-toc-id]"),
+			);
+			const idx = tocLinks.indexOf(link);
+			const label = (
+				link.querySelector(".toc-link-label") || link
+			).textContent?.trim();
+			if (label && label !== hoveredTocChapter) {
+				hoveredTocChapter = label;
+				hoveredTocIndex = idx;
+				syncReadingProgress();
+			}
+		});
+
+		document.addEventListener("mouseout", (event) => {
+			if (!hoveredTocChapter || !(event.target instanceof Element)) return;
+			const toc = event.target.closest(".article-toc");
+			if (!toc) return;
+			const nextTarget = event.relatedTarget;
+			if (nextTarget instanceof Node && toc.contains(nextTarget)) {
+				return;
+			}
+			hoveredTocChapter = "";
+			hoveredTocIndex = -1;
+			syncReadingProgress();
+		});
+
+		window.addEventListener("article:toc-change", () => {
+			syncReadingProgress();
+		});
+	};
+
 	syncNavState({ force: true });
+	bindTocHoverScrub();
 	document.addEventListener("DOMContentLoaded", () => {
 		bindNavHoverGlide();
 		bindShellHoverMorph();

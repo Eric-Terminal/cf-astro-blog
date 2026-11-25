@@ -39,11 +39,15 @@ describe("导航收缩与灵动岛进阶交互保护", () => {
 		assert.match(headerSource, /data-nav-back-top/u);
 		assert.match(headerSource, /data-nav-reading-percent/u);
 		assert.match(headerSource, /data-nav-reading-hud/u);
+		assert.match(headerSource, /data-nav-reading-reel/u);
 		assert.match(headerSource, /data-nav-reading-chapter/u);
+		assert.match(headerSource, /data-nav-reading-measure/u);
 		assert.match(headerSource, /nav-progress-ring/u);
 		assert.match(headerSource, /data-nav-indicator/u);
 		assert.match(headerSource, /--nav-reading-progress/u);
 		assert.match(themeScriptSource, /syncReadingProgress/u);
+		assert.match(themeScriptSource, /animateChapterRoll/u);
+		assert.match(themeScriptSource, /bindTocHoverScrub/u);
 		assert.match(themeScriptSource, /syncNavGlidePill/u);
 		assert.match(themeScriptSource, /bindNavHoverGlide/u);
 		assert.match(themeScriptSource, /data-reading-active/u);
