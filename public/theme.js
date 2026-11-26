@@ -23,6 +23,9 @@
 		},
 	];
 	let isNavCondensed = root.hasAttribute("data-nav-condensed");
+	let isNavManuallyExpanded = false;
+	let expandedAtScrollY = 0;
+	const NAV_EXPAND_SCROLL_DISMISS_DELTA = 24;
 	let isRouteTransitioning = false;
 	let isThemeTransitioning = false;
 	let syncFrame = 0;
@@ -164,8 +167,8 @@
 							),
 						)
 					: 140;
-			const maxChapterW = Math.max(160, window.innerWidth - 320);
-			const hudW = 6 + 9 + Math.min(rawChapterW, Math.min(600, maxChapterW));
+			const maxChapterW = Math.max(160, window.innerWidth - 340);
+			const hudW = 6 + 12 + 24 + Math.min(rawChapterW, Math.min(580, maxChapterW));
 			const actionsW =
 				actions instanceof HTMLElement
 					? Math.ceil(
@@ -205,8 +208,8 @@
 		const MIN_INSET_PX = 16;
 		const isReadingHudCompact =
 			root.getAttribute("data-reading-active") === "true" &&
-			window.innerWidth >= 769 &&
-			!document.querySelector(".site-nav-shell-scroll:hover");
+			!isNavManuallyExpanded &&
+			window.innerWidth >= 769;
 		if (isReadingHudCompact && scrollShell instanceof HTMLElement) {
 			scrollShell.scrollLeft = 0;
 		}
@@ -214,19 +217,49 @@
 		const maxAllowed = vw - MIN_INSET_PX * 2;
 		const NAV_MAX_W = isReadingHudCompact
 			? Math.min(880, maxAllowed)
-			: Math.min(860, maxAllowed);
+			: Math.min(1080, maxAllowed);
 		const contentW = measureNavContentWidth(isReadingHudCompact);
 		if (contentW === 0) {
 			return;
 		}
 		const targetW = isReadingHudCompact
 			? Math.min(Math.max(contentW, 320), NAV_MAX_W)
-			: Math.min(Math.max(contentW + 16, Math.min(520, NAV_MAX_W)), NAV_MAX_W);
+			: Math.min(Math.max(contentW + 32, Math.min(520, NAV_MAX_W)), NAV_MAX_W);
 		const newInset = Math.max(MIN_INSET_PX, (vw - targetW) / 2);
 		root.style.setProperty(
 			"--nav-shell-condensed-computed-inset",
 			`${newInset.toFixed(1)}px`,
 		);
+	};
+
+	const setNavManuallyExpanded = (expanded) => {
+		const canExpand =
+			Boolean(expanded) &&
+			isNavCondensed &&
+			root.getAttribute("data-reading-active") === "true";
+		if (
+			canExpand === isNavManuallyExpanded &&
+			root.hasAttribute("data-nav-expanded") === canExpand
+		) {
+			return;
+		}
+		isNavManuallyExpanded = canExpand;
+		if (canExpand) {
+			expandedAtScrollY = window.scrollY || 0;
+			root.setAttribute("data-nav-expanded", "true");
+		} else {
+			root.removeAttribute("data-nav-expanded");
+		}
+		const hudBtn = document.querySelector("[data-nav-reading-hud]");
+		if (hudBtn instanceof HTMLElement) {
+			hudBtn.setAttribute("aria-expanded", canExpand ? "true" : "false");
+		}
+		syncCondensedNavWidth();
+		syncNavGlidePill();
+		window.requestAnimationFrame(() => {
+			syncCondensedNavWidth();
+			syncNavGlidePill();
+		});
 	};
 
 	// Apple Watch 心率滚轮式方向感知章节翻牌动画
@@ -299,6 +332,8 @@
 
 		if (!(articleBody instanceof HTMLElement)) {
 			root.removeAttribute("data-reading-active");
+			root.removeAttribute("data-nav-expanded");
+			isNavManuallyExpanded = false;
 			root.style.removeProperty("--nav-reading-progress");
 			lastChapterText = "";
 			lastChapterIndex = -1;
@@ -390,6 +425,9 @@
 	};
 
 	const applyNavState = (nextCondensed) => {
+		if (!nextCondensed && isNavManuallyExpanded) {
+			setNavManuallyExpanded(false);
+		}
 		if (nextCondensed === isNavCondensed) {
 			return;
 		}
@@ -420,9 +458,17 @@
 			return;
 		}
 
+		const currentY = window.scrollY || 0;
+		if (
+			isNavManuallyExpanded &&
+			Math.abs(currentY - expandedAtScrollY) > NAV_EXPAND_SCROLL_DISMISS_DELTA
+		) {
+			setNavManuallyExpanded(false);
+		}
+
 		const nextCondensed = force
-			? getInitialNavCondensedState(window.scrollY)
-			: getNextNavCondensedState(window.scrollY);
+			? getInitialNavCondensedState(currentY)
+			: getNextNavCondensedState(currentY);
 
 		syncReadingProgress();
 		applyNavState(nextCondensed);
@@ -452,16 +498,6 @@
 			return;
 		}
 		scrollShell.dataset.morphBound = "1";
-		const resync = () => {
-			if (isNavCondensed) {
-				window.requestAnimationFrame(() => {
-					syncCondensedNavWidth();
-					syncNavGlidePill();
-				});
-			}
-		};
-		scrollShell.addEventListener("pointerenter", resync);
-		scrollShell.addEventListener("pointerleave", resync);
 
 		// 监听离屏章节探针与右侧操作区尺寸变化（如霞鹜文楷 WebFont 子集异步加载完成、9%->99%->100% 宽度跳变）
 		if ("ResizeObserver" in window) {
@@ -508,6 +544,9 @@
 				link.querySelector(".toc-link-label") || link
 			).textContent?.trim();
 			if (label && label !== hoveredTocChapter) {
+				if (isNavManuallyExpanded) {
+					setNavManuallyExpanded(false);
+				}
 				hoveredTocChapter = label;
 				hoveredTocIndex = idx;
 				syncReadingProgress();
@@ -554,6 +593,7 @@
 		{ passive: true },
 	);
 	document.addEventListener("astro:page-load", () => {
+		setNavManuallyExpanded(false);
 		bindNavHoverGlide();
 		bindShellHoverMorph();
 		syncActiveNavLinksByPath();
@@ -693,18 +733,38 @@
 		);
 	};
 
+	document.addEventListener("keydown", (event) => {
+		if (event.key === "Escape" && isNavManuallyExpanded) {
+			setNavManuallyExpanded(false);
+		}
+	});
+
 	document.addEventListener("click", (event) => {
 		if (!(event.target instanceof Element)) {
 			return;
 		}
 
+		const hudTrigger = event.target.closest("[data-nav-reading-hud]");
+		if (hudTrigger) {
+			setNavManuallyExpanded(true);
+			return;
+		}
+
 		const backTop = event.target.closest("[data-nav-back-top]");
 		if (backTop) {
+			setNavManuallyExpanded(false);
 			window.scrollTo({
 				top: 0,
 				behavior: prefersReducedMotion() ? "auto" : "smooth",
 			});
 			return;
+		}
+
+		if (
+			isNavManuallyExpanded &&
+			!event.target.closest(".site-nav-shell-scroll")
+		) {
+			setNavManuallyExpanded(false);
 		}
 
 		const toggle = event.target.closest(".theme-toggle");

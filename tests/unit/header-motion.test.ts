@@ -51,6 +51,12 @@ describe("导航收缩与灵动岛进阶交互保护", () => {
 		assert.match(themeScriptSource, /syncNavGlidePill/u);
 		assert.match(themeScriptSource, /bindNavHoverGlide/u);
 		assert.match(themeScriptSource, /data-reading-active/u);
+		assert.match(themeScriptSource, /data-nav-expanded/u);
+		assert.match(themeScriptSource, /setNavManuallyExpanded/u);
+		assert.doesNotMatch(
+			headerSource,
+			/\.site-nav-shell-scroll:not\(:hover\):not\(:focus-within\)/u,
+		);
 		assert.match(themeScriptSource, /window\.scrollTo/u);
 	});
 
